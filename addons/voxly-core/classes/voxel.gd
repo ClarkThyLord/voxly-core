@@ -63,7 +63,7 @@ const ADJACENT_FACES: Dictionary[Vector3i, Array] = {
 const UNSET_COLOR := Color.TRANSPARENT
 
 # Texture x,y is "unset" if has negative x or y value
-const UNSET_TEXTURE_XY := Vector2i.ZERO
+const UNSET_TEXTURE_XY := -Vector2i.ONE
 
 # Material id is "unset" if is empty
 const UNSET_MATERIAL_ID := ""

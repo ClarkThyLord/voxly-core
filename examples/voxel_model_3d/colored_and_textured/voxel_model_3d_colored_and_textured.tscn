@@ -1,0 +1,44 @@
+[gd_scene format=4 uid="uid://s6elsoglck0t"]
+
+[ext_resource type="Script" uid="uid://bxcn05ovl30a" path="res://examples/voxel_model_3d/colored_and_textured/voxel_model_3d_colored_and_textured.gd" id="1_ii1wr"]
+[ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="2_fbyfd"]
+[ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="3_8op8x"]
+[ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="4_ivnsl"]
+[ext_resource type="Texture2D" uid="uid://dcd4tt2ib4m8f" path="res://assets/textures/kenney_voxel_pack.png" id="5_cxnsc"]
+
+[sub_resource type="Resource" id="Resource_ii1wr"]
+script = ExtResource("3_8op8x")
+base_color = Color(1, 0, 0, 1)
+base_texture_xy = Vector2i(0, 0)
+
+[sub_resource type="Resource" id="Resource_vdb6q"]
+script = ExtResource("3_8op8x")
+base_color = Color(0, 1, 0, 1)
+base_texture_xy = Vector2i(1, 0)
+
+[sub_resource type="Resource" id="Resource_gw5vf"]
+script = ExtResource("3_8op8x")
+base_color = Color(0, 0, 1, 1)
+base_texture_xy = Vector2i(2, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g8ovd"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="Resource" id="Resource_qfgcw"]
+script = ExtResource("4_ivnsl")
+texture_atlas = ExtResource("5_cxnsc")
+texture_atlas_cell_size = Vector2i(128, 128)
+default_material = SubResource("StandardMaterial3D_g8ovd")
+_voxels = Dictionary[int, ExtResource("3_8op8x")]({
+0: SubResource("Resource_ii1wr"),
+1: SubResource("Resource_vdb6q"),
+2: SubResource("Resource_gw5vf")
+})
+
+[node name="VoxelModel3DColoredAndTextured" type="Node3D" unique_id=1298457747]
+script = ExtResource("1_ii1wr")
+
+[node name="@Node3D@21994" type="Node3D" parent="." unique_id=1287395842]
+script = ExtResource("2_fbyfd")
+_voxel_data = PackedByteArray("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAACAAAAAAAAAAIAAAA=")
+voxel_set = SubResource("Resource_qfgcw")

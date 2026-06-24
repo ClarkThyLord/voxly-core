@@ -1,0 +1,41 @@
+[gd_scene format=4 uid="uid://ouvpxn6c52iy"]
+
+[ext_resource type="Script" uid="uid://8li68lhbv6sd" path="res://examples/voxel_model_3d/textured/voxel_model_3d_textured.gd" id="1_cuqd5"]
+[ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="2_fbyfd"]
+[ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="3_8op8x"]
+[ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="4_ivnsl"]
+[ext_resource type="Texture2D" uid="uid://dcd4tt2ib4m8f" path="res://assets/textures/kenney_voxel_pack.png" id="5_cxnsc"]
+
+[sub_resource type="Resource" id="Resource_cxnsc"]
+script = ExtResource("3_8op8x")
+base_texture_xy = Vector2i(0, 0)
+
+[sub_resource type="Resource" id="Resource_310uy"]
+script = ExtResource("3_8op8x")
+base_texture_xy = Vector2i(1, 0)
+
+[sub_resource type="Resource" id="Resource_fvpl6"]
+script = ExtResource("3_8op8x")
+base_texture_xy = Vector2i(2, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mx0ik"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="Resource" id="Resource_pkpxo"]
+script = ExtResource("4_ivnsl")
+texture_atlas = ExtResource("5_cxnsc")
+texture_atlas_cell_size = Vector2i(128, 128)
+default_material = SubResource("StandardMaterial3D_mx0ik")
+_voxels = Dictionary[int, ExtResource("3_8op8x")]({
+0: SubResource("Resource_cxnsc"),
+1: SubResource("Resource_310uy"),
+2: SubResource("Resource_fvpl6")
+})
+
+[node name="VoxelModel3DTextured" type="Node3D" unique_id=1298457747]
+script = ExtResource("1_cuqd5")
+
+[node name="@Node3D@33963" type="Node3D" parent="." unique_id=219111567]
+script = ExtResource("2_fbyfd")
+_voxel_data = PackedByteArray("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAACAAAAAAAAAAIAAAA=")
+voxel_set = SubResource("Resource_pkpxo")

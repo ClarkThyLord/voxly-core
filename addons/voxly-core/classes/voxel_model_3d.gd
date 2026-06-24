@@ -171,3 +171,23 @@ func rebuild_mesh() -> void:
 		if _mesh_instance:
 			_mesh_instance.mesh = null
 		return
+	
+	var mesher := VoxelMesher.create()
+	mesher.begin(voxel_size, voxel_set, voxels_colored, voxels_textured)
+	
+	var voxel_positions := _voxels.keys()
+	match mesh_mode:
+		MeshMode.BRUTE:
+			mesher.add_all_faces(_voxels)
+		MeshMode.GREEDY:
+			mesher.add_greedy_faces(_voxels)
+		_: # NAIVE default
+			mesher.add_culled_faces(_voxels)
+	
+	var mesh := mesher.commit()
+	
+	var mesh_instance := _get_mesh_instance()
+	mesh_instance.mesh = mesh
+	mesh_instance.position = origin * voxel_size
+	
+	super.rebuild_mesh()
