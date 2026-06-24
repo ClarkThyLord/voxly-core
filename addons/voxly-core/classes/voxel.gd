@@ -63,10 +63,10 @@ const ADJACENT_FACES: Dictionary[Vector3i, Array] = {
 const UNSET_COLOR := Color.TRANSPARENT
 
 # Texture x,y is "unset" if has negative x or y value
-const UNSET_TEXTURE := Vector2i.ZERO
+const UNSET_TEXTURE_XY := Vector2i.ZERO
 
 # Material id is "unset" if is empty
-const UNSET_MATERIAL := ""
+const UNSET_MATERIAL_ID := ""
 
 ## Display name for this voxel type
 @export
@@ -89,16 +89,16 @@ var base_color: Color = Color.WHITE:
 ## Base texture atlas coordinates (XY grid position)
 ## Neither x or y can be negative for valid value
 @export
-var base_texture_xy: Vector2i = UNSET_TEXTURE:
+var base_texture_xy: Vector2i = UNSET_TEXTURE_XY:
 	set = set_base_texture_xy,
 	get = get_base_texture_xy
 
 ## Base material ID string (references a material in VoxelSet)
 ## Empty string means no material override
 @export
-var base_material_id: String = UNSET_MATERIAL:
-	set = set_material_id,
-	get = get_material_id
+var base_material_id: String = UNSET_MATERIAL_ID:
+	set = set_base_material_id,
+	get = get_base_material_id
 
 @export_group("Face Overrides")
 @export_subgroup("Colors")
@@ -110,20 +110,20 @@ var base_material_id: String = UNSET_MATERIAL:
 @export var left_face_color: Color = UNSET_COLOR
 
 @export_subgroup("Textures")
-@export var top_face_texture_xy: Vector2i = UNSET_TEXTURE
-@export var bottom_face_texture_xy: Vector2i = UNSET_TEXTURE
-@export var front_face_texture_xy: Vector2i = UNSET_TEXTURE
-@export var back_face_texture_xy: Vector2i = UNSET_TEXTURE
-@export var right_face_texture_xy: Vector2i = UNSET_TEXTURE
-@export var left_face_texture_xy: Vector2i = UNSET_TEXTURE
+@export var top_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
+@export var bottom_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
+@export var front_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
+@export var back_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
+@export var right_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
+@export var left_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
 
 @export_subgroup("Materials")
-@export var top_face_material_id: String = UNSET_MATERIAL
-@export var bottom_face_material_id: String = UNSET_MATERIAL
-@export var front_face_material_id: String = UNSET_MATERIAL
-@export var back_face_material_id: String = UNSET_MATERIAL
-@export var right_face_material_id: String = UNSET_MATERIAL
-@export var left_face_material_id: String = UNSET_MATERIAL
+@export var top_face_material_id: String = UNSET_MATERIAL_ID
+@export var bottom_face_material_id: String = UNSET_MATERIAL_ID
+@export var front_face_material_id: String = UNSET_MATERIAL_ID
+@export var back_face_material_id: String = UNSET_MATERIAL_ID
+@export var right_face_material_id: String = UNSET_MATERIAL_ID
+@export var left_face_material_id: String = UNSET_MATERIAL_ID
 
 func set_name(new_name: String) -> void:
 	if new_name == name:
@@ -193,23 +193,42 @@ func set_back_face_color(color_value: Color) -> void: set_face_color(FACE_BACK, 
 func set_right_face_color(color_value: Color) -> void: set_face_color(FACE_RIGHT, color_value)
 func set_left_face_color(color_value: Color) -> void: set_face_color(FACE_LEFT, color_value)
 
+func has_base_color() -> bool:
+	return base_color.a > 0
+
 func get_base_color() -> Color:
 	return base_color
+
+func has_face_color(face: Vector3i) -> bool:
+	match face:
+		FACE_TOP:
+			return top_face_color.a > 0 or base_color.a > 0
+		FACE_BOTTOM:
+			return bottom_face_color.a > 0 or base_color.a > 0
+		FACE_FRONT:
+			return front_face_color.a > 0 or base_color.a > 0
+		FACE_BACK:
+			return back_face_color.a > 0 or base_color.a > 0
+		FACE_RIGHT:
+			return right_face_color.a > 0 or base_color.a > 0
+		FACE_LEFT:
+			return left_face_color.a > 0 or base_color.a > 0
+	return base_color.a > 0
 
 func get_face_color(face: Vector3i) -> Color:
 	match face:
 		FACE_TOP:
-			return top_face_color if top_face_color != UNSET_COLOR else base_color
+			return top_face_color if top_face_color.a > 0 else base_color
 		FACE_BOTTOM:
-			return bottom_face_color if bottom_face_color != UNSET_COLOR else base_color
+			return bottom_face_color if bottom_face_color.a > 0 else base_color
 		FACE_FRONT:
-			return front_face_color if front_face_color != UNSET_COLOR else base_color
+			return front_face_color if front_face_color.a > 0 else base_color
 		FACE_BACK:
-			return back_face_color if back_face_color != UNSET_COLOR else base_color
+			return back_face_color if back_face_color.a > 0 else base_color
 		FACE_RIGHT:
-			return right_face_color if right_face_color != UNSET_COLOR else base_color
+			return right_face_color if right_face_color.a > 0 else base_color
 		FACE_LEFT:
-			return left_face_color if left_face_color != UNSET_COLOR else base_color
+			return left_face_color if left_face_color.a > 0 else base_color
 	return base_color
 
 # Convenience per-face getters
@@ -268,23 +287,42 @@ func set_back_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_textur
 func set_right_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_RIGHT, texture_xy_pos)
 func set_left_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_LEFT, texture_xy_pos)
 
+func has_base_texture_xy() -> bool:
+	return base_texture_xy > UNSET_TEXTURE_XY
+
 func get_base_texture_xy() -> Vector2i:
 	return base_texture_xy
+
+func has_face_texture_xy(face: Vector3i) -> bool:
+	match face:
+		FACE_TOP:
+			return top_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+		FACE_BOTTOM:
+			return bottom_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+		FACE_FRONT:
+			return front_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+		FACE_BACK:
+			return back_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+		FACE_RIGHT:
+			return right_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+		FACE_LEFT:
+			return left_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+	return base_texture_xy > UNSET_TEXTURE_XY
 
 func get_face_texture_xy(face: Vector3i) -> Vector2i:
 	match face:
 		FACE_TOP:
-			return top_face_texture_xy if top_face_texture_xy != UNSET_TEXTURE else base_texture_xy
+			return top_face_texture_xy if top_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
 		FACE_BOTTOM:
-			return bottom_face_texture_xy if bottom_face_texture_xy != UNSET_TEXTURE else base_texture_xy
+			return bottom_face_texture_xy if bottom_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
 		FACE_FRONT:
-			return front_face_texture_xy if front_face_texture_xy != UNSET_TEXTURE else base_texture_xy
+			return front_face_texture_xy if front_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
 		FACE_BACK:
-			return back_face_texture_xy if back_face_texture_xy != UNSET_TEXTURE else base_texture_xy
+			return back_face_texture_xy if back_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
 		FACE_RIGHT:
-			return right_face_texture_xy if right_face_texture_xy != UNSET_TEXTURE else base_texture_xy
+			return right_face_texture_xy if right_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
 		FACE_LEFT:
-			return left_face_texture_xy if left_face_texture_xy != UNSET_TEXTURE else base_texture_xy
+			return left_face_texture_xy if left_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
 	return base_texture_xy
 
 # Convenience per-face getters
@@ -295,10 +333,10 @@ func get_back_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_BAC
 func get_right_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_RIGHT)
 func get_left_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_LEFT)
 
-func set_material_id(new_material_id: String) -> void:
-	if new_material_id == base_material_id:
+func set_base_material_id(new_base_material_id: String) -> void:
+	if new_base_material_id == base_material_id:
 		return
-	base_material_id = new_material_id
+	base_material_id = new_base_material_id
 	base_material_id_changed.emit()
 	changed.emit()
 
@@ -343,23 +381,42 @@ func set_back_face_material_id(material: String) -> void: set_face_material_id(F
 func set_right_face_material_id(material: String) -> void: set_face_material_id(FACE_RIGHT, material)
 func set_left_face_material_id(material: String) -> void: set_face_material_id(FACE_LEFT, material)
 
-func get_material_id() -> String:
+func has_base_material_id() -> bool:
+	return base_material_id != UNSET_MATERIAL_ID
+
+func get_base_material_id() -> String:
 	return base_material_id
+
+func has_face_material_id(face: Vector3i) -> bool:
+	match face:
+		FACE_TOP:
+			return top_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+		FACE_BOTTOM:
+			return bottom_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+		FACE_FRONT:
+			return front_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+		FACE_BACK:
+			return back_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+		FACE_RIGHT:
+			return right_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+		FACE_LEFT:
+			return left_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+	return base_material_id != UNSET_MATERIAL_ID
 
 func get_face_material_id(face: Vector3i) -> String:
 	match face:
 		FACE_TOP:
-			return top_face_material_id if top_face_material_id != UNSET_MATERIAL else base_material_id
+			return top_face_material_id if top_face_material_id != UNSET_MATERIAL_ID else base_material_id
 		FACE_BOTTOM:
-			return bottom_face_material_id if bottom_face_material_id != UNSET_MATERIAL else base_material_id
+			return bottom_face_material_id if bottom_face_material_id != UNSET_MATERIAL_ID else base_material_id
 		FACE_FRONT:
-			return front_face_material_id if front_face_material_id != UNSET_MATERIAL else base_material_id
+			return front_face_material_id if front_face_material_id != UNSET_MATERIAL_ID else base_material_id
 		FACE_BACK:
-			return back_face_material_id if back_face_material_id != UNSET_MATERIAL else base_material_id
+			return back_face_material_id if back_face_material_id != UNSET_MATERIAL_ID else base_material_id
 		FACE_RIGHT:
-			return right_face_material_id if right_face_material_id != UNSET_MATERIAL else base_material_id
+			return right_face_material_id if right_face_material_id != UNSET_MATERIAL_ID else base_material_id
 		FACE_LEFT:
-			return left_face_material_id if left_face_material_id != UNSET_MATERIAL else base_material_id
+			return left_face_material_id if left_face_material_id != UNSET_MATERIAL_ID else base_material_id
 	return base_material_id
 
 # Convenience per-face getters
