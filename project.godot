@@ -21,6 +21,10 @@ config/icon="uid://bx55mkr5kt1o3"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/voxly-core/plugin.cfg")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
