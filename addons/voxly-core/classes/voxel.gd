@@ -48,6 +48,16 @@ const FACES: Array[Vector3i] = [
 	FACE_LEFT
 ]
 
+## All six face names
+const FACE_NAMES : Dictionary[Vector3i, String] = {
+	FACE_TOP: "Top",
+	FACE_BOTTOM: "Bottom",
+	FACE_FRONT: "Front",
+	FACE_BACK: "Back",
+	FACE_RIGHT: "Right",
+	FACE_LEFT: "Left"
+}
+
 ## Adjacent face mappings for greedy meshing.
 ## Each entry maps a face to its adjacent faces in [right, left, down, up] order.
 const ADJACENT_FACES: Dictionary[Vector3i, Array] = {
@@ -81,6 +91,7 @@ var tags: Array[String] = []:
 	get = get_tags
 
 ## Base color applied to all faces unless overridden per-face
+## Alpha value 0 will not apply color.
 @export
 var base_color: Color = Color.WHITE:
 	set = set_base_color,
@@ -102,28 +113,46 @@ var base_material_id: String = UNSET_MATERIAL_ID:
 
 @export_group("Face Overrides")
 @export_subgroup("Colors")
-@export var top_face_color: Color = UNSET_COLOR
-@export var bottom_face_color: Color = UNSET_COLOR
-@export var front_face_color: Color = UNSET_COLOR
-@export var back_face_color: Color = UNSET_COLOR
-@export var right_face_color: Color = UNSET_COLOR
-@export var left_face_color: Color = UNSET_COLOR
+@export var top_face_color: Color = UNSET_COLOR:
+	set = set_top_face_color
+@export var bottom_face_color: Color = UNSET_COLOR:
+	set = set_bottom_face_color
+@export var front_face_color: Color = UNSET_COLOR:
+	set = set_front_face_color
+@export var back_face_color: Color = UNSET_COLOR:
+	set = set_back_face_color
+@export var right_face_color: Color = UNSET_COLOR:
+	set = set_right_face_color
+@export var left_face_color: Color = UNSET_COLOR:
+	set = set_left_face_color
 
 @export_subgroup("Textures")
-@export var top_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
-@export var bottom_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
-@export var front_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
-@export var back_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
-@export var right_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
-@export var left_face_texture_xy: Vector2i = UNSET_TEXTURE_XY
+@export var top_face_texture_xy: Vector2i = UNSET_TEXTURE_XY:
+	set = set_top_face_texture_xy
+@export var bottom_face_texture_xy: Vector2i = UNSET_TEXTURE_XY:
+	set = set_bottom_face_texture_xy
+@export var front_face_texture_xy: Vector2i = UNSET_TEXTURE_XY:
+	set = set_front_face_texture_xy
+@export var back_face_texture_xy: Vector2i = UNSET_TEXTURE_XY:
+	set = set_back_face_texture_xy
+@export var right_face_texture_xy: Vector2i = UNSET_TEXTURE_XY:
+	set = set_right_face_texture_xy
+@export var left_face_texture_xy: Vector2i = UNSET_TEXTURE_XY:
+	set = set_left_face_texture_xy
 
 @export_subgroup("Materials")
-@export var top_face_material_id: String = UNSET_MATERIAL_ID
-@export var bottom_face_material_id: String = UNSET_MATERIAL_ID
-@export var front_face_material_id: String = UNSET_MATERIAL_ID
-@export var back_face_material_id: String = UNSET_MATERIAL_ID
-@export var right_face_material_id: String = UNSET_MATERIAL_ID
-@export var left_face_material_id: String = UNSET_MATERIAL_ID
+@export var top_face_material_id: String = UNSET_MATERIAL_ID:
+	set = set_top_face_material_id
+@export var bottom_face_material_id: String = UNSET_MATERIAL_ID:
+	set = set_bottom_face_material_id
+@export var front_face_material_id: String = UNSET_MATERIAL_ID:
+	set = set_front_face_material_id
+@export var back_face_material_id: String = UNSET_MATERIAL_ID:
+	set = set_back_face_material_id
+@export var right_face_material_id: String = UNSET_MATERIAL_ID:
+	set = set_right_face_material_id
+@export var left_face_material_id: String = UNSET_MATERIAL_ID:
+	set = set_left_face_material_id
 
 func set_name(new_name: String) -> void:
 	if new_name == name:
@@ -153,45 +182,66 @@ func set_base_color(new_base_color: Color) -> void:
 	changed.emit()
 
 func set_face_color(face: Vector3i, face_color_value: Color) -> void:
-	if not ADJACENT_FACES.has(face):
+	if not FACE_NAMES.has(face):
 		return
 	match face:
 		FACE_TOP:
-			if face_color_value == top_face_color:
-				return
 			top_face_color = face_color_value
 		FACE_BOTTOM:
-			if face_color_value == bottom_face_color:
-				return
 			bottom_face_color = face_color_value
 		FACE_FRONT:
-			if face_color_value == front_face_color:
-				return
 			front_face_color = face_color_value
 		FACE_BACK:
-			if face_color_value == back_face_color:
-				return
 			back_face_color = face_color_value
 		FACE_RIGHT:
-			if face_color_value == right_face_color:
-				return
 			right_face_color = face_color_value
 		FACE_LEFT:
-			if face_color_value == left_face_color:
-				return
 			left_face_color = face_color_value
 		_:
 			return
-	face_color_changed.emit(face)
+
+func set_top_face_color(color_value: Color) -> void:
+	if color_value == top_face_color:
+		return
+	top_face_color = color_value
+	face_color_changed.emit(FACE_TOP)
 	changed.emit()
 
-# Convenience per-face setters
-func set_top_face_color(color_value: Color) -> void: set_face_color(FACE_TOP, color_value)
-func set_bottom_face_color(color_value: Color) -> void: set_face_color(FACE_BOTTOM, color_value)
-func set_front_face_color(color_value: Color) -> void: set_face_color(FACE_FRONT, color_value)
-func set_back_face_color(color_value: Color) -> void: set_face_color(FACE_BACK, color_value)
-func set_right_face_color(color_value: Color) -> void: set_face_color(FACE_RIGHT, color_value)
-func set_left_face_color(color_value: Color) -> void: set_face_color(FACE_LEFT, color_value)
+func set_bottom_face_color(color_value: Color) -> void:
+	if color_value == bottom_face_color:
+		return
+	bottom_face_color = color_value
+	face_color_changed.emit(FACE_BOTTOM)
+	changed.emit()
+
+func set_front_face_color(color_value: Color) -> void:
+	if color_value == front_face_color:
+		return
+	front_face_color = color_value
+	face_color_changed.emit(FACE_FRONT)
+	changed.emit()
+
+func set_back_face_color(color_value: Color) -> void:
+	if color_value == back_face_color:
+		return
+	back_face_color = color_value
+	face_color_changed.emit(FACE_BACK)
+	changed.emit()
+
+func set_right_face_color(color_value: Color) -> void:
+	if color_value == right_face_color:
+		return
+	right_face_color = color_value
+	face_color_changed.emit(FACE_RIGHT)
+	changed.emit()
+
+func set_left_face_color(color_value: Color) -> void:
+	if color_value == left_face_color:
+		return
+	left_face_color = color_value
+	face_color_changed.emit(FACE_LEFT)
+	changed.emit()
+
 
 func has_base_color() -> bool:
 	return base_color.a > 0
@@ -199,21 +249,21 @@ func has_base_color() -> bool:
 func get_base_color() -> Color:
 	return base_color
 
-func has_face_color(face: Vector3i) -> bool:
+func has_face_color(face: Vector3i, include_base : bool = true) -> bool:
 	match face:
 		FACE_TOP:
-			return top_face_color.a > 0 or base_color.a > 0
+			return top_face_color.a > 0 or (include_base and base_color.a > 0)
 		FACE_BOTTOM:
-			return bottom_face_color.a > 0 or base_color.a > 0
+			return bottom_face_color.a > 0 or (include_base and base_color.a > 0)
 		FACE_FRONT:
-			return front_face_color.a > 0 or base_color.a > 0
+			return front_face_color.a > 0 or (include_base and base_color.a > 0)
 		FACE_BACK:
-			return back_face_color.a > 0 or base_color.a > 0
+			return back_face_color.a > 0 or (include_base and base_color.a > 0)
 		FACE_RIGHT:
-			return right_face_color.a > 0 or base_color.a > 0
+			return right_face_color.a > 0 or (include_base and base_color.a > 0)
 		FACE_LEFT:
-			return left_face_color.a > 0 or base_color.a > 0
-	return base_color.a > 0
+			return left_face_color.a > 0 or (include_base and base_color.a > 0)
+	return (include_base and base_color.a > 0)
 
 func get_face_color(face: Vector3i) -> Color:
 	match face:
@@ -251,41 +301,62 @@ func set_face_texture_xy(face: Vector3i, new_texture_xy: Vector2i) -> void:
 		return
 	match face:
 		FACE_TOP:
-			if new_texture_xy == top_face_texture_xy:
-				return
-			top_face_texture_xy = new_texture_xy
+			set_top_face_texture_xy(new_texture_xy)
 		FACE_BOTTOM:
-			if new_texture_xy == bottom_face_texture_xy:
-				return
-			bottom_face_texture_xy = new_texture_xy
+			set_bottom_face_texture_xy(new_texture_xy)
 		FACE_FRONT:
-			if new_texture_xy == front_face_texture_xy:
-				return
-			front_face_texture_xy = new_texture_xy
+			set_front_face_texture_xy(new_texture_xy)
 		FACE_BACK:
-			if new_texture_xy == back_face_texture_xy:
-				return
-			back_face_texture_xy = new_texture_xy
+			set_back_face_texture_xy(new_texture_xy)
 		FACE_RIGHT:
-			if new_texture_xy == right_face_texture_xy:
-				return
-			right_face_texture_xy = new_texture_xy
+			set_right_face_texture_xy(new_texture_xy)
 		FACE_LEFT:
-			if new_texture_xy == left_face_texture_xy:
-				return
-			left_face_texture_xy = new_texture_xy
+			set_left_face_texture_xy(new_texture_xy)
 		_:
 			return
-	face_texture_xy_changed.emit(face)
-	changed.emit()
 
 # Convenience per-face setters
-func set_top_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_TOP, texture_xy_pos)
-func set_bottom_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_BOTTOM, texture_xy_pos)
-func set_front_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_FRONT, texture_xy_pos)
-func set_back_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_BACK, texture_xy_pos)
-func set_right_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_RIGHT, texture_xy_pos)
-func set_left_face_texture_xy(texture_xy_pos: Vector2i) -> void: set_face_texture_xy(FACE_LEFT, texture_xy_pos)
+func set_top_face_texture_xy(texture_xy_pos: Vector2i) -> void:
+	if texture_xy_pos == top_face_texture_xy:
+		return
+	top_face_texture_xy = texture_xy_pos
+	face_texture_xy_changed.emit(FACE_TOP)
+	changed.emit()
+
+func set_bottom_face_texture_xy(texture_xy_pos: Vector2i) -> void:
+	if texture_xy_pos == bottom_face_texture_xy:
+		return
+	bottom_face_texture_xy = texture_xy_pos
+	face_texture_xy_changed.emit(FACE_BOTTOM)
+	changed.emit()
+
+func set_front_face_texture_xy(texture_xy_pos: Vector2i) -> void:
+	if texture_xy_pos == front_face_texture_xy:
+		return
+	front_face_texture_xy = texture_xy_pos
+	face_texture_xy_changed.emit(FACE_FRONT)
+	changed.emit()
+
+func set_back_face_texture_xy(texture_xy_pos: Vector2i) -> void:
+	if texture_xy_pos == back_face_texture_xy:
+		return
+	back_face_texture_xy = texture_xy_pos
+	face_texture_xy_changed.emit(FACE_BACK)
+	changed.emit()
+
+func set_right_face_texture_xy(texture_xy_pos: Vector2i) -> void:
+	if texture_xy_pos == right_face_texture_xy:
+		return
+	right_face_texture_xy = texture_xy_pos
+	face_texture_xy_changed.emit(FACE_RIGHT)
+	changed.emit()
+
+func set_left_face_texture_xy(texture_xy_pos: Vector2i) -> void:
+	if texture_xy_pos == left_face_texture_xy:
+		return
+	left_face_texture_xy = texture_xy_pos
+	face_texture_xy_changed.emit(FACE_LEFT)
+	changed.emit()
 
 func has_base_texture_xy() -> bool:
 	return base_texture_xy > UNSET_TEXTURE_XY
@@ -293,21 +364,21 @@ func has_base_texture_xy() -> bool:
 func get_base_texture_xy() -> Vector2i:
 	return base_texture_xy
 
-func has_face_texture_xy(face: Vector3i) -> bool:
+func has_face_texture_xy(face: Vector3i, include_base : bool = true) -> bool:
 	match face:
 		FACE_TOP:
-			return top_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+			return top_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 		FACE_BOTTOM:
-			return bottom_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+			return bottom_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 		FACE_FRONT:
-			return front_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+			return front_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 		FACE_BACK:
-			return back_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+			return back_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 		FACE_RIGHT:
-			return right_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
+			return right_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 		FACE_LEFT:
-			return left_face_texture_xy > UNSET_TEXTURE_XY or base_texture_xy > UNSET_TEXTURE_XY
-	return base_texture_xy > UNSET_TEXTURE_XY
+			return left_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
+	return (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 
 func get_face_texture_xy(face: Vector3i) -> Vector2i:
 	match face:
@@ -345,41 +416,62 @@ func set_face_material_id(face: Vector3i, new_material_id: String) -> void:
 		return
 	match face:
 		FACE_TOP:
-			if new_material_id == top_face_material_id:
-				return
-			top_face_material_id = new_material_id
+			set_top_face_material_id(new_material_id)
 		FACE_BOTTOM:
-			if new_material_id == bottom_face_material_id:
-				return
-			bottom_face_material_id = new_material_id
+			set_bottom_face_material_id(new_material_id)
 		FACE_FRONT:
-			if new_material_id == front_face_material_id:
-				return
-			front_face_material_id = new_material_id
+			set_front_face_material_id(new_material_id)
 		FACE_BACK:
-			if new_material_id == back_face_material_id:
-				return
-			back_face_material_id = new_material_id
+			set_back_face_material_id(new_material_id)
 		FACE_RIGHT:
-			if new_material_id == right_face_material_id:
-				return
-			right_face_material_id = new_material_id
+			set_right_face_material_id(new_material_id)
 		FACE_LEFT:
-			if new_material_id == left_face_material_id:
-				return
-			left_face_material_id = new_material_id
+			set_left_face_material_id(new_material_id)
 		_:
 			return
-	face_material_id_changed.emit(face)
-	changed.emit()
 
 # Convenience per-face setters
-func set_top_face_material_id(material: String) -> void: set_face_material_id(FACE_TOP, material)
-func set_bottom_face_material_id(material: String) -> void: set_face_material_id(FACE_BOTTOM, material)
-func set_front_face_material_id(material: String) -> void: set_face_material_id(FACE_FRONT, material)
-func set_back_face_material_id(material: String) -> void: set_face_material_id(FACE_BACK, material)
-func set_right_face_material_id(material: String) -> void: set_face_material_id(FACE_RIGHT, material)
-func set_left_face_material_id(material: String) -> void: set_face_material_id(FACE_LEFT, material)
+func set_top_face_material_id(material: String) -> void:
+	if material == top_face_material_id:
+		return
+	top_face_material_id = material
+	face_material_id_changed.emit(FACE_TOP)
+	changed.emit()
+
+func set_bottom_face_material_id(material: String) -> void:
+	if material == bottom_face_material_id:
+		return
+	bottom_face_material_id = material
+	face_material_id_changed.emit(FACE_BOTTOM)
+	changed.emit()
+
+func set_front_face_material_id(material: String) -> void:
+	if material == front_face_material_id:
+		return
+	front_face_material_id = material
+	face_material_id_changed.emit(FACE_FRONT)
+	changed.emit()
+
+func set_back_face_material_id(material: String) -> void:
+	if material == back_face_material_id:
+		return
+	back_face_material_id = material
+	face_material_id_changed.emit(FACE_BACK)
+	changed.emit()
+
+func set_right_face_material_id(material: String) -> void:
+	if material == right_face_material_id:
+		return
+	right_face_material_id = material
+	face_material_id_changed.emit(FACE_RIGHT)
+	changed.emit()
+
+func set_left_face_material_id(material: String) -> void:
+	if material == left_face_material_id:
+		return
+	left_face_material_id = material
+	face_material_id_changed.emit(FACE_LEFT)
+	changed.emit()
 
 func has_base_material_id() -> bool:
 	return base_material_id != UNSET_MATERIAL_ID
@@ -387,21 +479,21 @@ func has_base_material_id() -> bool:
 func get_base_material_id() -> String:
 	return base_material_id
 
-func has_face_material_id(face: Vector3i) -> bool:
+func has_face_material_id(face: Vector3i, include_base : bool = true) -> bool:
 	match face:
 		FACE_TOP:
-			return top_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+			return top_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
 		FACE_BOTTOM:
-			return bottom_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+			return bottom_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
 		FACE_FRONT:
-			return front_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+			return front_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
 		FACE_BACK:
-			return back_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+			return back_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
 		FACE_RIGHT:
-			return right_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
+			return right_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
 		FACE_LEFT:
-			return left_face_material_id != UNSET_MATERIAL_ID or base_material_id != UNSET_MATERIAL_ID
-	return base_material_id != UNSET_MATERIAL_ID
+			return left_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
+	return (include_base and base_material_id != UNSET_MATERIAL_ID)
 
 func get_face_material_id(face: Vector3i) -> String:
 	match face:
