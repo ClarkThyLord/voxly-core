@@ -1,0 +1,88 @@
+[gd_scene format=3 uid="uid://b75p7h3d502ru"]
+
+[ext_resource type="Script" uid="uid://d1v0nff2vuyyr" path="res://addons/voxly-core/ui/voxel_inspector/voxel_inspector.gd" id="1_8gbbl"]
+[ext_resource type="PackedScene" uid="uid://nm23m1vrmkbo" path="res://addons/voxly-core/ui/tag_editor/tag_editor.tscn" id="4_vrr0v"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5ehny"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="VoxelInspector" type="VBoxContainer" unique_id=2085056115]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_8gbbl")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=615611050]
+layout_mode = 2
+
+[node name="IDContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=2139436660]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/IDContainer" unique_id=1184610085]
+layout_mode = 2
+text = "ID:"
+
+[node name="IDLineEdit" type="LineEdit" parent="HBoxContainer/IDContainer" unique_id=258353292]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="NameContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=1399001797]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label2" type="Label" parent="HBoxContainer/NameContainer" unique_id=381797010]
+layout_mode = 2
+text = "Name:"
+
+[node name="NameLineEdit" type="LineEdit" parent="HBoxContainer/NameContainer" unique_id=1815602804]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TagEditor" parent="." unique_id=1464479839 instance=ExtResource("4_vrr0v")]
+unique_name_in_owner = true
+layout_mode = 2
+disable_editing = false
+tag_validator = "^[a-zA-Z0-9_-]{1,32}$"
+
+[node name="InfoContainer" type="ScrollContainer" parent="." unique_id=1553734258]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 256)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="InfoContainer" unique_id=1679550769]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_5ehny")
+
+[node name="MarginContainer" type="MarginContainer" parent="InfoContainer/PanelContainer" unique_id=684662853]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="InfoLabel" type="Label" parent="InfoContainer/PanelContainer/MarginContainer" unique_id=1681852548]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
