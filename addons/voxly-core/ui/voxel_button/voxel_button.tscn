@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://dn72slkiuo50k"]
+
+[ext_resource type="Script" uid="uid://bi7is7rea33yv" path="res://addons/voxly-core/ui/voxel_button/voxel_button.gd" id="1_tbqd3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6ec83"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1254902, 0.14509805, 0.1764706, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.21176471, 0.36862746, 0.57254905, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="VoxelButton" type="Button" unique_id=1783842367]
+custom_minimum_size = Vector2(42, 42)
+theme_override_styles/pressed = SubResource("StyleBoxFlat_6ec83")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_6ec83")
+script = ExtResource("1_tbqd3")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1692478567]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+metadata/_edit_use_anchors_ = true
+
+[node name="Color" type="ColorRect" parent="MarginContainer" unique_id=1130981815]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Texture" type="TextureRect" parent="MarginContainer" unique_id=2130036687]
+unique_name_in_owner = true
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
