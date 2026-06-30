@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://c06i31tos2nkm"]
+
+[ext_resource type="Script" uid="uid://dl1e3r2mludyc" path="res://addons/voxly-core/ui/atlas_texture_picker/atlas_texture_picker.gd" id="1_e71l0"]
+
+[node name="AtlasTexturePicker" type="ScrollContainer" unique_id=1304973413]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_e71l0")
+
+[node name="AtlasTexture" type="TextureRect" parent="." unique_id=555674968]
+unique_name_in_owner = true
+show_behind_parent = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
