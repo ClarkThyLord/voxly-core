@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://bccafwt8tinsp"]
+
+[ext_resource type="Script" uid="uid://b51q2bo7skgmx" path="res://addons/voxly-core/ui/color_picker_window/color_picker_window.gd" id="1_48v0i"]
+
+[node name="ColorPickerWindow" type="Window" unique_id=104473677]
+oversampling_override = 1.0
+title = "Color Picker"
+initial_position = 4
+size = Vector2i(308, 617)
+wrap_controls = true
+transient = true
+unresizable = true
+popup_window = true
+minimize_disabled = true
+maximize_disabled = true
+script = ExtResource("1_48v0i")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1453680835]
+offset_right = 308.0
+offset_bottom = 617.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1749502670]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1707939636]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ColorPicker" type="ColorPicker" parent="MarginContainer/VBoxContainer/PanelContainer" unique_id=1150798447]
+unique_name_in_owner = true
+layout_mode = 2
+edit_intensity = false
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=2072861650]
+layout_mode = 2
+alignment = 1
+
+[node name="Ok" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=100263285]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ok"
+
+[node name="Cancel" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1508812855]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"
