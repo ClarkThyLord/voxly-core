@@ -21,6 +21,9 @@ signal materials_changed
 ## Emitted when voxels are added, removed or modified
 signal voxels_changed
 
+@export_tool_button("Notify of Changes", "Reload")
+var notify_changed_button = _notify_changed
+
 ## The texture atlas containing all voxel textures
 @export
 var texture_atlas: Texture2D:
@@ -51,6 +54,10 @@ var _voxels: Dictionary[int, Voxel] = {}:
 	set = set_voxels
 
 var _texture_uv_scale: Vector2 = Vector2.ONE
+
+func _notify_changed() -> void:
+	"""Emit the changed signal to notify connected VoxelNode3D nodes to refresh."""
+	changed.emit()
 
 func _init() -> void:
 	default_material.vertex_color_use_as_albedo = true

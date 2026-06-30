@@ -4,7 +4,7 @@
 class_name VoxelNode3D
 extends Node3D
 ## Abstract base class for all nodes that display voxel content.
-## Defines core properties and methods shared by VoxelModel3D and VoxelWorld3D.
+## Defines core properties and methods shared across voxel content object.
 
 ## Emitted when mesh generation mode changes
 signal mesh_mode_changed
@@ -27,6 +27,11 @@ enum MeshMode {
 
 @export_tool_button("Rebuild Mesh", "BoxMesh")
 var rebuild_mesh_button = rebuild_mesh
+
+## When enabled (default), the mesh automatically updates whenever
+## the assigned VoxelSet resource is modified. Disable for manual control.
+@export
+var update_with_voxel_set: bool = true
 
 ## Mesh generation algorithm
 @export
@@ -84,13 +89,27 @@ func get_voxel_set() -> VoxelSet:
 
 func set_voxel_set(new_voxel_set: VoxelSet) -> void:
 	if voxel_set != new_voxel_set:
+		# Disconnect old signal
+		if voxel_set and voxel_set.changed.is_connected(_on_voxel_set_content_changed):
+			voxel_set.changed.disconnect(_on_voxel_set_content_changed)
+		
 		voxel_set = new_voxel_set
+		
+		# Connect new signal for auto-refresh when VoxelSet content changes
+		if voxel_set and not voxel_set.changed.is_connected(_on_voxel_set_content_changed):
+			voxel_set.changed.connect(_on_voxel_set_content_changed)
+		
 		voxel_set_changed.emit()
 		if _pending_rebuild:
 			_pending_rebuild = false
-			_queue_rebuild()
-		else:
-			_queue_rebuild()
+		_queue_rebuild()
+
+## Called when the VoxelSet resource's `changed` signal fires
+## (e.g., after voxel properties are edited via the VoxelSet editor).
+## Triggers a mesh rebuild so the node reflects the updated data.
+func _on_voxel_set_content_changed() -> void:
+	if update_with_voxel_set:
+		_queue_rebuild()
 
 func get_voxels_colored() -> bool:
 	return voxels_colored
