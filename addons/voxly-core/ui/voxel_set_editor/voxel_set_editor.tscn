@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://cl5qufud6f48u"]
+
+[ext_resource type="Script" uid="uid://mn7j3gnhbujl" path="res://addons/voxly-core/ui/voxel_set_editor/voxel_set_editor.gd" id="1_vt8mh"]
+[ext_resource type="PackedScene" uid="uid://bgcv2ueybi3o7" path="res://addons/voxly-core/ui/voxel_editor/voxel_editor.tscn" id="2_kohc5"]
+[ext_resource type="PackedScene" uid="uid://b75p7h3d502ru" path="res://addons/voxly-core/ui/voxel_inspector/voxel_inspector.tscn" id="3_tngtc"]
+[ext_resource type="PackedScene" uid="uid://hbr6xbwnatyg" path="res://addons/voxly-core/ui/voxel_set_viewer/voxel_set_viewer.tscn" id="4_o1b2m"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kohc5"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="VoxelSetEditor" type="BoxContainer" unique_id=1043880044]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+vertical = true
+script = ExtResource("1_vt8mh")
+
+[node name="SplitContainer" type="SplitContainer" parent="." unique_id=2009539910]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical = true
+
+[node name="VoxelContainer" type="SplitContainer" parent="SplitContainer" unique_id=367752865]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+vertical = true
+
+[node name="PanelContainer" type="PanelContainer" parent="SplitContainer/VoxelContainer" unique_id=374103657]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kohc5")
+
+[node name="VoxelEditor" parent="SplitContainer/VoxelContainer/PanelContainer" unique_id=1613042170 instance=ExtResource("2_kohc5")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VoxelInspector" parent="SplitContainer/VoxelContainer" unique_id=868877094 instance=ExtResource("3_tngtc")]
+unique_name_in_owner = true
+layout_mode = 2
+show_info = false
+
+[node name="VoxelSetViewer" parent="SplitContainer" unique_id=190935005 instance=ExtResource("4_o1b2m")]
+unique_name_in_owner = true
+layout_mode = 2
