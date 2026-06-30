@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://hbr6xbwnatyg"]
+
+[ext_resource type="Script" uid="uid://dfr4rmebuxfxy" path="res://addons/voxly-core/ui/voxel_set_viewer/voxel_set_viewer.gd" id="1_wolgs"]
+
+[node name="VoxelSetViewer" type="VBoxContainer" unique_id=937536362]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_wolgs")
+
+[node name="ToolBar" type="HBoxContainer" parent="." unique_id=1798286548]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AddMenuButton" type="MenuButton" parent="ToolBar" unique_id=1913638723]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Add"
+item_count = 1
+popup/item_0/text = "Add New Voxel"
+popup/item_0/id = 0
+
+[node name="ImportMenuButton" type="MenuButton" parent="ToolBar" unique_id=1144888463]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Import"
+item_count = 2
+popup/item_0/text = "Append..."
+popup/item_0/id = 0
+popup/item_1/text = "Replace..."
+popup/item_1/id = 1
+
+[node name="RemoveMenuButton" type="MenuButton" parent="ToolBar" unique_id=126610324]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Remove"
+
+[node name="SelectMenuButton" type="MenuButton" parent="ToolBar" unique_id=369430087]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Select"
+item_count = 2
+popup/item_0/text = "Select All"
+popup/item_0/id = 0
+popup/item_1/text = "Unselect All"
+popup/item_1/id = 1
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1901790968]
+layout_mode = 2
+
+[node name="Search" type="LineEdit" parent="PanelContainer" unique_id=729419405]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Search by id, name, #tag..."
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1092201314]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+draw_focus_border = true
+horizontal_scroll_mode = 0
+
+[node name="List" type="HFlowContainer" parent="ScrollContainer" unique_id=1641278157]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
