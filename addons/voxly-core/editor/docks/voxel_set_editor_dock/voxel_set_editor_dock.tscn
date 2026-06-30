@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://b1qfstrbg2kd8"]
+
+[ext_resource type="Script" uid="uid://briqgdt4p8st2" path="res://addons/voxly-core/editor/docks/voxel_set_editor_dock/voxel_set_editor_dock.gd" id="1_lnkbo"]
+[ext_resource type="Texture2D" uid="uid://chhk2gqnkxbgv" path="res://addons/voxly-core/assets/icons/voxel_set.svg" id="1_qhqpw"]
+[ext_resource type="PackedScene" uid="uid://cl5qufud6f48u" path="res://addons/voxly-core/ui/voxel_set_editor/voxel_set_editor.tscn" id="2_kuuqi"]
+
+[node name="EditorDock" type="EditorDock" unique_id=444387934]
+custom_minimum_size = Vector2(250, 300)
+title = "VoxelSet Editor"
+dock_icon = ExtResource("1_qhqpw")
+default_slot = 7
+script = ExtResource("1_lnkbo")
+
+[node name="VoxelSetEditorDock" type="ScrollContainer" parent="." unique_id=295661333]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VoxelSetEditor" parent="VoxelSetEditorDock" unique_id=341575654 instance=ExtResource("2_kuuqi")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

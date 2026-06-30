@@ -6,6 +6,8 @@ extends RefCounted
 
 signal state_changed(transition: VoxlyState.Transition)
 
+signal current_voxel_set_changed(voxel_set: VoxelSet)
+
 ## Valid state transitions table.
 ## State IDs: 0=IDLE, 1=VIEWING_VOXEL_SET, 2=VIEWING_VOXEL_MODEL, 3=EDITING_VOXEL_MODEL
 const _valid_transitions: Dictionary = {
@@ -35,6 +37,16 @@ const _valid_transitions: Dictionary = {
 ## The current editor state.
 var current_state: VoxlyState.State = VoxlyState.State.IDLE:
 	get = get_current_state
+
+## The VoxelSet resource currently being edited (if any).
+## Set by the plugin when a VoxelSet is selected for editing.
+var current_voxel_set: VoxelSet = null
+
+## Sets the current VoxelSet and emits the signal.
+func set_current_voxel_set(vs: VoxelSet) -> void:
+	if current_voxel_set != vs:
+		current_voxel_set = vs
+		current_voxel_set_changed.emit(vs)
 
 var _editor_plugin: EditorPlugin
 var _current_screen: String = "3D" # Track current main screen
@@ -112,15 +124,17 @@ func on_selection_changed(selected_nodes: Array[Node]) -> void:
 		transition_to(VoxlyState.State.IDLE)
 		return
 	
-	var valid_node: Node3D = selected_nodes[0]
+	var node : Node = selected_nodes[0]
+	if not can_handle(node):
+		node = null
 	
-	if valid_node == null:
+	if node == null:
 		# Don't interrupt active editing — we may have cleared selection ourselves
 		if current_state != VoxlyState.State.EDITING_VOXEL_MODEL:
 			transition_to(VoxlyState.State.IDLE)
 		return
 	
-	var target_state := state_for_node(valid_node)
+	var target_state := state_for_node(node)
 	
 	# Don't enter 3D-specific states when not in the 3D viewport
 	if _current_screen != "3D" and target_state in [
@@ -132,10 +146,10 @@ func on_selection_changed(selected_nodes: Array[Node]) -> void:
 	# Don't interrupt active editing
 	if current_state == VoxlyState.State.EDITING_VOXEL_MODEL and target_state == VoxlyState.State.VIEWING_VOXEL_MODEL:
 		# If the same object and we're editing, stay in editing mode
-		if _is_same_object(valid_node):
+		if _is_same_object(node):
 			return
 	
-	transition_to(target_state, valid_node)
+	transition_to(target_state, node)
 
 
 ## Called when the editing toggle changes in the VoxelModel3D editor.

@@ -27,7 +27,7 @@ var _bottom_dock: Control = null
 var _bottom_dock_type: DockType = DockType.NONE
 
 ## VoxelSet editor dock, managed separately so it can coexist with the bottom panel.
-var _voxel_set_dock: Control = null
+var _voxel_set_dock: EditorDock = null
 
 func _init(plugin: EditorPlugin, state_machine: VoxlyStateMachine) -> void:
 	_editor_plugin = plugin
@@ -106,11 +106,10 @@ func _hide_bottom_dock() -> void:
 func _hide_voxel_set_dock() -> void:
 	if _voxel_set_dock == null:
 		return
-
-	_editor_plugin.remove_control_from_docks(_voxel_set_dock)
-	_voxel_set_dock.queue_free()
+	
+	_editor_plugin.remove_dock(_voxel_set_dock)
 	_voxel_set_dock = null
-
+	
 	dock_hidden.emit("VOXEL_SET_EDITOR")
 	print("VoxlyUIManager: Hidden VoxelSet right-side dock")
 
@@ -126,6 +125,31 @@ func _create_dock(path: String, node: Node3D) -> Control:
 	return dock
 
 func _show_voxel_set_dock(node: Node3D) -> void:
+	# Grab the current voxel_set from the state machine (typed, safe)
+	var vs: VoxelSet = _state_machine.current_voxel_set
+	if not vs:
+		return
+	
+	var path := "res://addons/voxly-core/editor/docks/voxel_set_editor_dock/voxel_set_editor_dock.tscn"
+	
+	# If already showing a VoxelSet dock, update and skip
+	if _voxel_set_dock != null:
+		_voxel_set_dock.set_voxel_set(vs)
+		dock_shown.emit("VOXEL_SET_EDITOR")
+		return
+	
+	var dock := _create_dock(path, node)
+	_voxel_set_dock = dock
+	
+	# Add to the right-side dock FIRST so @onready vars are initialized
+	_editor_plugin.add_dock(dock)
+	
+	# Now pass the voxel_set and undo_redo — children are guaranteed to be ready
+	if dock.has_method("set_voxel_set"):
+		dock.set_voxel_set(vs)
+	
+	dock.set_undo_redo_manager(_editor_plugin.get_undo_redo())
+	dock_shown.emit("VOXEL_SET_EDITOR")
 	print("VoxlyUIManager: Shown VoxelSet editor right-side dock")
 
 func _show_voxel_node_editor_dock(node: Node3D) -> void:

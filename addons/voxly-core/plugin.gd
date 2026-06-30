@@ -90,6 +90,7 @@ func _edit(object: Object) -> void:
 	elif object is VoxelSet:
 		# VoxelSet doesn't map to a selected node, store and transition
 		_current_voxel_set = object
+		_state_machine.set_current_voxel_set(object)
 		_state_machine.transition_to(VoxlyState.State.VIEWING_VOXEL_SET, null)
 
 func _forward_3d_gui_input(camera: Camera3D, event: InputEvent) -> int:
