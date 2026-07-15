@@ -34,6 +34,9 @@ const _SURFACE_TEXTURED := "_textured"
  # Tag for surface that are not textured
 const _SURFACE_NOT_TEXTURED := "_not_textured"
 
+func _init() -> void:
+	DEBUG_CONTEXT = "VoxelMesherGDScript"
+
 func begin(voxel_size: Vector3, voxel_set: VoxelSet, add_color: bool = true, add_uv: bool = true) -> void:
 	_began = true
 	_voxel_size = voxel_size
@@ -41,6 +44,7 @@ func begin(voxel_size: Vector3, voxel_set: VoxelSet, add_color: bool = true, add
 	_add_color = add_color
 	_add_uv = add_uv
 	_surfaces.clear()
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Begun: size=%s add_color=%s add_uv=%s" % [voxel_size, add_color, add_uv])
 
 func clear() -> void:
 	_began = false
@@ -64,6 +68,7 @@ func commit() -> ArrayMesh:
 		if ms.material:
 			array_mesh.surface_set_material(array_mesh.get_surface_count() - 1, ms.material)
 	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Committed mesh: %d surfaces" % array_mesh.get_surface_count())
 	return array_mesh
 
 func add_face(voxel_position: Vector3i, voxel_id: int, voxel_face: Vector3i, scale_by: Vector2i = Vector2i.ONE) -> void:
@@ -219,33 +224,45 @@ func add_face(voxel_position: Vector3i, voxel_id: int, voxel_face: Vector3i, sca
 	ms.add_index(ms.vertex_count + 1)
 	ms.add_index(ms.vertex_count + 3)
 	ms.add_index(ms.vertex_count + 2)
-	
 	ms.vertex_count = new_count
 
+
 func add_all_faces(voxels: Dictionary[Vector3i, int]) -> void:
-	for voxel_position in voxels:
-		var voxel_id: int = voxels[voxel_position]
-		if typeof(voxel_id) == TYPE_INT:
-			for voxel_face in Voxel.FACES:
-				add_face(voxel_position, voxel_id, voxel_face)
+	if not _began:
+		push_error("VoxelMesherGDScript not begun, call begin() first")
+		return
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Adding all faces for %d voxels" % voxels.size())
+	for p in voxels:
+		for face in Voxel.FACES:
+			add_face(p, voxels[p], face)
+
 
 func add_culled_faces(voxels: Dictionary[Vector3i, int]) -> void:
-	for voxel_position in voxels:
-		var voxel_id: int = voxels[voxel_position]
-		if typeof(voxel_id) == TYPE_INT:
-			for voxel_face in Voxel.FACES:
-				# Only add face if no voxel exists in that direction
-				if typeof(voxels.get(voxel_position + voxel_face)) != TYPE_INT:
-					add_face(voxel_position, voxel_id, voxel_face)
+	if not _began:
+		push_error("VoxelMesherGDScript not begun, call begin() first")
+		return
+	
+	var face_count := 0
+	for p in voxels:
+		for face in Voxel.FACES:
+			if not voxels.has(p + face):
+				add_face(p, voxels[p], face)
+				face_count += 1
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Added %d culled faces for %d voxels" % [face_count, voxels.size()])
+
 
 func add_greedy_faces(voxels: Dictionary[Vector3i, int]) -> void:
+	if not _began:
+		push_error("VoxelMesherGDScript not begun, call begin() first")
+		return
+	
 	# Process each axis separately using the greedy algorithm
-	_greedy_by_face(voxels, Voxel.FACE_TOP)
-	_greedy_by_face(voxels, Voxel.FACE_BOTTOM)
-	_greedy_by_face(voxels, Voxel.FACE_RIGHT)
-	_greedy_by_face(voxels, Voxel.FACE_LEFT)
-	_greedy_by_face(voxels, Voxel.FACE_FRONT)
-	_greedy_by_face(voxels, Voxel.FACE_BACK)
+	var total_quads := 0
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Greedy meshing %d voxels" % voxels.size())
+	for face in Voxel.FACES:
+		var quads := _greedy_by_face(voxels, face)
+		total_quads += quads
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Greedy mesh complete: %d total quads" % total_quads)
 
 ## Builds a surface key that separates by material_id AND by texture presence.
 ## A single voxel can produce up to 2 surfaces per material_id:
@@ -299,7 +316,7 @@ func _bare_material_id_from_key(surface_key: String) -> String:
 		return surface_key.trim_suffix(_SURFACE_NOT_TEXTURED)
 	return surface_key
 
-func _greedy_by_face(voxels: Dictionary[Vector3i, int], voxel_face: Vector3i) -> void:
+func _greedy_by_face(voxels: Dictionary[Vector3i, int], voxel_face: Vector3i) -> int:
 	# Step 1: Find all uncovered faces in this direction
 	var uncovered_faces: Dictionary[Vector3i, int] = {}
 	
@@ -309,13 +326,36 @@ func _greedy_by_face(voxels: Dictionary[Vector3i, int], voxel_face: Vector3i) ->
 			if typeof(voxels.get(voxel_position + voxel_face)) != TYPE_INT:
 				uncovered_faces[voxel_position] = voxel_id
 	
+	var quad_count := 0
 	var last_count: int = -1
+	var iteration := 0
 	
 	# Step 2: Process until all faces are merged
 	while not uncovered_faces.is_empty():
 		var count: int = uncovered_faces.size()
+		iteration += 1
+		
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "  iter %d: face=%s remaining=%d" % [iteration, Voxel.FACE_NAMES.get(voxel_face, str(voxel_face)), count])
 		
 		if count == last_count:
+			var first_pos: Vector3i = uncovered_faces.keys()[0]
+			var first_id: int = uncovered_faces[first_pos]
+			var face_name: String = Voxel.FACE_NAMES.get(voxel_face, str(voxel_face))
+			# Determine if we have a patter, sample a few positions
+			var sample_positions: Array = []
+			var sample_idx := 0
+			for pos in uncovered_faces:
+				if sample_idx >= 5:
+					break
+				sample_positions.append(pos)
+				sample_idx += 1
+			# Check if any neighbors exist for the first position (zero-growth detection)
+			var stuck_pos: Vector3i = uncovered_faces.keys()[0]
+			var adj_right := uncovered_faces.get(stuck_pos + Voxel.ADJACENT_FACES[voxel_face][0])
+			var adj_left := uncovered_faces.get(stuck_pos + Voxel.ADJACENT_FACES[voxel_face][1])
+			var adj_down := uncovered_faces.get(stuck_pos + Voxel.ADJACENT_FACES[voxel_face][2])
+			var adj_up := uncovered_faces.get(stuck_pos + Voxel.ADJACENT_FACES[voxel_face][3])
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "LOOP BREAK: face=%s remaining=%d first_pos=%s first_id=%d neighbors(R=%s L=%s D=%s U=%s) samples=%s" % [face_name, count, first_pos, first_id, adj_right, adj_left, adj_down, adj_up, sample_positions])
 			push_error("Greedy meshing: uncovered faces count unchanged, breaking loop")
 			break
 		
@@ -372,7 +412,7 @@ func _greedy_by_face(voxels: Dictionary[Vector3i, int], voxel_face: Vector3i) ->
 				break
 		
 		secondary_offset -= 1
-		start_pos += Voxel.ADJACENT_FACES[voxel_face][1] * secondary_offset
+		start_pos += Voxel.ADJACENT_FACES[voxel_face][3] * secondary_offset
 		
 		var secondary_growth_dir: Vector3i = Voxel.ADJACENT_FACES[voxel_face][2]
 		var secondary_growth_axis: int = secondary_growth_dir.max_axis_index()
@@ -401,6 +441,8 @@ func _greedy_by_face(voxels: Dictionary[Vector3i, int], voxel_face: Vector3i) ->
 		
 		add_face(start_pos, voxel_id, voxel_face, scale_by)
 		
+		quad_count += 1
+		
 		# Erase merged faces
 		for x in range(scale_by.x):
 			for y in range(scale_by.y):
@@ -408,3 +450,5 @@ func _greedy_by_face(voxels: Dictionary[Vector3i, int], voxel_face: Vector3i) ->
 				pos[primary_growth_axis] += x
 				pos[secondary_growth_axis] += y
 				uncovered_faces.erase(pos)
+	
+	return quad_count

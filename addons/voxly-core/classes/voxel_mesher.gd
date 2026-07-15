@@ -7,6 +7,8 @@ extends RefCounted
 ## Provides the interface that both GDScript and native C++ backends implement.
 ## Auto-selects the best available backend at runtime.
 
+var DEBUG_CONTEXT := "VoxelMesher"
+
 ## Whether a native mesher (GDExtension) is available
 static var native_available: bool:
 	get:
@@ -15,7 +17,9 @@ static var native_available: bool:
 ## Creates a VoxelMesher instance, preferring native if available
 static func create() -> VoxelMesher:
 	if native_available:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, "VoxelMesher", "Using native GDExtension mesher")
 		return ClassDB.instantiate("VoxelMesherGDExtension")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, "VoxelMesher", "Using GDScript mesher")
 	return VoxelMesherGDScript.new()
 
 ## Begins a new mesh build
