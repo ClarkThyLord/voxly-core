@@ -22,6 +22,9 @@ var _mesh_instance: MeshInstance3D = null
 
 var _voxels: Dictionary[Vector3i, int] = {}
 
+func _init() -> void:
+	DEBUG_CONTEXT = "VoxelModel3D"
+
 func _ready() -> void:
 	_get_mesh_instance()
 
@@ -72,6 +75,7 @@ func _set(property: StringName, value) -> bool:
 				var voxel_id := data.decode_s32(idx + 12)
 				_voxels[pos] = voxel_id
 				idx += 16
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Loaded %d voxels from serialized data" % _voxels.size())
 		if Engine.is_editor_hint():
 			_queue_rebuild()
 		return true
@@ -83,6 +87,7 @@ func get_origin() -> Vector3:
 
 func set_origin(new_origin: Vector3) -> void:
 	if origin != new_origin:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Origin changed: %s -> %s" % [origin, new_origin])
 		origin = new_origin
 		var mesh_instance := _get_mesh_instance()
 		mesh_instance.position = origin * voxel_size
@@ -95,6 +100,7 @@ func get_shape() -> Vector3i:
 func set_shape(new_shape: Vector3i) -> void:
 	var clamped_shape := new_shape.max(Vector3i(1, 1, 1))
 	if clamped_shape != shape:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Shape changed: %s -> %s" % [shape, clamped_shape])
 		shape = clamped_shape
 		for voxel_position in _voxels.keys():
 			if not is_voxel_position_valid(voxel_position):
@@ -106,6 +112,23 @@ func is_voxel_position_valid(voxel_position: Vector3i) -> bool:
 	return (voxel_position.x >= 0 and voxel_position.x < shape.x
 		and voxel_position.y >= 0 and voxel_position.y < shape.y
 		and voxel_position.z >= 0 and voxel_position.z < shape.z)
+
+## Converts a world position to local voxel grid coordinates,
+## accounting for the model's origin offset.
+func world_to_voxel_position(world_position: Vector3) -> Vector3i:
+	var local_pos := world_position - origin * voxel_size
+	return Vector3i((local_pos / voxel_size).round())
+
+## Converts local voxel grid coordinates to a world position,
+## accounting for the model's origin offset.
+func voxel_to_world_position(voxel_position: Vector3i) -> Vector3:
+	return Vector3(voxel_position) * voxel_size + origin * voxel_size
+
+## Raycasts through the voxel grid, shifting the ray origin into
+## the model's local grid space to account for the origin offset.
+func voxel_raycast(ray_origin: Vector3, direction: Vector3, length: float) -> Dictionary:
+	var local_origin := ray_origin - origin * voxel_size
+	return super.voxel_raycast(local_origin, direction, length)
 
 func get_voxel_count() -> int:
 	return _voxels.size()
@@ -137,18 +160,30 @@ func set_voxel(voxel_position: Vector3i, voxel_id: int) -> void:
 		_voxels[voxel_position] = voxel_id
 
 func add_voxels(voxels: Dictionary[Vector3i, int]) -> void:
+	var added := 0
 	for voxel_position in voxels:
-		set_voxel(voxel_position, voxels[voxel_position])
+		if is_voxel_position_valid(voxel_position):
+			_voxels[voxel_position] = voxels[voxel_position]
+			added += 1
+	if added > 0:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Added %d voxels" % added)
 
 func remove_voxel(voxel_position: Vector3i) -> void:
-	_voxels.erase(voxel_position)
+	if _voxels.erase(voxel_position):
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Removed voxel at %s" % voxel_position)
 
 func remove_voxels(voxel_positions: Array[Vector3i]) -> void:
+	var count := 0
 	for pos in voxel_positions:
-		_voxels.erase(pos)
+		if _voxels.erase(pos):
+			count += 1
+	if count > 0:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Removed %d voxels" % count)
 
 func clear_voxels() -> void:
+	var count := _voxels.size()
 	_voxels.clear()
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Cleared %d voxels" % count)
 
 func _get_mesh_instance() -> MeshInstance3D:
 	if not _mesh_instance:

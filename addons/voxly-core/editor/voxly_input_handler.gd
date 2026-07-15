@@ -4,6 +4,8 @@ extends RefCounted
 ## Handles 3D viewport input forwarding for the Voxly editor.
 ## Routes input events to the appropriate editor based on the current state.
 
+const DEBUG_CONTEXT := "VoxlyInputHandler"
+
 ## Callable that handles input events during editing mode.
 ## Set by whoever owns the active editing tool.
 ## Should return true if the event was consumed.
@@ -13,7 +15,7 @@ var _state_machine: VoxlyStateMachine
 
 func _init(state_machine: VoxlyStateMachine) -> void:
 	_state_machine = state_machine
-	print("VoxlyInputHandler: Initialized")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Initialized")
 
 ## Returns true if the input was consumed, false to let Godot handle it.
 func handle_input(camera: Camera3D, event: InputEvent) -> int:

@@ -8,6 +8,8 @@ signal state_changed(transition: VoxlyState.Transition)
 
 signal current_voxel_set_changed(voxel_set: VoxelSet)
 
+const DEBUG_CONTEXT := "VoxlyStateMachine"
+
 ## Valid state transitions table.
 ## State IDs: 0=IDLE, 1=VIEWING_VOXEL_SET, 2=VIEWING_VOXEL_MODEL, 3=EDITING_VOXEL_MODEL
 const _valid_transitions: Dictionary = {
@@ -54,7 +56,7 @@ var _previous_selection: Array[Node] = [] # Saved selection for edit-mode restor
 
 func _init(plugin: EditorPlugin) -> void:
 	_editor_plugin = plugin
-	print("VoxlyStateMachine: Initialized (IDLE)")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Initialized (IDLE)")
 
 func get_current_state() -> VoxlyState.State:
 	return current_state
@@ -80,7 +82,7 @@ func transition_to(to: VoxlyState.State, node: Node3D = null) -> bool:
 	if to == current_state:
 		return false
 	elif not _is_transition_valid(current_state, to):
-		print("VoxlyStateMachine: Invalid transition %s -> %s" % [
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Invalid transition %s -> %s" % [
 			VoxlyState.State.keys()[current_state],
 			VoxlyState.State.keys()[to]
 		])
@@ -95,7 +97,7 @@ func transition_to(to: VoxlyState.State, node: Node3D = null) -> bool:
 	_on_enter(from, to, node)
 	
 	state_changed.emit(transition)
-	print("VoxlyStateMachine: %s" % transition.to_string())
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "%s" % transition.to_string())
 	return true
 
 ## Called when the editor switches to/from the 3D viewport.
@@ -182,23 +184,23 @@ func _on_exit(from: VoxlyState.State, to: VoxlyState.State, node: Node3D) -> voi
 func _on_enter(from: VoxlyState.State, to: VoxlyState.State, node: Node3D) -> void:
 	match to:
 		VoxlyState.State.IDLE:
-			print("VoxlyStateMachine: Entered IDLE")
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Entered IDLE")
 		
 		VoxlyState.State.VIEWING_VOXEL_SET:
 			if node:
-				print("VoxlyStateMachine: Viewing VoxelSet: %s" % node.name)
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Viewing VoxelSet: %s" % node.name)
 				_select_node(node)
 			else:
-				print("VoxlyStateMachine: Viewing VoxelSet (resource)")
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Viewing VoxelSet (resource)")
 				# VoxelSet is a Resource, not a Node3D — selection is handled
 				# by the VoxelSetController via dock/panel integration.
 		
 		VoxlyState.State.VIEWING_VOXEL_MODEL:
-			print("VoxlyStateMachine: Viewing VoxelModel3D: %s" % node.name)
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Viewing VoxelModel3D: %s" % node.name)
 			_select_node(node)
 		
 		VoxlyState.State.EDITING_VOXEL_MODEL:
-			print("VoxlyStateMachine: Editing VoxelModel3D: %s" % node.name)
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Editing VoxelModel3D: %s" % node.name)
 			# Clear selection so gizmo doesn't conflict with painting input
 			_clear_selection()
 

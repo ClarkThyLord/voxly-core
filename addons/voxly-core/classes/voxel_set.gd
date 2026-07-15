@@ -6,6 +6,8 @@ extends Resource
 ## Manages a texture atlas, materials, and voxel definitions.
 ## Serves as the central database for all voxel variations.
 
+const DEBUG_CONTEXT := "VoxelSet"
+
 ## Emitted when the texture atlas is changed
 signal texture_atlas_changed
 
@@ -67,6 +69,7 @@ func get_texture_atlas() -> Texture2D:
 
 func set_texture_atlas(new_texture_atlas: Texture2D) -> void:
 	if texture_atlas != new_texture_atlas:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Texture atlas changed")
 		texture_atlas = new_texture_atlas
 		texture_atlas_changed.emit()
 		changed.emit()
@@ -117,6 +120,7 @@ func get_texture_atlas_sub_texture(texture_position: Vector2i) -> AtlasTexture:
 
 func set_texture_atlas_cell_size(new_cell_size: Vector2i) -> void:
 	if texture_atlas_cell_size != new_cell_size:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Cell size changed: %s" % new_cell_size)
 		texture_atlas_cell_size = new_cell_size
 		if texture_atlas and new_cell_size.x > 0 and new_cell_size.y > 0:
 			var atlas_size := texture_atlas.get_size()
@@ -171,6 +175,7 @@ func add_materials(new_materials: Dictionary[String, BaseMaterial3D]) -> void:
 func remove_material(material_id: String) -> BaseMaterial3D:
 	var material = materials.get(material_id)
 	if materials.erase(material_id):
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Removed material: %s" % material_id)
 		materials_changed.emit()
 		changed.emit()
 	return material
@@ -182,12 +187,14 @@ func remove_materials(material_ids: Array[String]) -> Dictionary[String, BaseMat
 			removed[id] = materials[id]
 			materials.erase(id)
 	if not removed.is_empty():
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Removed %d materials" % removed.size())
 		materials_changed.emit()
 		changed.emit()
 	return removed
 
 func clear_materials() -> void:
 	if not materials.is_empty():
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Cleared all materials")
 		materials.clear()
 		materials_changed.emit()
 		changed.emit()
@@ -225,12 +232,14 @@ func set_voxels(new_voxels: Dictionary[int, Voxel]) -> void:
 func add_voxels(new_voxels: Dictionary[int, Voxel]) -> void:
 	for id in new_voxels:
 		_voxels[id] = new_voxels[id]
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Added %d voxels" % new_voxels.size())
 	voxels_changed.emit()
 	changed.emit()
 
 func remove_voxel(voxel_id: int) -> Voxel:
 	var voxel = _voxels.get(voxel_id)
 	if _voxels.erase(voxel_id):
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Removed voxel: %d" % voxel_id)
 		voxels_changed.emit()
 		changed.emit()
 	return voxel
@@ -242,12 +251,14 @@ func remove_voxels(voxel_ids: Array[int]) -> Dictionary[int, Voxel]:
 			removed[id] = _voxels[id]
 			_voxels.erase(id)
 	if not removed.is_empty():
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Removed %d voxels" % removed.size())
 		voxels_changed.emit()
 		changed.emit()
 	return removed
 
 func clear_voxels() -> void:
 	if not _voxels.is_empty():
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_SETS, DEBUG_CONTEXT, "Cleared all voxels")
 		_voxels.clear()
 		voxels_changed.emit()
 		changed.emit()

@@ -6,6 +6,8 @@ extends Node3D
 ## Abstract base class for all nodes that display voxel content.
 ## Defines core properties and methods shared across voxel content object.
 
+var DEBUG_CONTEXT := "VoxelNode3D"
+
 ## Emitted when mesh generation mode changes
 signal mesh_mode_changed
 
@@ -71,6 +73,7 @@ func get_voxel_size() -> Vector3:
 func set_voxel_size(new_voxel_size: Vector3) -> void:
 	var clamped_size := new_voxel_size.max(Vector3(0.1, 0.1, 0.1))
 	if clamped_size != voxel_size:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Voxel size changed: %s -> %s" % [voxel_size, clamped_size])
 		voxel_size = clamped_size
 		voxel_size_changed.emit()
 		_queue_rebuild()
@@ -80,6 +83,7 @@ func get_mesh_mode() -> MeshMode:
 
 func set_mesh_mode(new_mesh_mode: MeshMode) -> void:
 	if new_mesh_mode != mesh_mode:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Mesh mode changed: %s -> %s" % [MeshMode.keys()[mesh_mode], MeshMode.keys()[new_mesh_mode]])
 		mesh_mode = new_mesh_mode
 		mesh_mode_changed.emit()
 		_queue_rebuild()
@@ -93,6 +97,7 @@ func set_voxel_set(new_voxel_set: VoxelSet) -> void:
 		if voxel_set and voxel_set.changed.is_connected(_on_voxel_set_content_changed):
 			voxel_set.changed.disconnect(_on_voxel_set_content_changed)
 		
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "VoxelSet changed")
 		voxel_set = new_voxel_set
 		
 		# Connect new signal for auto-refresh when VoxelSet content changes
@@ -116,6 +121,7 @@ func get_voxels_colored() -> bool:
 
 func set_voxels_colored(new_value: bool) -> void:
 	if voxels_colored != new_value:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Vertex colors: %s" % new_value)
 		voxels_colored = new_value
 		_queue_rebuild()
 
@@ -124,6 +130,7 @@ func get_voxels_textured() -> bool:
 
 func set_voxels_textured(new_value: bool) -> void:
 	if voxels_textured != new_value:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Textures: %s" % new_value)
 		voxels_textured = new_value
 		_queue_rebuild()
 
@@ -161,6 +168,7 @@ func clear_voxels() -> void
 
 ## Rebuilds the mesh using the current mesher
 func rebuild_mesh() -> void:
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Rebuilding mesh")
 	voxels_changed.emit()
 
 ## Queues a rebuild (called when properties change in editor)

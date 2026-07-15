@@ -5,6 +5,8 @@ extends RefCounted
 ## Supports simultaneous display: the VoxelSet editor lives in the right-side dock,
 ## while VoxelNode3D editor live in bottom panel.
 
+const DEBUG_CONTEXT := "VoxlyUIManager"
+
 signal dock_shown(dock_type: String)
 
 signal dock_hidden(dock_type: String)
@@ -33,7 +35,7 @@ func _init(plugin: EditorPlugin, state_machine: VoxlyStateMachine) -> void:
 	_editor_plugin = plugin
 	_state_machine = state_machine
 	_state_machine.state_changed.connect(_on_state_changed)
-	print("VoxlyUIManager: Initialized")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Initialized")
 
 ## Returns the currently active bottom-panel dock control, if any.
 func get_current_dock() -> Control:
@@ -101,7 +103,7 @@ func _hide_bottom_dock() -> void:
 	_bottom_dock_type = DockType.NONE
 	
 	dock_hidden.emit(DockType.keys()[old_type])
-	print("VoxlyUIManager: Hidden %s dock" % DockType.keys()[old_type])
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Hidden %s dock" % DockType.keys()[old_type])
 
 func _hide_voxel_set_dock() -> void:
 	if _voxel_set_dock == null:
@@ -111,7 +113,7 @@ func _hide_voxel_set_dock() -> void:
 	_voxel_set_dock = null
 	
 	dock_hidden.emit("VOXEL_SET_EDITOR")
-	print("VoxlyUIManager: Hidden VoxelSet right-side dock")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Hidden VoxelSet right-side dock")
 
 func _create_dock(path: String, node: Node3D) -> Control:
 	# Ensure the path exists; load and instance it.
@@ -150,7 +152,7 @@ func _show_voxel_set_dock(node: Node3D) -> void:
 	
 	dock.set_undo_redo_manager(_editor_plugin.get_undo_redo())
 	dock_shown.emit("VOXEL_SET_EDITOR")
-	print("VoxlyUIManager: Shown VoxelSet editor right-side dock")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Shown VoxelSet editor right-side dock")
 
 func _show_voxel_node_editor_dock(node: Node3D) -> void:
-	print("VoxlyUIManager: Shown VoxlyEditor editor dock")
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Shown VoxlyEditor editor dock")
