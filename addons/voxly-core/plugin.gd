@@ -5,6 +5,10 @@ extends EditorPlugin
 const NAME = "Voxly-Core"
 const VERSION = "1.0.0"
 
+const DEBUG_CONTEXT := NAME
+
+## Debug singleton instance.
+var voxly_debug = null
 ## State machine managing editor state transitions.
 var _state_machine: VoxlyStateMachine = null
 
@@ -18,7 +22,10 @@ var _ui_manager: VoxlyUIManager = null
 var _current_voxel_set: VoxelSet = null
 
 func _enter_tree() -> void:
-	print("%s %s is active!" % [NAME, VERSION])
+	# Register VoxlyDebug as a global singleton before anything uses
+	add_autoload_singleton("VoxlyDebug", "res://addons/voxly-core/utils/voxly_debug.gd")
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_PLUGIN, DEBUG_CONTEXT, "%s %s is active!" % [NAME, VERSION])
 	
 	# Initialize state management
 	_state_machine = VoxlyStateMachine.new(self)
@@ -38,7 +45,9 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
-	print("%s %s is inactive!" % [NAME, VERSION])
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_PLUGIN, DEBUG_CONTEXT, "%s %s is inactive!" % [NAME, VERSION])
+	
+	remove_autoload_singleton("VoxlyDebug")
 	
 	# Disconnect signals
 	var editor_interface := get_editor_interface()
@@ -60,6 +69,11 @@ func _exit_tree() -> void:
 	_state_machine = null
 	_input_handler = null
 	_ui_manager = null
+	
+	# Unregister debug singleton
+	if voxly_debug:
+		Engine.unregister_singleton("VoxlyDebug")
+		voxly_debug = null
 
 func _on_state_changed(transition: VoxlyState.Transition) -> void:
 	match transition.to_state:

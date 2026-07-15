@@ -16,6 +16,10 @@ config/version="1.0.0"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="uid://bx55mkr5kt1o3"
 
+[autoload]
+
+VoxlyDebug="*uid://bhjy0yw7y2ltx"
+
 [display]
 
 window/stretch/mode="canvas_items"
