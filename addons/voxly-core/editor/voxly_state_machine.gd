@@ -151,6 +151,20 @@ func on_selection_changed(selected_nodes: Array[Node]) -> void:
 		if _is_same_object(node):
 			return
 	
+	# Handle same-state transition when switching to a different node
+	# (e.g., selecting a different VoxelModel3D in the scene tree)
+	if current_state == target_state:
+		if _is_same_object(node):
+			return # Same node, nothing to do
+		
+		# Different node in the same state — emit a state change signal so UI
+		# components can react (e.g., update the VoxelSet dock with the new
+		# node's VoxelSet).
+		var transition := VoxlyState.Transition.new(current_state, target_state, _editor_plugin, node)
+		state_changed.emit(transition)
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "%s" % transition.to_string())
+		return
+	
 	transition_to(target_state, node)
 
 

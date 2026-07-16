@@ -35,6 +35,7 @@ func _init(plugin: EditorPlugin, state_machine: VoxlyStateMachine) -> void:
 	_editor_plugin = plugin
 	_state_machine = state_machine
 	_state_machine.state_changed.connect(_on_state_changed)
+	_state_machine.current_voxel_set_changed.connect(_on_current_voxel_set_changed)
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Initialized")
 
 ## Returns the currently active bottom-panel dock control, if any.
@@ -81,15 +82,32 @@ func _on_state_changed(transition: VoxlyState.Transition) -> void:
 			_show_voxel_set_dock(transition.selected_node)
 
 		VoxlyState.State.VIEWING_VOXEL_MODEL:
+			# When a VoxelModel3D is selected, sync the current_voxel_set
+			# from the node so the VoxelSet dock updates accordingly.
+			var node := transition.selected_node
+			if node is VoxelModel3D and node.voxel_set:
+				_state_machine.set_current_voxel_set(node.voxel_set)
+			
+			# Show the VoxelSet dock in the right panel (it will pick up
+			# the current_voxel_set that was just synced above).
+			_show_voxel_set_dock(node)
+			
 			# Show the VoxelNode editor in the bottom panel.
-			# Keep the VoxelSet dock if it's already visible.
 			_hide_bottom_dock()
-			_show_voxel_node_editor_dock(transition.selected_node)
+			_show_voxel_node_editor_dock(node)
 
 		VoxlyState.State.EDITING_VOXEL_MODEL:
 			# Dock should already be visible from VIEWING_VOXEL_MODEL
 			# The editor tool will connect to input_handler
 			pass
+
+## Called when the current VoxelSet changes (e.g., selecting a different
+## VoxelModel3D with a different VoxelSet, or selecting a different VoxelSet
+## resource from the file system).
+func _on_current_voxel_set_changed(voxel_set: VoxelSet) -> void:
+	if _voxel_set_dock != null and voxel_set != null:
+		_voxel_set_dock.set_voxel_set(voxel_set)
+		dock_shown.emit("VOXEL_SET_EDITOR")
 
 func _hide_bottom_dock() -> void:
 	if _bottom_dock == null:
