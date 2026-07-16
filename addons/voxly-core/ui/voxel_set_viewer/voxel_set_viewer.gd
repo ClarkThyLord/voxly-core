@@ -371,17 +371,88 @@ func _import_palette(append: bool) -> void:
 	if not _import_file_dialog:
 		_import_file_dialog = FileDialog.new()
 		_import_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-		_import_file_dialog.add_filter("*.png,*.jpg,*.jpeg,*.vox;Supported Files")
-		_import_file_dialog.add_filter("*.png;PNG Image")
-		_import_file_dialog.add_filter("*.jpg,*.jpeg;JPEG Image")
+		_import_file_dialog.add_filter("*.png,*.jpg,*.jpeg,*.vox,*.gpl,*.json,*.txt,*.pal,*.hex;Supported Files")
+		_import_file_dialog.add_filter("*.png,*.jpg,*.jpeg;Images")
 		_import_file_dialog.add_filter("*.vox;MagicaVoxel")
+		_import_file_dialog.add_filter("*.gpl,*.json,*.txt,*.pal,*.hex;Palettes")
 		_import_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 		_import_file_dialog.file_selected.connect(_on_import_file_selected)
 		add_child(_import_file_dialog)
 	_import_file_dialog.popup_centered()
 
 func _on_import_file_selected(path: String) -> void:
-	pass
+	if not voxel_set:
+		return
+	
+	# Read the file into a VoxelSet using the shared reader
+	var imported: VoxelSet = VoxlyReader.read_file_as_voxel_set(path, {"allow_repeated": true})
+	if not imported or imported.get_voxels_count() == 0:
+		return
+	
+	if _import_append:
+		# Append mode: add imported voxels with new IDs to avoid conflicts
+		# IMPORTANT: Pre-calculate all new IDs before the undo_redo action,
+		# because next_voxel_id() returns the same value during recording
+		# (voxels aren't actually added until commit_action()).
+		var imported_voxels: Dictionary = imported.get_voxels()
+		var imported_materials: Dictionary = imported.get_materials()
+		var imported_ids := imported_voxels.keys()
+		var first_new_id := voxel_set.next_voxel_id()
+		
+		if undo_redo:
+			undo_redo.create_action("Import Palette (Append)", UndoRedo.MergeMode.MERGE_DISABLE, voxel_set)
+		
+		for mat_id in imported_materials:
+			if not voxel_set.material_id_exists(mat_id):
+				if undo_redo:
+					undo_redo.add_do_method(voxel_set, "set_material", mat_id, imported_materials[mat_id])
+					undo_redo.add_undo_method(voxel_set, "remove_material", mat_id)
+				else:
+					voxel_set.set_material(mat_id, imported_materials[mat_id])
+		
+		for i in imported_ids.size():
+			var new_id := first_new_id + i
+			var voxel: Voxel = imported_voxels[imported_ids[i]]
+			if undo_redo:
+				undo_redo.add_do_method(voxel_set, "set_voxel", new_id, voxel)
+				undo_redo.add_undo_method(voxel_set, "remove_voxel", new_id)
+			else:
+				voxel_set.set_voxel(new_id, voxel)
+		
+		if undo_redo:
+			undo_redo.commit_action()
+	else:
+		# Replace mode: clear existing and copy all imported data
+		var old_voxels: Dictionary = voxel_set.get_voxels()
+		var old_materials: Dictionary = voxel_set.get_materials()
+		
+		if undo_redo:
+			undo_redo.create_action("Import Palette (Replace)", UndoRedo.MergeMode.MERGE_DISABLE, voxel_set)
+			undo_redo.add_do_method(voxel_set, "clear_voxels")
+			undo_redo.add_do_method(voxel_set, "clear_materials")
+			for vid in old_voxels:
+				undo_redo.add_undo_method(voxel_set, "set_voxel", vid, old_voxels[vid])
+			for mid in old_materials:
+				undo_redo.add_undo_method(voxel_set, "set_material", mid, old_materials[mid])
+			
+			var imported_voxels: Dictionary = imported.get_voxels()
+			var imported_materials: Dictionary = imported.get_materials()
+			for voxel_id in imported_voxels:
+				undo_redo.add_do_method(voxel_set, "set_voxel", int(voxel_id), imported_voxels[voxel_id])
+			for mat_id in imported_materials:
+				undo_redo.add_do_method(voxel_set, "set_material", str(mat_id), imported_materials[mat_id])
+			undo_redo.commit_action()
+		else:
+			voxel_set.clear_voxels()
+			voxel_set.clear_materials()
+			var imported_voxels: Dictionary = imported.get_voxels()
+			var imported_materials: Dictionary = imported.get_materials()
+			for voxel_id in imported_voxels:
+				voxel_set.set_voxel(int(voxel_id), imported_voxels[voxel_id])
+			for mat_id in imported_materials:
+				voxel_set.set_material(str(mat_id), imported_materials[mat_id])
+	
+	clear_selection()
 
 func _on_btn_right_clicked(voxel_id: int, at_position: Vector2) -> void:
 	_context_voxel_id = voxel_id
