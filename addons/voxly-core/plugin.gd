@@ -9,6 +9,11 @@ const DEBUG_CONTEXT := NAME
 
 ## Debug singleton instance.
 var voxly_debug = null
+
+## Editor import plugins.
+var _voxel_model_3d_importer: EditorImportPlugin = null
+var _voxel_set_importer: EditorImportPlugin = null
+
 ## State machine managing editor state transitions.
 var _state_machine: VoxlyStateMachine = null
 
@@ -26,6 +31,9 @@ func _enter_tree() -> void:
 	add_autoload_singleton("VoxlyDebug", "res://addons/voxly-core/utils/voxly_debug.gd")
 	
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_PLUGIN, DEBUG_CONTEXT, "%s %s is active!" % [NAME, VERSION])
+	
+	# Register import plugins
+	_add_importers()
 	
 	# Initialize state management
 	_state_machine = VoxlyStateMachine.new(self)
@@ -48,6 +56,9 @@ func _exit_tree() -> void:
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_PLUGIN, DEBUG_CONTEXT, "%s %s is inactive!" % [NAME, VERSION])
 	
 	remove_autoload_singleton("VoxlyDebug")
+	
+	# Remove import plugins
+	_remove_importers()
 	
 	# Disconnect signals
 	var editor_interface := get_editor_interface()
@@ -74,6 +85,25 @@ func _exit_tree() -> void:
 	if voxly_debug:
 		Engine.unregister_singleton("VoxlyDebug")
 		voxly_debug = null
+
+func _add_importers() -> void:
+	# Register Voxly Model Importer (.vox, .png, .jpg → PackedScene)
+	_voxel_model_3d_importer = preload("res://addons/voxly-core/importers/voxel_model_3d_import.gd").new()
+	add_import_plugin(_voxel_model_3d_importer)
+	
+	# Register Voxly Set Importer (.gpl, .aco, .json, .txt, .pal → VoxelSet resource)
+	_voxel_set_importer = preload("res://addons/voxly-core/importers/voxel_set_import.gd").new()
+	add_import_plugin(_voxel_set_importer)
+
+
+func _remove_importers() -> void:
+	if _voxel_model_3d_importer:
+		remove_import_plugin(_voxel_model_3d_importer)
+		_voxel_model_3d_importer = null
+	
+	if _voxel_set_importer:
+		remove_import_plugin(_voxel_set_importer)
+		_voxel_set_importer = null
 
 func _on_state_changed(transition: VoxlyState.Transition) -> void:
 	match transition.to_state:
