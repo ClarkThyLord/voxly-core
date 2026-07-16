@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://b31wqea4gnxlp"]
+
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_nt1qs"]
+[ext_resource type="PackedScene" uid="uid://cwe5tuqqxg5h2" path="res://examples/import/png_as_voxel_model_3d/sword_diamond.png" id="1_sn71b"]
+
+[node name="PngAsVoxelModel3D" type="Node3D" unique_id=1348704182]
+
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("1_nt1qs")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, -2.262668e-08, 8.444392e-08, 0, 0.9659258, 0.25881904, -8.742278e-08, 0.25881904, -0.9659258, 0, 4, -8)
+
+[node name="sword_diamond" parent="." unique_id=133062205 instance=ExtResource("1_sn71b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -5, 0)
+
+[editable path="ExampleSetup"]

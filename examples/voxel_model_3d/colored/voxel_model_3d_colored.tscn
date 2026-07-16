@@ -1,39 +1,63 @@
 [gd_scene format=4 uid="uid://b12rfi6i4qfnd"]
 
 [ext_resource type="Script" uid="uid://custkh5kruq5b" path="res://examples/voxel_model_3d/colored/voxel_model_3d_colored.gd" id="1_f5lo6"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="2_8op8x"]
 [ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="2_fbyfd"]
 [ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="3_8op8x"]
 [ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="4_ivnsl"]
 
-[sub_resource type="Resource" id="Resource_fbyfd"]
+[sub_resource type="Resource" id="Resource_8op8x"]
 script = ExtResource("3_8op8x")
 base_color = Color(1, 0, 0, 1)
 
-[sub_resource type="Resource" id="Resource_8op8x"]
+[sub_resource type="Resource" id="Resource_ivnsl"]
 script = ExtResource("3_8op8x")
 base_color = Color(0, 1, 0, 1)
 
-[sub_resource type="Resource" id="Resource_ivnsl"]
+[sub_resource type="Resource" id="Resource_dfoq7"]
 script = ExtResource("3_8op8x")
 base_color = Color(0, 0, 1, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dfoq7"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1mqff"]
 vertex_color_use_as_albedo = true
 
-[sub_resource type="Resource" id="Resource_1mqff"]
+[sub_resource type="Resource" id="Resource_f2ugm"]
 script = ExtResource("4_ivnsl")
-default_material = SubResource("StandardMaterial3D_dfoq7")
+default_material = SubResource("StandardMaterial3D_1mqff")
 _voxels = Dictionary[int, ExtResource("3_8op8x")]({
-0: SubResource("Resource_fbyfd"),
-1: SubResource("Resource_8op8x"),
-2: SubResource("Resource_ivnsl")
+0: SubResource("Resource_8op8x"),
+1: SubResource("Resource_ivnsl"),
+2: SubResource("Resource_dfoq7")
 })
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_48qpt"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 3, 3, 3),
+"attribute_data": PackedByteArray("/wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wAA//8AAP//AAD//wAA////AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA/wD/AP8A/wD/AP8A/wD/AP8AAP//AAD//wAA//8AAP///wAA//8AAP//AAD//wAA/wD/AP8A/wD/AP8A/wD/AP8AAP//AAD//wAA//8AAP///wAA//8AAP//AAD//wAA/wD/AP8A/wD/AP8A/wD/AP8AAP//AAD//wAA//8AAP///wAA//8AAP//AAD//wAA/wD/AP8A/wD/AP8A/wD/AP8AAP//AAD//wAA//8AAP//"),
+"format": 34359742479,
+"index_count": 108,
+"index_data": PackedByteArray("AAABAAIAAQADAAIABAAFAAYABQAHAAYACAAJAAoACQALAAoADAANAA4ADQAPAA4AEAARABIAEQATABIAFAAVABYAFQAXABYAGAAZABoAGQAbABoAHAAdAB4AHQAfAB4AIAAhACIAIQAjACIAJAAlACYAJQAnACYAKAApACoAKQArACoALAAtAC4ALQAvAC4AMAAxADIAMQAzADIANAA1ADYANQA3ADYAOAA5ADoAOQA7ADoAPAA9AD4APQA/AD4AQABBAEIAQQBDAEIARABFAEYARQBHAEYA"),
+"material": SubResource("StandardMaterial3D_1mqff"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 72,
+"vertex_data": PackedByteArray("AAAAAAAAgD8AAEBAAAAAAAAAgD8AAABAAABAQAAAgD8AAEBAAABAQAAAgD8AAABAAAAAQAAAgD8AAABAAAAAQAAAgD8AAAAAAABAQAAAgD8AAABAAABAQAAAgD8AAAAAAAAAAAAAAEAAAABAAAAAAAAAAEAAAIA/AAAAQAAAAEAAAABAAAAAQAAAAEAAAIA/AACAPwAAAEAAAIA/AACAPwAAAEAAAAAAAAAAQAAAAEAAAIA/AAAAQAAAAEAAAAAAAAAAAAAAQEAAAIA/AAAAAAAAQEAAAAAAAACAPwAAQEAAAIA/AACAPwAAQEAAAAAAAABAQAAAAAAAAEBAAABAQAAAAAAAAAAAAAAAAAAAAAAAAEBAAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAABAQAAAgD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAQAAAgD8AAAAAAAAAQAAAAEAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAEAAAAAAAACAPwAAAEAAAAAAAACAPwAAQEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQEAAAAAAAABAQAAAgD8AAEBAAABAQAAAAAAAAEBAAAAAAAAAgD8AAEBAAAAAAAAAAAAAAEBAAAAAQAAAAEAAAABAAAAAQAAAgD8AAABAAAAAAAAAAEAAAABAAAAAAAAAgD8AAABAAACAPwAAQEAAAIA/AACAPwAAAEAAAIA/AAAAAAAAQEAAAIA/AAAAAAAAAEAAAIA/AABAQAAAgD8AAAAAAABAQAAAAAAAAAAAAABAQAAAgD8AAEBAAABAQAAAAAAAAEBAAAAAQAAAAEAAAAAAAAAAQAAAgD8AAAAAAAAAQAAAAEAAAABAAAAAQAAAgD8AAABAAACAPwAAQEAAAAAAAACAPwAAAEAAAAAAAACAPwAAQEAAAIA/AACAPwAAAEAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAEBAAAAAAAAAgD8AAEBAAAAAAAAAgD8AAAAAAAAAAAAAAEAAAAAAAAAAAAAAgD8AAABAAAAAAAAAAEAAAABAAAAAAAAAAEAAAAAAAAAAAAAAQEAAAAAAAAAAAAAAAEAAAIA/AAAAAAAAQEAAAIA//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/")
+}]
 
 [node name="VoxelModel3DColored" type="Node3D" unique_id=1298457747]
 script = ExtResource("1_f5lo6")
 
-[node name="@Node3D@29009" type="Node3D" parent="." unique_id=87709778]
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("2_8op8x")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, 1.5180806e-08, -8.609463e-08, 0, 0.9848078, 0.17364818, 8.742278e-08, 0.17364818, -0.9848078, 0, 2, -4)
+
+[node name="VoxelModel3D" type="Node3D" parent="." unique_id=236562426]
 script = ExtResource("2_fbyfd")
 _voxel_data = PackedByteArray("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAACAAAAAAAAAAIAAAA=")
-mesh_mode = 1
-voxel_set = SubResource("Resource_1mqff")
+voxel_set = SubResource("Resource_f2ugm")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="VoxelModel3D" unique_id=711277500]
+mesh = SubResource("ArrayMesh_48qpt")
+
+[editable path="ExampleSetup"]

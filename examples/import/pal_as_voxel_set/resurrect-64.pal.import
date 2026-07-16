@@ -1,0 +1,15 @@
+[remap]
+
+importer="Voxly-Core.VoxelSet"
+type="Resource"
+uid="uid://bp1jm3ma5rccj"
+path="res://.godot/imported/resurrect-64.pal-cb00e81b109983a7f2a18087e04b4949.tres"
+
+[deps]
+
+source_file="res://examples/import/pal_as_voxel_set/resurrect-64.pal"
+dest_files=["res://.godot/imported/resurrect-64.pal-cb00e81b109983a7f2a18087e04b4949.tres"]
+
+[params]
+
+allow_repeated=false

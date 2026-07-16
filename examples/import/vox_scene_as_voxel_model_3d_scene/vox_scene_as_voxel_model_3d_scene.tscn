@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://khq776pu0pum"]
+
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_mw8qc"]
+[ext_resource type="PackedScene" uid="uid://4vnkku41dqnd" path="res://examples/import/vox_scene_as_voxel_model_3d_scene/chr_knight_world.vox" id="1_p0tbq"]
+
+[node name="VoxSceneAsVoxelModel3DScene" type="Node3D" unique_id=2135961474]
+
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("1_mw8qc")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, -2.990035e-08, 8.2150535e-08, 0, 0.9396926, 0.34202012, -8.742278e-08, 0.34202012, -0.9396926, 0, 6, -7)
+
+[node name="chr_knight_world" parent="." unique_id=1375059355 instance=ExtResource("1_p0tbq")]
+
+[editable path="ExampleSetup"]

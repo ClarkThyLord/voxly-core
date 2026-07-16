@@ -1,0 +1,15 @@
+[remap]
+
+importer="Voxly-Core.VoxelSet"
+type="Resource"
+uid="uid://c73t3kbpty85j"
+path="res://.godot/imported/chr_knight.vox-c0abec43afbf98164abb3ab58678d5ca.tres"
+
+[deps]
+
+source_file="res://examples/import/vox_as_voxel_set/chr_knight.vox"
+dest_files=["res://.godot/imported/chr_knight.vox-c0abec43afbf98164abb3ab58678d5ca.tres"]
+
+[params]
+
+import_mode=0

@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://d101nm7u31xik"]
+
+[ext_resource type="PackedScene" uid="uid://dx12ne0bhbxij" path="res://examples/import/vox_as_voxel_set_for_vox_as_voxel_model_3d/chr_knight.vox" id="1_ffgqv"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_yu8si"]
+[ext_resource type="PackedScene" uid="uid://lv7ql4o7bwxl" path="res://examples/import/vox_as_voxel_set_for_vox_as_voxel_model_3d/cars.vox" id="2_nu1fm"]
+
+[node name="VoxAsVoxelSetForVoxAsVoxelModel3D" type="Node3D" unique_id=1592325493]
+
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("1_yu8si")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, 1.5180806e-08, -8.609463e-08, -2.262668e-08, 0.9063078, 0.42261827, 8.444391e-08, 0.42261827, -0.9063078, 0, 8, -18)
+
+[node name="cars" parent="." unique_id=1616542734 instance=ExtResource("2_nu1fm")]
+
+[node name="chr_knight" parent="." unique_id=1758230437 instance=ExtResource("1_ffgqv")]
+
+[editable path="ExampleSetup"]

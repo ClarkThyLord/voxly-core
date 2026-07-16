@@ -1,0 +1,15 @@
+[remap]
+
+importer="Voxly-Core.VoxelSet"
+type="Resource"
+uid="uid://c8aji4yrgflr3"
+path="res://.godot/imported/palette.vox-b5684ad3fbd180ddf6ea60f3fd45af62.tres"
+
+[deps]
+
+source_file="res://examples/import/vox_as_voxel_set_for_vox_as_voxel_model_3d/palette.vox"
+dest_files=["res://.godot/imported/palette.vox-b5684ad3fbd180ddf6ea60f3fd45af62.tres"]
+
+[params]
+
+import_mode=0

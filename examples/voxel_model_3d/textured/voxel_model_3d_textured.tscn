@@ -1,41 +1,73 @@
 [gd_scene format=4 uid="uid://ouvpxn6c52iy"]
 
 [ext_resource type="Script" uid="uid://8li68lhbv6sd" path="res://examples/voxel_model_3d/textured/voxel_model_3d_textured.gd" id="1_cuqd5"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="2_8hcip"]
 [ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="2_fbyfd"]
 [ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="3_8op8x"]
 [ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="4_ivnsl"]
 [ext_resource type="Texture2D" uid="uid://dcd4tt2ib4m8f" path="res://assets/textures/kenney_voxel_pack.png" id="5_cxnsc"]
+[ext_resource type="Shader" uid="uid://bgd3d6g8kav18" path="res://addons/voxly-core/shaders/greedy_meshing_textured.gdshader" id="7_fvpl6"]
 
-[sub_resource type="Resource" id="Resource_cxnsc"]
+[sub_resource type="Resource" id="Resource_mx0ik"]
 script = ExtResource("3_8op8x")
 base_texture_xy = Vector2i(0, 0)
 
-[sub_resource type="Resource" id="Resource_310uy"]
+[sub_resource type="Resource" id="Resource_pkpxo"]
 script = ExtResource("3_8op8x")
 base_texture_xy = Vector2i(1, 0)
 
-[sub_resource type="Resource" id="Resource_fvpl6"]
+[sub_resource type="Resource" id="Resource_tklku"]
 script = ExtResource("3_8op8x")
 base_texture_xy = Vector2i(2, 0)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mx0ik"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gosxv"]
 vertex_color_use_as_albedo = true
 
-[sub_resource type="Resource" id="Resource_pkpxo"]
+[sub_resource type="Resource" id="Resource_v6t1i"]
 script = ExtResource("4_ivnsl")
 texture_atlas = ExtResource("5_cxnsc")
 texture_atlas_cell_size = Vector2i(128, 128)
-default_material = SubResource("StandardMaterial3D_mx0ik")
+default_material = SubResource("StandardMaterial3D_gosxv")
 _voxels = Dictionary[int, ExtResource("3_8op8x")]({
-0: SubResource("Resource_cxnsc"),
-1: SubResource("Resource_310uy"),
-2: SubResource("Resource_fvpl6")
+0: SubResource("Resource_mx0ik"),
+1: SubResource("Resource_pkpxo"),
+2: SubResource("Resource_tklku")
 })
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_q4ts4"]
+render_priority = 0
+shader = ExtResource("7_fvpl6")
+shader_parameter/atlas_texture = ExtResource("5_cxnsc")
+shader_parameter/uv_scale = Vector2(0.11111111, 0.1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_tlx5c"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 3, 3, 3),
+"attribute_data": PackedByteArray("/////wAAAAAAAIA/AAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAAAAP////8AAEBAAACAPwAAAAAAAAAA/////wAAQEAAAAAAAAAAAAAAAAD/////AAAAAAAAAEAAAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAAAA/////wAAgD8AAABAAAAAAAAAAAD/////AACAPwAAAAAAAAAAAAAAAP////8AAAAAAACAPwAAgD8AAAAA/////wAAAAAAAAAAAACAPwAAAAD/////AAAAQAAAgD8AAIA/AAAAAP////8AAABAAAAAAAAAgD8AAAAA/////wAAAAAAAIA/AACAPwAAAAD/////AAAAAAAAAAAAAIA/AAAAAP////8AAIA/AACAPwAAgD8AAAAA/////wAAgD8AAAAAAACAPwAAAAD/////AAAAAAAAgD8AAABAAAAAAP////8AAAAAAAAAAAAAAEAAAAAA/////wAAgD8AAIA/AAAAQAAAAAD/////AACAPwAAAAAAAABAAAAAAP////8AAAAAAABAQAAAAAAAAAAA/////wAAAAAAAAAAAAAAAAAAAAD/////AABAQAAAQEAAAAAAAAAAAP////8AAEBAAAAAAAAAAAAAAAAA/////wAAQEAAAIA/AAAAAAAAAAD/////AABAQAAAAAAAAAAAAAAAAP////8AAAAAAACAPwAAAAAAAAAA/////wAAAAAAAAAAAAAAAAAAAAD/////AAAAQAAAgD8AAIA/AAAAAP////8AAABAAAAAAAAAgD8AAAAA/////wAAAAAAAIA/AACAPwAAAAD/////AAAAAAAAAAAAAIA/AAAAAP////8AAIA/AACAPwAAAEAAAAAA/////wAAgD8AAAAAAAAAQAAAAAD/////AAAAAAAAgD8AAABAAAAAAP////8AAAAAAAAAAAAAAEAAAAAA/////wAAQEAAAAAAAAAAAAAAAAD/////AABAQAAAgD8AAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAAAA/////wAAAAAAAIA/AAAAAAAAAAD/////AAAAQAAAAAAAAIA/AAAAAP////8AAABAAACAPwAAgD8AAAAA/////wAAAAAAAAAAAACAPwAAAAD/////AAAAAAAAgD8AAIA/AAAAAP////8AAIA/AAAAAAAAAEAAAAAA/////wAAgD8AAIA/AAAAQAAAAAD/////AAAAAAAAAAAAAABAAAAAAP////8AAAAAAACAPwAAAEAAAAAA/////wAAQEAAAAAAAAAAAAAAAAD/////AABAQAAAgD8AAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAAAA/////wAAAAAAAIA/AAAAAAAAAAD/////AAAAQAAAAAAAAIA/AAAAAP////8AAABAAACAPwAAgD8AAAAA/////wAAAAAAAAAAAACAPwAAAAD/////AAAAAAAAgD8AAIA/AAAAAP////8AAIA/AAAAAAAAAEAAAAAA/////wAAgD8AAIA/AAAAQAAAAAD/////AAAAAAAAAAAAAABAAAAAAP////8AAAAAAACAPwAAAEAAAAAA/////wAAAAAAAIA/AAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAAAAP////8AAEBAAACAPwAAAAAAAAAA/////wAAQEAAAAAAAAAAAAAAAAD/////AAAAAAAAgD8AAIA/AAAAAP////8AAAAAAAAAAAAAgD8AAAAA/////wAAAEAAAIA/AACAPwAAAAD/////AAAAQAAAAAAAAIA/AAAAAP////8AAAAAAACAPwAAAEAAAAAA/////wAAAAAAAAAAAAAAQAAAAAD/////AACAPwAAgD8AAABAAAAAAP////8AAIA/AAAAAAAAAEAAAAAA"),
+"format": 34359742527,
+"index_count": 108,
+"index_data": PackedByteArray("AAABAAIAAQADAAIABAAFAAYABQAHAAYACAAJAAoACQALAAoADAANAA4ADQAPAA4AEAARABIAEQATABIAFAAVABYAFQAXABYAGAAZABoAGQAbABoAHAAdAB4AHQAfAB4AIAAhACIAIQAjACIAJAAlACYAJQAnACYAKAApACoAKQArACoALAAtAC4ALQAvAC4AMAAxADIAMQAzADIANAA1ADYANQA3ADYAOAA5ADoAOQA7ADoAPAA9AD4APQA/AD4AQABBAEIAQQBDAEIARABFAEYARQBHAEYA"),
+"material": SubResource("ShaderMaterial_q4ts4"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 72,
+"vertex_data": PackedByteArray("AAAAAAAAgD8AAEBAAAAAAAAAgD8AAABAAABAQAAAgD8AAEBAAABAQAAAgD8AAABAAAAAQAAAgD8AAABAAAAAQAAAgD8AAAAAAABAQAAAgD8AAABAAABAQAAAgD8AAAAAAAAAAAAAAEAAAABAAAAAAAAAAEAAAIA/AAAAQAAAAEAAAABAAAAAQAAAAEAAAIA/AACAPwAAAEAAAIA/AACAPwAAAEAAAAAAAAAAQAAAAEAAAIA/AAAAQAAAAEAAAAAAAAAAAAAAQEAAAIA/AAAAAAAAQEAAAAAAAACAPwAAQEAAAIA/AACAPwAAQEAAAAAAAABAQAAAAAAAAEBAAABAQAAAAAAAAAAAAAAAAAAAAAAAAEBAAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAABAQAAAgD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAQAAAgD8AAAAAAAAAQAAAAEAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAEAAAAAAAACAPwAAAEAAAAAAAACAPwAAQEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQEAAAAAAAABAQAAAgD8AAEBAAABAQAAAAAAAAEBAAAAAAAAAgD8AAEBAAAAAAAAAAAAAAEBAAAAAQAAAAEAAAABAAAAAQAAAgD8AAABAAAAAAAAAAEAAAABAAAAAAAAAgD8AAABAAACAPwAAQEAAAIA/AACAPwAAAEAAAIA/AAAAAAAAQEAAAIA/AAAAAAAAAEAAAIA/AABAQAAAgD8AAAAAAABAQAAAAAAAAAAAAABAQAAAgD8AAEBAAABAQAAAAAAAAEBAAAAAQAAAAEAAAAAAAAAAQAAAgD8AAAAAAAAAQAAAAEAAAABAAAAAQAAAgD8AAABAAACAPwAAQEAAAAAAAACAPwAAAEAAAAAAAACAPwAAQEAAAIA/AACAPwAAAEAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAEBAAAAAAAAAgD8AAEBAAAAAAAAAgD8AAAAAAAAAAAAAAEAAAAAAAAAAAAAAgD8AAABAAAAAAAAAAEAAAABAAAAAAAAAAEAAAAAAAAAAAAAAQEAAAAAAAAAAAAAAAEAAAIA/AAAAAAAAQEAAAIA//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/")
+}]
 
 [node name="VoxelModel3DTextured" type="Node3D" unique_id=1298457747]
 script = ExtResource("1_cuqd5")
 
-[node name="@Node3D@33963" type="Node3D" parent="." unique_id=219111567]
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("2_8hcip")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, 1.5180806e-08, -8.609463e-08, 0, 0.9848078, 0.17364818, 8.742278e-08, 0.17364818, -0.9848078, 0, 2, -4)
+
+[node name="VoxelModel3D" type="Node3D" parent="." unique_id=1734422060]
 script = ExtResource("2_fbyfd")
 _voxel_data = PackedByteArray("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAACAAAAAAAAAAIAAAA=")
-voxel_set = SubResource("Resource_pkpxo")
+voxel_set = SubResource("Resource_v6t1i")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="VoxelModel3D" unique_id=1077746972]
+mesh = SubResource("ArrayMesh_tlx5c")
+
+[editable path="ExampleSetup"]

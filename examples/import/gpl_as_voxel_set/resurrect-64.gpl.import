@@ -1,0 +1,15 @@
+[remap]
+
+importer="Voxly-Core.VoxelSet"
+type="Resource"
+uid="uid://d22rwyr4scqek"
+path="res://.godot/imported/resurrect-64.gpl-ceaa55c18abdab72ba9630ebb63e4976.tres"
+
+[deps]
+
+source_file="res://examples/import/gpl_as_voxel_set/resurrect-64.gpl"
+dest_files=["res://.godot/imported/resurrect-64.gpl-ceaa55c18abdab72ba9630ebb63e4976.tres"]
+
+[params]
+
+allow_repeated=false

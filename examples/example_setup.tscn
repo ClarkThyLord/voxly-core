@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://bgutlnnvuuioh"]
+
+[ext_resource type="Environment" uid="uid://dldev0lfvlry4" path="res://assets/environments/default.tres" id="1_21gwg"]
+[ext_resource type="Script" uid="uid://dbvr0hi3gunvp" path="res://examples/example_setup.gd" id="1_yv5gi"]
+
+[node name="ExampleSetup" type="Node3D" unique_id=1698688896]
+script = ExtResource("1_yv5gi")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1837327574]
+environment = ExtResource("1_21gwg")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1726361819]
+transform = Transform3D(0.70710677, -0.49999997, -0.49999997, 0, -0.7071068, 0.7071068, -0.7071068, -0.5, -0.5, 0, 0, 0)
+shadow_enabled = true
+
+[node name="CameraPivot" type="Node3D" parent="." unique_id=296509562]
+unique_name_in_owner = true
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot" unique_id=1150340663]
+transform = Transform3D(-1, 1.5180804e-08, -8.6094616e-08, 0, 0.98480767, 0.17364816, 8.742278e-08, 0.17364816, -0.98480767, 0, 2, -5)
+current = true

@@ -4,15 +4,15 @@ extends Node3D
 @export_tool_button("Rebuild Scene")
 var _rebuild_scene_button = _rebuild_scene
 
-func _ready() -> void:
-	_rebuild_scene()
+var voxel_model_3d : VoxelModel3D
 
 func _rebuild_scene():
-	for child in get_children():
-		remove_child(child)
-		child.queue_free()
+	voxel_model_3d = find_child("VoxelModel3D")
+	if voxel_model_3d:
+		remove_child(voxel_model_3d)
+		voxel_model_3d.queue_free()
 	
-	var vm := VoxelModel3D.new()
+	voxel_model_3d = VoxelModel3D.new()
 	
 	var vs := VoxelSet.new()
 	vs.texture_atlas = preload("res://assets/textures/kenney_voxel_pack.png")
@@ -28,16 +28,17 @@ func _rebuild_scene():
 	vs.set_voxel(1, v2)
 	vs.set_voxel(2, v3)
 	
-	vm.voxel_set = vs
-	vm.voxels_textured = true
+	voxel_model_3d.voxel_set = vs
+	voxel_model_3d.voxels_textured = true
 	
 	for y in range(3):
 		for x in range(3 - y):
 			for z in range(3 - y):
-				vm.set_voxel(Vector3i(x, y, z), y % 3)
+				voxel_model_3d.set_voxel(Vector3i(x, y, z), y % 3)
 	
-	add_child(vm)
-	vm.owner = self
-	vm.rebuild_mesh()
+	add_child(voxel_model_3d)
+	voxel_model_3d.name = "VoxelModel3D"
+	voxel_model_3d.owner = self
+	voxel_model_3d.rebuild_mesh()
 
 	print("Example scene built successfully!")
