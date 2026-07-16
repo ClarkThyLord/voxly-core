@@ -24,7 +24,7 @@ static func create() -> VoxelMesher:
 
 ## Begins a new mesh build
 @abstract
-func begin(voxel_size: Vector3, voxel_set: VoxelSet, add_color: bool = true, add_uv: bool = true) -> void
+func begin(voxel_size: Vector3, voxel_set: VoxelSet, voxels_colored: bool = true, voxels_textured: bool = true) -> void
 
 ## Adds all six faces for each voxel in the dictionary (brute-force, no culling)
 @abstract

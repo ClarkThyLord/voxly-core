@@ -22,8 +22,8 @@ class MeshSurface extends SurfaceTool:
 var _began: bool = false
 var _voxel_size: Vector3 = Vector3.ONE
 var _voxel_set: VoxelSet = null
-var _add_color: bool = true
-var _add_uv: bool = true
+var _voxels_colored: bool = true
+var _voxels_textured: bool = true
 var _surfaces: Dictionary[String, MeshSurface] = {}
 
 const _GREEDY_MESHING_TEXTURED_SHADER = preload("res://addons/voxly-core/shaders/greedy_meshing_textured.gdshader")
@@ -37,14 +37,14 @@ const _SURFACE_NOT_TEXTURED := "_not_textured"
 func _init() -> void:
 	DEBUG_CONTEXT = "VoxelMesherGDScript"
 
-func begin(voxel_size: Vector3, voxel_set: VoxelSet, add_color: bool = true, add_uv: bool = true) -> void:
+func begin(voxel_size: Vector3, voxel_set: VoxelSet, voxels_colored: bool = true, voxels_textured: bool = true) -> void:
 	_began = true
 	_voxel_size = voxel_size
 	_voxel_set = voxel_set
-	_add_color = add_color
-	_add_uv = add_uv
+	_voxels_colored = voxels_colored
+	_voxels_textured = voxels_textured
 	_surfaces.clear()
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Begun: size=%s add_color=%s add_uv=%s" % [voxel_size, add_color, add_uv])
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, DEBUG_CONTEXT, "Begun: size=%s voxels_colored=%s voxels_textured=%s" % [voxel_size, voxels_colored, voxels_textured])
 
 func clear() -> void:
 	_began = false
@@ -84,10 +84,10 @@ func add_face(voxel_position: Vector3i, voxel_id: int, voxel_face: Vector3i, sca
 	
 	var material_id: String = voxel.get_face_material_id(voxel_face)
 	# A face has a texture (uses UV coordinates) only if:
-	#   1. The global add_uv flag is enabled
+	#   1. The global voxels_textured flag is enabled
 	#   2. The voxel face has a texture coordinate assigned (-Vector2i.ONE means "no texture")
 	#   3. The VoxelSet has a texture atlas ready to use
-	var has_texture: bool = (_add_uv
+	var has_texture: bool = (_voxels_textured
 		and voxel.has_face_texture_xy(voxel_face)
 		and _voxel_set.is_texture_ready())
 	var surface_key: String = _build_surface_key(material_id, has_texture)
@@ -95,7 +95,7 @@ func add_face(voxel_position: Vector3i, voxel_id: int, voxel_face: Vector3i, sca
 	
 	ms.set_normal(voxel_face)
 	
-	if _add_color:
+	if _voxels_colored:
 		ms.set_color(voxel.get_face_color(voxel_face))
 	
 	var face_texture: Vector2i = voxel.get_face_texture_xy(voxel_face)
