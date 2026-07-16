@@ -22,9 +22,9 @@ signal voxels_changed
 
 ## Supported meshing modes
 enum MeshMode {
-	BRUTE = 0,   # All faces, no culling
-	NAIVE = 1,   # Culled faces (check neighbors)
-	GREEDY = 2   # Greedy merged faces (most optimized)
+	BRUTE = 0, # All faces, no culling
+	NAIVE = 1, # Culled faces (check neighbors)
+	GREEDY = 2 # Greedy merged faces (most optimized)
 }
 
 @export_tool_button("Rebuild Mesh", "BoxMesh")
@@ -66,6 +66,7 @@ var voxels_textured: bool = true:
 	set = set_voxels_textured
 
 var _pending_rebuild: bool = false
+var _is_initialized := false
 
 func get_voxel_size() -> Vector3:
 	return voxel_size
@@ -173,11 +174,17 @@ func rebuild_mesh() -> void:
 
 ## Queues a rebuild (called when properties change in editor)
 func _queue_rebuild() -> void:
+	if not _is_initialized:
+		_pending_rebuild = true
+		return
 	if Engine.is_editor_hint():
 		if not is_instance_valid(voxel_set):
 			_pending_rebuild = true
 			return
 		rebuild_mesh()
+
+func _ready() -> void:
+	_is_initialized = true
 
 ## Converts a world position to local voxel grid coordinates
 func world_to_voxel_position(world_position: Vector3) -> Vector3i:

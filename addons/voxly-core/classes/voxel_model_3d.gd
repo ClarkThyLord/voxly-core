@@ -26,7 +26,9 @@ func _init() -> void:
 	DEBUG_CONTEXT = "VoxelModel3D"
 
 func _ready() -> void:
-	_get_mesh_instance()
+	super._ready()
+	var mesh_instance := _get_mesh_instance()
+	mesh_instance.position = origin * voxel_size
 
 ## Registers a hidden property "_voxel_data" that stores voxels as a
 ## PackedByteArray so they survive scene save/reload. Not exposed in the
@@ -76,8 +78,6 @@ func _set(property: StringName, value) -> bool:
 				_voxels[pos] = voxel_id
 				idx += 16
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Loaded %d voxels from serialized data" % _voxels.size())
-		if Engine.is_editor_hint():
-			_queue_rebuild()
 		return true
 	
 	return false
@@ -89,10 +89,11 @@ func set_origin(new_origin: Vector3) -> void:
 	if origin != new_origin:
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Origin changed: %s -> %s" % [origin, new_origin])
 		origin = new_origin
-		var mesh_instance := _get_mesh_instance()
-		mesh_instance.position = origin * voxel_size
-		if Engine.is_editor_hint():
-			_queue_rebuild()
+		if _is_initialized:
+			var mesh_instance := _get_mesh_instance()
+			mesh_instance.position = origin * voxel_size
+			if Engine.is_editor_hint():
+				_queue_rebuild()
 
 func get_shape() -> Vector3i:
 	return shape
@@ -187,13 +188,16 @@ func clear_voxels() -> void:
 
 func _get_mesh_instance() -> MeshInstance3D:
 	if not _mesh_instance:
-		var mesh_instances = find_children("*", "MeshInstance3D", false, true)
+		var mesh_instances = find_children("*", "MeshInstance3D", false, false)
 		if not mesh_instances.is_empty():
 			_mesh_instance = mesh_instances[0]
 		else:
 			_mesh_instance = MeshInstance3D.new()
 			add_child(_mesh_instance)
+			_mesh_instance.name = "MeshInstance3D"
 			_mesh_instance.owner = owner
+	else:
+		_mesh_instance.owner = owner
 	return _mesh_instance
 
 func rebuild_mesh() -> void:
