@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bw6g10mj4gy8"]
+
+[ext_resource type="Script" uid="uid://pvgi2uimsmwe" path="res://addons/voxly-core/ui/material_info/material_info.gd" id="1_1cv3h"]
+
+[node name="MaterialInfo" type="Label" unique_id=2066236374]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_1cv3h")
