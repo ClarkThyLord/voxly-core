@@ -67,7 +67,7 @@ popup/item_1/text = "Unselect All"
 popup/item_1/id = 4
 
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=143872549]
-custom_minimum_size = Vector2(0, 75)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
@@ -143,3 +143,6 @@ text = "Ok"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Cancel"
+
+[node name="ContextMenu" type="PopupMenu" parent="." unique_id=590489764]
+unique_name_in_owner = true

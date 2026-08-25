@@ -84,8 +84,12 @@ var _name_ok: Button = %OkButton
 var _name_cancel: Button = %CancelButton
 
 var _tag_buttons: Dictionary[String, Button] = {}
-var _context_menu: PopupMenu = null
+
+@onready
+var _context_menu: PopupMenu = %ContextMenu
+
 var _pending_rebuild := false
+
 var _rename_old_tag: String = ""
 
 enum ContextAction {
@@ -140,11 +144,13 @@ func _update_toolbar_disabled_state() -> void:
 	if not _add_button:
 		return
 	_update_add_button()
-	# Remove: disabled if no tags and no selection, or editing is disabled
+	
+	# Disabled if no tags and no selection, or editing is disabled
 	var has_sel := not selected_tags.is_empty()
 	var has_tags := not tags.is_empty()
 	_remove_button.disabled = (not has_sel and not has_tags) or disable_editing
-	# Select: hidden in single-select mode, otherwise disabled if no tags
+	
+	# Hidden in single-select mode, otherwise disabled if no tags
 	if _is_single_select():
 		_select_button.hide()
 	else:
@@ -166,11 +172,11 @@ func _ready() -> void:
 	_add_button.get_popup().clear(true)
 	_add_button.get_popup().add_item("Add New Tag", 0)
 	
-	# Remove button — rebuild on open to show counts
+	# Remove buttob
 	_remove_button.get_popup().about_to_popup.connect(_update_remove_menu)
 	_remove_button.get_popup().id_pressed.connect(_on_toolbar_remove_action)
 	
-	# Select button — rebuild on open to show counts
+	# Select button
 	_select_button.get_popup().about_to_popup.connect(_update_select_menu)
 	_select_button.get_popup().id_pressed.connect(_on_toolbar_select_action)
 	
@@ -178,11 +184,10 @@ func _ready() -> void:
 	_name_ok.pressed.connect(_on_name_ok)
 	_name_cancel.pressed.connect(_on_name_cancel)
 	_name_line_edit.text_submitted.connect(_on_name_ok)
+	_name_window.close_requested.connect(_on_name_cancel)
 	
-	# Context menu (tag-specific)
-	_context_menu = PopupMenu.new()
+	# Context menu
 	_context_menu.id_pressed.connect(_on_context_action)
-	add_child(_context_menu)
 	
 	# Right-click on the tags container for global context menu
 	_tags_container.gui_input.connect(_on_tags_container_gui_input)
@@ -349,19 +354,22 @@ func _on_context_action(action_id: int) -> void:
 func _select_tag(tag: String) -> void:
 	if tag in selected_tags:
 		return
-	if selection_max >= 0 and selected_tags.size() >= selection_max:
+	elif selection_max >= 0 and selected_tags.size() >= selection_max:
 		return
+	
 	selected_tags.append(tag)
 	var btn = _tag_buttons.get(tag)
 	if btn:
 		btn.button_pressed = true
+	
 	tag_toggled.emit(tag, true)
 
 func _deselect_tag(tag: String) -> void:
 	if tag not in selected_tags:
 		return
-	if selected_tags.size() <= selection_min:
+	elif selected_tags.size() <= selection_min:
 		return
+	
 	selected_tags.erase(tag)
 	var btn = _tag_buttons.get(tag)
 	if btn:
@@ -372,14 +380,14 @@ func _remove_tag(tag: String) -> void:
 	tags.erase(tag)
 	selected_tags.erase(tag)
 	var btn = _tag_buttons.get(tag)
+	
 	if btn:
 		_tags_container.remove_child(btn)
 		btn.queue_free()
 		_tag_buttons.erase(tag)
+	
 	_update_toolbar_disabled_state()
 	changed.emit()
-
-# ── Toolbar: Add ──
 
 func _on_toolbar_add_action(id: int) -> void:
 	if id == 0:
@@ -448,6 +456,7 @@ func _open_rename_window(old_tag: String) -> void:
 func _update_add_button() -> void:
 	if not _add_button:
 		return
+	
 	if tag_limit >= 0 and tags.size() >= tag_limit:
 		_add_button.disabled = true
 		_add_button.tooltip_text = "Maximum %d tags reached" % tag_limit
@@ -455,12 +464,12 @@ func _update_add_button() -> void:
 		_add_button.disabled = disable_editing
 		_add_button.tooltip_text = ""
 
-func _on_name_ok() -> void:
+func _on_name_ok(_new_text := "") -> void:
 	var tag_name := _name_line_edit.text.strip_edges()
 	if tag_name.is_empty():
 		return
 	
-	# Run regex validator if set
+	# Run regex validator if set.
 	if tag_validator:
 		var regex := RegEx.new()
 		regex.compile(tag_validator)
@@ -471,7 +480,7 @@ func _on_name_ok() -> void:
 			return
 	
 	if _rename_old_tag != "":
-		# Renaming existing tag
+		# Renaming existing tag.
 		if tag_name == _rename_old_tag:
 			_name_window.hide()
 			_rename_old_tag = ""
@@ -492,7 +501,7 @@ func _on_name_ok() -> void:
 		_name_window.hide()
 		changed.emit()
 	else:
-		# Adding new tag
+		# Adding new tag.
 		if tag_limit >= 0 and tags.size() >= tag_limit:
 			_name_line_edit.placeholder_text = "Maximum %d tags reached" % tag_limit
 			_name_line_edit.text = ""
