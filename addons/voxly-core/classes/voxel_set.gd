@@ -8,42 +8,43 @@ extends Resource
 
 const DEBUG_CONTEXT := "VoxelSet"
 
-## Emitted when the texture atlas is changed
+## Emitted when the texture atlas is changed.
 signal texture_atlas_changed
 
-## Emitted when the texture atlas cell size is changed
+## Emitted when the texture atlas cell size is changed.
 signal texture_atlas_cell_size_changed
 
-## Emitted when the default material is changed
+## Emitted when the default material is changed.
 signal default_material_changed
 
-## Emitted when materials are added, removed or modified
+## Emitted when materials are added, removed or modified.
 signal materials_changed
 
-## Emitted when voxels are added, removed or modified
+## Emitted when voxels are added, removed or modified.
 signal voxels_changed
 
 @export_tool_button("Notify of Changes", "Reload")
 var notify_changed_button = _notify_changed
 
-## The texture atlas containing all voxel textures
+## The texture atlas containing all voxel textures.
 @export
 var texture_atlas: Texture2D:
 	set = set_texture_atlas,
 	get = get_texture_atlas
 
-## The size of each cell in the texture atlas (in pixels)
+## The size of each cell in the texture atlas (in pixels).
 @export
 var texture_atlas_cell_size: Vector2i:
 	set = set_texture_atlas_cell_size
 
-## Default material applied to all voxels (uses vertex colors by default)
+## Default material applied to all voxels.
+## Should have enable vertex colors for proper rendering.
 @export
 var default_material: BaseMaterial3D = StandardMaterial3D.new():
 	set = set_default_material,
 	get = get_default_material
 
-## Named materials that can be referenced by voxels via material_id
+## Named materials that can be referenced by voxels via `material_id`.
 @export
 var materials: Dictionary[String, BaseMaterial3D] = {}:
 	set = set_materials,
@@ -58,7 +59,6 @@ var _voxels: Dictionary[int, Voxel] = {}:
 var _texture_uv_scale: Vector2 = Vector2.ONE
 
 func _notify_changed() -> void:
-	"""Emit the changed signal to notify connected VoxelNode3D nodes to refresh."""
 	changed.emit()
 
 func _init() -> void:
@@ -79,18 +79,18 @@ func is_texture_atlas_position(texture_atlas_position: Vector2i) -> bool:
 		return false
 	if texture_atlas_cell_size.x <= 0 or texture_atlas_cell_size.y <= 0:
 		return false
-
+	
 	var atlas_size := texture_atlas.get_size()
 	var max_x := atlas_size.x / texture_atlas_cell_size.x
 	var max_y := atlas_size.y / texture_atlas_cell_size.y
-
+	
 	return (texture_atlas_position.x >= 0 and texture_atlas_position.x < max_x
 		and texture_atlas_position.y >= 0 and texture_atlas_position.y < max_y)
 
 func get_texture_atlas_position_range() -> Vector2i:
 	if not texture_atlas or texture_atlas_cell_size.x <= 0 or texture_atlas_cell_size.y <= 0:
 		return Vector2i.ZERO
-
+	
 	var atlas_size := texture_atlas.get_size()
 	return Vector2i(
 		floori(atlas_size.x / texture_atlas_cell_size.x),
@@ -156,7 +156,20 @@ func get_material_ids() -> Array[String]:
 func get_materials_count() -> int:
 	return materials.size()
 
+## Returns the next available numeric material id.
+## Generates the current maximum numeric id + 1 (or "0" if no materials exist).
+func next_material_id() -> String:
+	var max_id := -1
+	for id in materials:
+		if id.is_valid_int():
+			max_id = maxi(max_id, id.to_int())
+	return str(max_id + 1)
+
 func set_material(material_id: String, material: BaseMaterial3D) -> void:
+	# The empty string is the reserved UNSET_MATERIAL_ID, assigning it breaks usage.
+	if material_id == Voxel.UNSET_MATERIAL_ID:
+		push_warning("VoxelSet.set_material(): material_id cannot be empty")
+		return
 	materials[material_id] = material
 	materials_changed.emit()
 	changed.emit()
@@ -274,6 +287,23 @@ func find_voxel_by_name(name: String) -> int:
 			return vid
 	return -1
 
+## Returns true if the voxel with the given ID exist and is fully opaque, 
+## considering both color alpha and any referenced materials transparency 
+## and refraction.
+func is_voxel_opaque(voxel_id: int) -> bool:
+	var voxel := _voxels.get(voxel_id)
+	if not is_instance_valid(voxel):
+		return false
+	if voxel.has_translucent_colors():
+		return false
+	for face in Voxel.FACES:
+		var material: BaseMaterial3D = get_material(voxel.get_face_material_id(face))
+		if is_instance_valid(material) and material is BaseMaterial3D:
+			if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED \
+					or material.refraction_enabled:
+				return false
+	return true
+
 ## Filters voxels by a query string and returns matching IDs.
 ##
 ## Tokens are comma-separated. Each token can be:
@@ -292,7 +322,7 @@ func query(query_string: String) -> Array[int]:
 	var tokens: PackedStringArray = query_string.split(",", false)
 	if tokens.is_empty():
 		return get_voxel_ids()
-
+	
 	var results: Array[int] = []
 	for vid in _voxels:
 		if _matches_query(vid, _voxels[vid], tokens):
@@ -304,7 +334,7 @@ func _matches_query(vid: int, voxel: Voxel, tokens: PackedStringArray) -> bool:
 		var t: String = token.strip_edges()
 		if t.is_empty():
 			continue
-
+		
 		# Tag filter: #tagname
 		if t.begins_with("#"):
 			var tag_target: String = t.trim_prefix("#").strip_edges().to_lower()
@@ -316,15 +346,15 @@ func _matches_query(vid: int, voxel: Voxel, tokens: PackedStringArray) -> bool:
 			if not found:
 				return false
 			continue
-
+		
 		# Numeric token → exact ID match
 		if t.is_valid_int():
 			if vid == t.to_int():
 				continue
 			return false
-
+		
 		# Plain text → name substring match (case-insensitive)
 		if not voxel.name.strip_edges().to_lower().contains(t.to_lower()):
 			return false
-
+	
 	return true

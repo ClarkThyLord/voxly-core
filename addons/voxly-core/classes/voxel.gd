@@ -6,31 +6,31 @@ extends Resource
 ## Stores visual data: color, texture atlas coordinates, and material references.
 ## Supports per-face overrides for all visual properties.
 
-## Emitted when the voxel's name is changed
+## Emitted when the voxel's name is changed.
 signal name_changed
 
-## Emitted when the voxel's tags are changed
+## Emitted when the voxel's tags are changed.
 signal tags_changed
 
-## Emitted when the voxel's base color is changed
+## Emitted when the voxel's base color is changed.
 signal base_color_changed
 
-## Emitted when a specific face color is changed
+## Emitted when a specific face color is changed.
 signal face_color_changed(face: Vector3i)
 
-## Emitted when the voxel's base texture is changed
+## Emitted when the voxel's base texture is changed.
 signal base_texture_xy_changed
 
-## Emitted when a specific face texture is changed
+## Emitted when a specific face texture is changed.
 signal face_texture_xy_changed(face: Vector3i)
 
-## Emitted when the voxel's base material id is changed
+## Emitted when the voxel's base material id is changed.
 signal base_material_id_changed
 
-## Emitted when a specific face material id is changed
+## Emitted when a specific face material id is changed.
 signal face_material_id_changed(face: Vector3i)
 
-# Face direction constants
+# Face direction constants.
 const FACE_TOP := Vector3i.UP
 const FACE_BOTTOM := Vector3i.DOWN
 const FACE_FRONT := Vector3i.FORWARD
@@ -38,7 +38,7 @@ const FACE_BACK := Vector3i.BACK
 const FACE_RIGHT := Vector3i.RIGHT
 const FACE_LEFT := Vector3i.LEFT
 
-## All six face directions
+## All six face directions.
 const FACES: Array[Vector3i] = [
 	FACE_TOP,
 	FACE_BOTTOM,
@@ -48,7 +48,7 @@ const FACES: Array[Vector3i] = [
 	FACE_LEFT
 ]
 
-## All six face names
+## All six face names.
 const FACE_NAMES : Dictionary[Vector3i, String] = {
 	FACE_TOP: "Top",
 	FACE_BOTTOM: "Bottom",
@@ -69,7 +69,7 @@ const ADJACENT_FACES: Dictionary[Vector3i, Array] = {
 	FACE_BACK: [FACE_TOP, FACE_BOTTOM, FACE_RIGHT, FACE_LEFT]
 }
 
-# Color is "unset" if alpha is 0
+# Color is "unset" if alpha is 0, regardless of rgb values.
 const UNSET_COLOR := Color.TRANSPARENT
 
 # Texture x,y is "unset" if has negative x or y value
@@ -84,28 +84,28 @@ var name: String = "":
 	set = set_name,
 	get = get_name
 
-## Tag identifiers (e.g., ["flammable", "ore", "solid"])
+## Tag identifiers (e.g., ["flammable", "ore", "solid"]).
 @export
 var tags: Array[String] = []:
 	set = set_tags,
 	get = get_tags
 
-## Base color applied to all faces unless overridden per-face
-## Alpha value 0 will not apply color.
+## Base color applied to all faces unless overridden per-face.
+## Color with alpha value 0 will render white to all color unset faces.
 @export
 var base_color: Color = Color.WHITE:
 	set = set_base_color,
 	get = get_base_color
 
-## Base texture atlas coordinates (XY grid position)
-## Neither x or y can be negative for valid value
+## Base texture atlas coordinates (XY grid position).
+## Neither x or y can be negative for valid value.
 @export
 var base_texture_xy: Vector2i = UNSET_TEXTURE_XY:
 	set = set_base_texture_xy,
 	get = get_base_texture_xy
 
-## Base material ID string (references a material in VoxelSet)
-## Empty string means no material override
+## Base material ID string (references a material in VoxelSet).
+## Empty string means no material override.
 @export
 var base_material_id: String = UNSET_MATERIAL_ID:
 	set = set_base_material_id,
@@ -242,7 +242,6 @@ func set_left_face_color(color_value: Color) -> void:
 	face_color_changed.emit(FACE_LEFT)
 	changed.emit()
 
-
 func has_base_color() -> bool:
 	return base_color.a > 0
 
@@ -265,29 +264,34 @@ func has_face_color(face: Vector3i, include_base : bool = true) -> bool:
 			return left_face_color.a > 0 or (include_base and base_color.a > 0)
 	return (include_base and base_color.a > 0)
 
-func get_face_color(face: Vector3i) -> Color:
+func get_face_color(face: Vector3i, include_base : bool = true) -> Color:
 	match face:
 		FACE_TOP:
-			return top_face_color if top_face_color.a > 0 else base_color
+			return top_face_color if top_face_color.a > 0 or not include_base else base_color
 		FACE_BOTTOM:
-			return bottom_face_color if bottom_face_color.a > 0 else base_color
+			return bottom_face_color if bottom_face_color.a > 0 or not include_base else base_color
 		FACE_FRONT:
-			return front_face_color if front_face_color.a > 0 else base_color
+			return front_face_color if front_face_color.a > 0 or not include_base else base_color
 		FACE_BACK:
-			return back_face_color if back_face_color.a > 0 else base_color
+			return back_face_color if back_face_color.a > 0 or not include_base else base_color
 		FACE_RIGHT:
-			return right_face_color if right_face_color.a > 0 else base_color
+			return right_face_color if right_face_color.a > 0 or not include_base else base_color
 		FACE_LEFT:
-			return left_face_color if left_face_color.a > 0 else base_color
+			return left_face_color if left_face_color.a > 0 or not include_base else base_color
 	return base_color
 
-# Convenience per-face getters
-func get_top_face_color() -> Color: return get_face_color(FACE_TOP)
-func get_bottom_face_color() -> Color: return get_face_color(FACE_BOTTOM)
-func get_front_face_color() -> Color: return get_face_color(FACE_FRONT)
-func get_back_face_color() -> Color: return get_face_color(FACE_BACK)
-func get_right_face_color() -> Color: return get_face_color(FACE_RIGHT)
-func get_left_face_color() -> Color: return get_face_color(FACE_LEFT)
+func get_top_face_color(include_base : bool = true) -> Color:
+	return get_face_color(FACE_TOP, include_base)
+func get_bottom_face_color(include_base : bool = true) -> Color:
+	return get_face_color(FACE_BOTTOM, include_base)
+func get_front_face_color(include_base : bool = true) -> Color:
+	return get_face_color(FACE_FRONT, include_base)
+func get_back_face_color(include_base : bool = true) -> Color:
+	return get_face_color(FACE_BACK, include_base)
+func get_right_face_color(include_base : bool = true) -> Color:
+	return get_face_color(FACE_RIGHT, include_base)
+func get_left_face_color(include_base : bool = true) -> Color:
+	return get_face_color(FACE_LEFT, include_base)
 
 func set_base_texture_xy(new_base_texture_xy: Vector2i) -> void:
 	if new_base_texture_xy == base_texture_xy:
@@ -315,7 +319,6 @@ func set_face_texture_xy(face: Vector3i, new_texture_xy: Vector2i) -> void:
 		_:
 			return
 
-# Convenience per-face setters
 func set_top_face_texture_xy(texture_xy_pos: Vector2i) -> void:
 	if texture_xy_pos == top_face_texture_xy:
 		return
@@ -380,29 +383,34 @@ func has_face_texture_xy(face: Vector3i, include_base : bool = true) -> bool:
 			return left_face_texture_xy > UNSET_TEXTURE_XY or (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 	return (include_base and base_texture_xy > UNSET_TEXTURE_XY)
 
-func get_face_texture_xy(face: Vector3i) -> Vector2i:
+func get_face_texture_xy(face: Vector3i, include_base : bool = true) -> Vector2i:
 	match face:
 		FACE_TOP:
-			return top_face_texture_xy if top_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
+			return top_face_texture_xy if top_face_texture_xy > UNSET_TEXTURE_XY else (base_texture_xy if include_base else UNSET_TEXTURE_XY)
 		FACE_BOTTOM:
-			return bottom_face_texture_xy if bottom_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
+			return bottom_face_texture_xy if bottom_face_texture_xy > UNSET_TEXTURE_XY else (base_texture_xy if include_base else UNSET_TEXTURE_XY)
 		FACE_FRONT:
-			return front_face_texture_xy if front_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
+			return front_face_texture_xy if front_face_texture_xy > UNSET_TEXTURE_XY else (base_texture_xy if include_base else UNSET_TEXTURE_XY)
 		FACE_BACK:
-			return back_face_texture_xy if back_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
+			return back_face_texture_xy if back_face_texture_xy > UNSET_TEXTURE_XY else (base_texture_xy if include_base else UNSET_TEXTURE_XY)
 		FACE_RIGHT:
-			return right_face_texture_xy if right_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
+			return right_face_texture_xy if right_face_texture_xy > UNSET_TEXTURE_XY else (base_texture_xy if include_base else UNSET_TEXTURE_XY)
 		FACE_LEFT:
-			return left_face_texture_xy if left_face_texture_xy > UNSET_TEXTURE_XY else base_texture_xy
-	return base_texture_xy
+			return left_face_texture_xy if left_face_texture_xy > UNSET_TEXTURE_XY else (base_texture_xy if include_base else UNSET_TEXTURE_XY)
+	return base_texture_xy if include_base else UNSET_TEXTURE_XY
 
-# Convenience per-face getters
-func get_top_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_TOP)
-func get_bottom_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_BOTTOM)
-func get_front_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_FRONT)
-func get_back_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_BACK)
-func get_right_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_RIGHT)
-func get_left_face_texture_xy() -> Vector2i: return get_face_texture_xy(FACE_LEFT)
+func get_top_face_texture_xy(include_base : bool = true) -> Vector2i:
+	return get_face_texture_xy(FACE_TOP, include_base)
+func get_bottom_face_texture_xy(include_base : bool = true) -> Vector2i:
+	return get_face_texture_xy(FACE_BOTTOM, include_base)
+func get_front_face_texture_xy(include_base : bool = true) -> Vector2i:
+	return get_face_texture_xy(FACE_FRONT, include_base)
+func get_back_face_texture_xy(include_base : bool = true) -> Vector2i:
+	return get_face_texture_xy(FACE_BACK, include_base)
+func get_right_face_texture_xy(include_base : bool = true) -> Vector2i:
+	return get_face_texture_xy(FACE_RIGHT, include_base)
+func get_left_face_texture_xy(include_base : bool = true) -> Vector2i:
+	return get_face_texture_xy(FACE_LEFT, include_base)
 
 func set_base_material_id(new_base_material_id: String) -> void:
 	if new_base_material_id == base_material_id:
@@ -430,7 +438,6 @@ func set_face_material_id(face: Vector3i, new_material_id: String) -> void:
 		_:
 			return
 
-# Convenience per-face setters
 func set_top_face_material_id(material: String) -> void:
 	if material == top_face_material_id:
 		return
@@ -495,31 +502,75 @@ func has_face_material_id(face: Vector3i, include_base : bool = true) -> bool:
 			return left_face_material_id != UNSET_MATERIAL_ID or (include_base and base_material_id != UNSET_MATERIAL_ID)
 	return (include_base and base_material_id != UNSET_MATERIAL_ID)
 
-func get_face_material_id(face: Vector3i) -> String:
+func get_face_material_id(face: Vector3i, include_base : bool = true) -> String:
 	match face:
 		FACE_TOP:
-			return top_face_material_id if top_face_material_id != UNSET_MATERIAL_ID else base_material_id
+			return top_face_material_id if top_face_material_id != UNSET_MATERIAL_ID else (base_material_id if include_base else UNSET_MATERIAL_ID)
 		FACE_BOTTOM:
-			return bottom_face_material_id if bottom_face_material_id != UNSET_MATERIAL_ID else base_material_id
+			return bottom_face_material_id if bottom_face_material_id != UNSET_MATERIAL_ID else (base_material_id if include_base else UNSET_MATERIAL_ID)
 		FACE_FRONT:
-			return front_face_material_id if front_face_material_id != UNSET_MATERIAL_ID else base_material_id
+			return front_face_material_id if front_face_material_id != UNSET_MATERIAL_ID else (base_material_id if include_base else UNSET_MATERIAL_ID)
 		FACE_BACK:
-			return back_face_material_id if back_face_material_id != UNSET_MATERIAL_ID else base_material_id
+			return back_face_material_id if back_face_material_id != UNSET_MATERIAL_ID else (base_material_id if include_base else UNSET_MATERIAL_ID)
 		FACE_RIGHT:
-			return right_face_material_id if right_face_material_id != UNSET_MATERIAL_ID else base_material_id
+			return right_face_material_id if right_face_material_id != UNSET_MATERIAL_ID else (base_material_id if include_base else UNSET_MATERIAL_ID)
 		FACE_LEFT:
-			return left_face_material_id if left_face_material_id != UNSET_MATERIAL_ID else base_material_id
-	return base_material_id
+			return left_face_material_id if left_face_material_id != UNSET_MATERIAL_ID else (base_material_id if include_base else UNSET_MATERIAL_ID)
+	return base_material_id if include_base else UNSET_MATERIAL_ID
 
 # Convenience per-face getters
-func get_top_face_material_id() -> String: return get_face_material_id(FACE_TOP)
-func get_bottom_face_material_id() -> String: return get_face_material_id(FACE_BOTTOM)
-func get_front_face_material_id() -> String: return get_face_material_id(FACE_FRONT)
-func get_back_face_material_id() -> String: return get_face_material_id(FACE_BACK)
-func get_right_face_material_id() -> String: return get_face_material_id(FACE_RIGHT)
-func get_left_face_material_id() -> String: return get_face_material_id(FACE_LEFT)
+func get_top_face_material_id(include_base : bool = true) -> String:
+	return get_face_material_id(FACE_TOP, include_base)
+func get_bottom_face_material_id(include_base : bool = true) -> String:
+	return get_face_material_id(FACE_BOTTOM, include_base)
+func get_front_face_material_id(include_base : bool = true) -> String:
+	return get_face_material_id(FACE_FRONT, include_base)
+func get_back_face_material_id(include_base : bool = true) -> String:
+	return get_face_material_id(FACE_BACK, include_base)
+func get_right_face_material_id(include_base : bool = true) -> String:
+	return get_face_material_id(FACE_RIGHT, include_base)
+func get_left_face_material_id(include_base : bool = true) -> String:
+	return get_face_material_id(FACE_LEFT, include_base)
 
-## Copies all properties from another Voxel
+## Returns true if the base color is translucent (0 < alpha < 1.0).
+## Alpha 0 is the "unset" sentinel, it does NOT apply
+## a tint, so it must not make the voxel translucent.
+func is_base_color_translucent() -> bool:
+	return base_color.a > 0.0 and base_color.a < 1.0
+
+## Returns true if the resolved color for the given face is translucent
+## (0 < alpha < 1.0). When `include_base` is true, the base color
+## is considered when the face has no override.
+func is_face_color_translucent(face: Vector3i, include_base: bool = true) -> bool:
+	var face_color := get_face_color(face, include_base)
+	return face_color.a > 0.0 and face_color.a < 1.0
+
+func is_top_face_color_translucent(include_base: bool = true) -> bool:
+	return is_face_color_translucent(FACE_TOP, include_base)
+func is_bottom_face_color_translucent(include_base: bool = true) -> bool:
+	return is_face_color_translucent(FACE_BOTTOM, include_base)
+func is_front_face_color_translucent(include_base: bool = true) -> bool:
+	return is_face_color_translucent(FACE_FRONT, include_base)
+func is_back_face_color_translucent(include_base: bool = true) -> bool:
+	return is_face_color_translucent(FACE_BACK, include_base)
+func is_right_face_color_translucent(include_base: bool = true) -> bool:
+	return is_face_color_translucent(FACE_RIGHT, include_base)
+func is_left_face_color_translucent(include_base: bool = true) -> bool:
+	return is_face_color_translucent(FACE_LEFT, include_base)
+
+## Returns true if the base color or any per-face color override is translucent.
+## This is the color-only test for translucency; material transparency must be
+## checked separately via VoxelSet.is_voxel_opaque().
+func has_translucent_colors() -> bool:
+	if is_base_color_translucent():
+		return true
+	# Per-face color overrides (face-only, no base fallback).
+	for face in FACES:
+		if is_face_color_translucent(face, false):
+			return true
+	return false
+
+## Copies all properties from another Voxel.
 func copy_from(source_voxel: Voxel) -> void:
 	if not source_voxel:
 		return
