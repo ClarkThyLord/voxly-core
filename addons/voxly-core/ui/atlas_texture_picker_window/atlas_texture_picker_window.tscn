@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://brao0cbshei56"]
+
+[ext_resource type="PackedScene" uid="uid://c06i31tos2nkm" path="res://addons/voxly-core/ui/atlas_texture_picker/atlas_texture_picker.tscn" id="1_740bh"]
+[ext_resource type="Script" uid="uid://gg17qe4lu35r" path="res://addons/voxly-core/ui/atlas_texture_picker_window/atlas_texture_picker_window.gd" id="2_g3wkd"]
+
+[node name="AtlasTexturePickerWindow" type="Window" unique_id=156599888]
+oversampling_override = 1.0
+initial_position = 4
+size = Vector2i(500, 500)
+visible = false
+always_on_top = true
+min_size = Vector2i(500, 500)
+script = ExtResource("2_g3wkd")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=387310025]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer" unique_id=1203629969]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AtlasTexturePicker" parent="VBoxContainer/PanelContainer" unique_id=1304973413 instance=ExtResource("1_740bh")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+selection_max = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer" unique_id=894835905]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer" unique_id=866560785]
+layout_mode = 2
+alignment = 1
+
+[node name="AtlasTexturePickerWindowOkButton" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer" unique_id=1799225445]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ok"
+
+[node name="AtlasTexturePickerWindowCancelButton" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer" unique_id=2081744651]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"
+
+[node name="AcceptDialog" type="AcceptDialog" parent="." unique_id=1447546078]
+unique_name_in_owner = true
+dialog_text = "Selection Required"
