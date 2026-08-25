@@ -1,0 +1,195 @@
+[gd_scene format=3 uid="uid://xl3mmsalbyd1"]
+
+[ext_resource type="Script" uid="uid://bgttvm438a8ag" path="res://addons/voxly-core/ui/material_editor/material_editor.gd" id="1_q8c7s"]
+[ext_resource type="PackedScene" uid="uid://bvng2fkh6v3dn" path="res://addons/voxly-core/ui/material_picker/material_picker.tscn" id="2_1hu54"]
+[ext_resource type="PackedScene" uid="uid://bw6g10mj4gy8" path="res://addons/voxly-core/ui/material_info/material_info.tscn" id="3_v4fkv"]
+[ext_resource type="PackedScene" uid="uid://g0j2ivb2a07w" path="res://addons/voxly-core/ui/material_inspector/material_inspector.tscn" id="4_don4e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q8c7s"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="MaterialEditor" type="BoxContainer" unique_id=2099320789]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+vertical = true
+script = ExtResource("1_q8c7s")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1851649461]
+layout_mode = 2
+
+[node name="TitleHBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=171216210]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="HBoxContainer/TitleHBoxContainer" unique_id=1240864710]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Material Editor"
+
+[node name="VSeparator" type="VSeparator" parent="HBoxContainer/TitleHBoxContainer" unique_id=99539269]
+layout_mode = 2
+
+[node name="ToolbarHBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=1712117716]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AddButton" type="Button" parent="HBoxContainer/ToolbarHBoxContainer" unique_id=447708477]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Add"
+
+[node name="RenameButton" type="Button" parent="HBoxContainer/ToolbarHBoxContainer" unique_id=1792769225]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Rename"
+
+[node name="DuplicateButton" type="Button" parent="HBoxContainer/ToolbarHBoxContainer" unique_id=851359372]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Duplicate"
+
+[node name="RemoveButton" type="Button" parent="HBoxContainer/ToolbarHBoxContainer" unique_id=729489100]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Remove"
+
+[node name="EditInInspectorButton" type="Button" parent="HBoxContainer/ToolbarHBoxContainer" unique_id=1746084248]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+theme_override_colors/font_focus_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+theme_override_colors/font_pressed_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+theme_override_colors/font_hover_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+theme_override_colors/font_disabled_color = Color(0.81960785, 0.73333335, 0.45882353, 0.5019608)
+disabled = true
+text = "Edit in Inspector"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=1890810483]
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="MaterialPicker" parent="HBoxContainer/HBoxContainer" unique_id=951957078 instance=ExtResource("2_1hu54")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(124, 0)
+layout_mode = 2
+size_flags_vertical = 1
+
+[node name="NoticeLabel" type="Label" parent="." unique_id=2015033558]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+text = "VoxelSet has no materials, please add one to select and continue"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContentVBoxContainer" type="VBoxContainer" parent="." unique_id=1139126651]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InfoContainer" type="ScrollContainer" parent="ContentVBoxContainer" unique_id=475557861]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="ContentVBoxContainer/InfoContainer" unique_id=1660320295]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_q8c7s")
+
+[node name="MarginContainer" type="MarginContainer" parent="ContentVBoxContainer/InfoContainer/PanelContainer" unique_id=286310509]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="MaterialInfo" parent="ContentVBoxContainer/InfoContainer/PanelContainer/MarginContainer" unique_id=444056394 instance=ExtResource("3_v4fkv")]
+unique_name_in_owner = true
+custom_maximum_size = Vector2(-1, 34)
+layout_mode = 2
+
+[node name="MaterialInspector" parent="ContentVBoxContainer" unique_id=1376326695 instance=ExtResource("4_don4e")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="NameWindow" type="Window" parent="." unique_id=1935483892]
+unique_name_in_owner = true
+oversampling_override = 1.0
+initial_position = 4
+size = Vector2i(134, 111)
+visible = false
+wrap_controls = true
+transient = true
+unresizable = true
+popup_window = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="NameWindow" unique_id=1147165387]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NameWindow/MarginContainer" unique_id=1172547558]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="NameWindowLineEdit" type="LineEdit" parent="NameWindow/MarginContainer/VBoxContainer" unique_id=1486306372]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(124, 0)
+layout_mode = 2
+placeholder_text = "Material name..."
+
+[node name="HBoxContainer" type="HBoxContainer" parent="NameWindow/MarginContainer/VBoxContainer" unique_id=1656558182]
+layout_mode = 2
+alignment = 1
+
+[node name="NameWindowOkButton" type="Button" parent="NameWindow/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2143029213]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ok"
+
+[node name="NameWindowCancelButton" type="Button" parent="NameWindow/MarginContainer/VBoxContainer/HBoxContainer" unique_id=832985838]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"
+
+[node name="ConfirmWindow" type="ConfirmationDialog" parent="." unique_id=650286989]
+unique_name_in_owner = true
+oversampling_override = 1.0
+initial_position = 4
+size = Vector2i(200, 111)
+unresizable = true
+popup_window = true
