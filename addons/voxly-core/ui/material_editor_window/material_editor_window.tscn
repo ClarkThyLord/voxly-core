@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://honsbu1j4wbr"]
+
+[ext_resource type="Script" uid="uid://b0ediv2rwuh0v" path="res://addons/voxly-core/ui/material_editor_window/material_editor_window.gd" id="1_7n4o6"]
+[ext_resource type="PackedScene" uid="uid://xl3mmsalbyd1" path="res://addons/voxly-core/ui/material_editor/material_editor.tscn" id="2_lfmjp"]
+
+[node name="MaterialEditorWindow" type="Window" unique_id=104473677]
+oversampling_override = 1.0
+title = "Material Editor"
+initial_position = 4
+size = Vector2i(680, 617)
+wrap_controls = true
+script = ExtResource("1_7n4o6")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1453680835]
+offset_right = 308.0
+offset_bottom = 617.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1749502670]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1707939636]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MaterialEditor" parent="MarginContainer/VBoxContainer/PanelContainer" unique_id=2099320789 instance=ExtResource("2_lfmjp")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=2072861650]
+layout_mode = 2
+alignment = 1
+
+[node name="Ok" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=100263285]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ok"
+
+[node name="Cancel" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1508812855]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close"
