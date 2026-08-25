@@ -4,6 +4,7 @@ extends Node
 ##
 ## This is a singleton registered by the Voxly-Core plugin.
 ## Access it globally via:
+##   VoxlyDebug.log_always("MyClass", "message")   # always prints, ignores log state
 ##   VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, "MyClass", "message")
 ##   VoxlyDebug.log_context("MyClass", "message")  # routes to CATEGORY_GENERAL
 ##
@@ -15,6 +16,8 @@ extends Node
 ## Global control:
 ##   VoxlyDebug.enable()      # all categories
 ##   VoxlyDebug.disable()     # all categories
+##
+## Logging is disabled by default. Use enable() at runtime to turn on logs.
 ##
 ## For performance-sensitive hot paths, guard string construction:
 ##   if VoxlyDebug.is_category_enabled(VoxlyDebug.CATEGORY_MESHER):
@@ -28,7 +31,9 @@ const CATEGORY_VOXEL_NODES := "voxel_nodes"
 const CATEGORY_VOXEL_SETS := "voxel_sets"
 const CATEGORY_MESHER     := "mesher"
 const CATEGORY_EDITOR_UI  := "editor_ui"
-const CATEGORY_PLUGIN     := "plugin"
+const CATEGORY_PLUGIN      := "plugin"
+const CATEGORY_EDITOR_LOGIC := "editor_logic"
+const CATEGORY_RAYCAST     := "raycast_debug"
 
 ## All categories in an array for iteration.
 const ALL_CATEGORIES := [
@@ -39,22 +44,24 @@ const ALL_CATEGORIES := [
 	CATEGORY_VOXEL_SETS,
 	CATEGORY_MESHER,
 	CATEGORY_EDITOR_UI,
+	CATEGORY_EDITOR_LOGIC,
+	CATEGORY_RAYCAST,
 	CATEGORY_PLUGIN,
 ]
 
 ## Set this to true at compile time to enable debug logging permanently.
-## When false, categories default to disabled unless VOXLY_DEBUG env var is set.
 const DEBUG_ENABLED: bool = true
 
 ## Per-category enabled flags.
 var _categories: Dictionary = {}
 
-## Global override — when false, all categories are disabled regardless of per-category flags.
+## Global override; if false, all categories are disabled regardless of per-category flags.
 var _global_enabled: bool = true
 
 func _init() -> void:
 	_update_debug_flag()
-	disable_category(CATEGORY_MESHER)
+	# Logging starts disabled by default.
+	disable()
 
 ## Updates the internal debug flag from the const or environment variable.
 func _update_debug_flag() -> void:
@@ -80,6 +87,14 @@ func is_category_enabled(category: String) -> bool:
 ## Returns true if debug logging is enabled globally.
 func is_enabled() -> bool:
 	return _global_enabled
+
+## Prints a message that is always shown, regardless of whether debug
+## logging is enabled or disabled.
+func log_always(context: String, message: String) -> void:
+	if context.is_empty():
+		print("[Voxly Debug] %s" % message)
+	else:
+		print("[Voxly Debug][%s] %s" % [context, message])
 
 ## Prints a debug message prefixed with [Voxly Debug] if the given category is enabled.
 ## Use this for all new debug logging.
@@ -123,14 +138,16 @@ func enable() -> void:
 	_global_enabled = true
 	for cat in ALL_CATEGORIES:
 		_categories[cat] = true
-	print("[Voxly Debug] All categories enabled")
+	log_always("", "All categories enabled")
 
 ## Convenience to disable all debug logging at runtime.
-func disable() -> void:
+## Pass silent=true to suppress the status message (e.g., during startup).
+func disable(silent: bool = false) -> void:
 	_global_enabled = false
 	for cat in ALL_CATEGORIES:
 		_categories[cat] = false
-	print("[Voxly Debug] All categories disabled")
+	if not silent:
+		log_always("", "All categories disabled")
 
 ## Returns a string showing which categories are currently enabled/disabled.
 func get_enabled_categories() -> String:
