@@ -51,10 +51,22 @@ var _id_container: HBoxContainer = %IDContainer
 var _id_line_edit: LineEdit = %IDLineEdit
 
 @onready
+var _id_save_button: Button = %IDSaveButton
+
+@onready
+var _id_cancel_button: Button = %IDCancelButton
+
+@onready
 var _name_container: HBoxContainer = %NameContainer
 
 @onready
 var _name_line_edit: LineEdit = %NameLineEdit
+
+@onready
+var _name_save_button: Button = %NameSaveButton
+
+@onready
+var _name_cancel_button: Button = %NameCancelButton
 
 @onready
 var _tag_editor := %TagEditor
@@ -97,16 +109,16 @@ func set_undo_redo_manager(manager: EditorUndoRedoManager) -> void:
 func _set_voxel_id(new_voxel_id: int) -> void:
 	if new_voxel_id == voxel_id:
 		return
-
+	
 	if _voxel and _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.disconnect(_on_voxel_changed)
-
+	
 	voxel_id = new_voxel_id
 	_voxel = voxel_set.get_voxel(voxel_id) if voxel_set else null
-
+	
 	if _voxel and not _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.connect(_on_voxel_changed)
-
+	
 	if not is_inside_tree():
 		_pending_update = true
 	else:
@@ -115,16 +127,16 @@ func _set_voxel_id(new_voxel_id: int) -> void:
 func _set_voxel_set(new_voxel_set: VoxelSet) -> void:
 	if new_voxel_set == voxel_set:
 		return
-
+	
 	if _voxel and _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.disconnect(_on_voxel_changed)
-
+	
 	voxel_set = new_voxel_set
 	_voxel = voxel_set.get_voxel(voxel_id) if voxel_set else null
-
+	
 	if _voxel and not _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.connect(_on_voxel_changed)
-
+	
 	if not is_inside_tree():
 		_pending_update = true
 	else:
@@ -161,20 +173,68 @@ func _set_show_info(value: bool) -> void:
 func _ready() -> void:
 	# ID field
 	_id_line_edit.text_submitted.connect(_on_id_submitted)
-	_id_line_edit.focus_exited.connect(_on_id_focus_lost)
-
+	_id_line_edit.text_changed.connect(_on_id_text_changed)
+	_id_save_button.pressed.connect(_on_id_save_pressed)
+	_id_cancel_button.pressed.connect(_on_id_cancel_pressed)
+	
 	# Name field
 	_name_line_edit.text_submitted.connect(_on_name_submitted)
-	_name_line_edit.focus_exited.connect(_on_name_focus_lost)
-
+	_name_line_edit.text_changed.connect(_on_name_text_changed)
+	_name_save_button.pressed.connect(_on_name_save_pressed)
+	_name_cancel_button.pressed.connect(_on_name_cancel_pressed)
+	
 	# Tag editor
-	_tag_editor.tag_validator = "^[a-zA-Z0-9_-]{1,32}$"
 	_tag_editor.changed.connect(_on_tag_editor_changed)
-
+	
 	if _pending_update:
 		_update()
 	else:
 		_apply_field_modes()
+
+func _hide_id_buttons() -> void:
+	_id_save_button.hide()
+	_id_cancel_button.hide()
+
+func _hide_name_buttons() -> void:
+	_name_save_button.hide()
+	_name_cancel_button.hide()
+
+func _on_id_text_changed(new_text: String) -> void:
+	if not _voxel or not new_text.is_valid_int():
+		_id_save_button.hide()
+		_id_cancel_button.hide()
+		return
+	var new_id := new_text.to_int()
+	if new_id == voxel_id:
+		_id_save_button.hide()
+		_id_cancel_button.hide()
+	else:
+		_id_save_button.show()
+		_id_cancel_button.show()
+
+func _on_name_text_changed(new_text: String) -> void:
+	if not _voxel or new_text == _voxel.name:
+		_name_save_button.hide()
+		_name_cancel_button.hide()
+	else:
+		_name_save_button.show()
+		_name_cancel_button.show()
+
+func _on_id_save_pressed() -> void:
+	_hide_id_buttons()
+	_try_change_id(_id_line_edit.text)
+
+func _on_id_cancel_pressed() -> void:
+	_hide_id_buttons()
+	_revert_id()
+
+func _on_name_save_pressed() -> void:
+	_hide_name_buttons()
+	_try_change_name(_name_line_edit.text)
+
+func _on_name_cancel_pressed() -> void:
+	_hide_name_buttons()
+	_revert_name()
 
 func set_voxel(voxel_set: VoxelSet, voxel_id: int) -> void:
 	self.voxel_set = voxel_set
@@ -214,10 +274,10 @@ func _update() -> void:
 		_pending_update = true
 		return
 	_pending_update = false
-
+	
 	# Apply field modes first
 	_apply_field_modes()
-
+	
 	# Prevent tag_editor.changed from re-triggering _update
 	_syncing_tags = true
 	
@@ -232,41 +292,49 @@ func _update() -> void:
 	_id_line_edit.text = str(voxel_id)
 	_name_line_edit.text = _voxel.name
 	
+	# Hide save/cancel buttons on any inspector update
+	_hide_id_buttons()
+	_hide_name_buttons()
+	
 	# Sync tags to tag_editor
 	_tag_editor.selected_tags = _voxel.tags.duplicate()
 	_tag_editor.tags = _voxel.tags.duplicate()
-
+	
 	_info_label.text = _format_raw_data()
-
+	
 	_syncing_tags = false
 
 func _format_raw_data() -> String:
 	if not _voxel:
 		return ""
 	var parts: PackedStringArray = []
-	parts.append("Color: %s" % _voxel.base_color.to_html())
-	parts.append("Texture XY: %s" % str(_voxel.base_texture_xy))
-	parts.append("Material ID: %s" % _voxel.base_material_id)
+	var base_color := "unset"
+	var base_texture := "unset"
+	var base_material := "unset"
+	if _voxel.has_base_color():
+		base_color = _voxel.base_color.to_html()
+	if _voxel.has_base_texture_xy():
+		base_texture = str(_voxel.base_texture_xy)
+	if _voxel.has_base_material_id():
+		base_material = _voxel.base_material_id
+	parts.append("Color: %s" % base_color)
+	parts.append("Texture XY: %s" % base_texture)
+	parts.append("Material ID: %s" % base_material)
 	for face in Voxel.FACES:
-		var fcolor := _voxel.get_face_color(face)
-		var ftex := _voxel.get_face_texture_xy(face)
-		var fmat := _voxel.get_face_material_id(face)
+		var fcolor := _voxel.get_face_color(face, false)
+		var ftex := _voxel.get_face_texture_xy(face, false)
+		var fmat := _voxel.get_face_material_id(face, false)
 		var face_name := Voxel.FACE_NAMES[face]
-		parts.append("%s: Color=%s" % [face_name, fcolor.to_html()])
-		if ftex != -Vector2i.ONE:
-			parts[-1] += " Tex=%s" % str(ftex)
-		if not fmat.is_empty():
-			parts[-1] += " Mat=%s" % fmat
+		parts.append("%s: Color=%s Tex=%s Mat=%s" % [
+			face_name,
+			fcolor.to_html() if fcolor.a > 0 else "unset",
+			str(ftex) if ftex != -Vector2i.ONE else "unset",
+			fmat if not fmat.is_empty() else "unset",
+		])
 	return "\n".join(parts)
 
 func _on_id_submitted(new_text: String) -> void:
 	_try_change_id(new_text)
-
-func _on_id_focus_lost() -> void:
-	if _confirming_id:
-		return
-	# On focus loss, re-apply current value (no edit if they just clicked away)
-	_id_line_edit.text = str(voxel_id)
 
 func _try_change_id(new_id_str: String) -> void:
 	if not _voxel or not new_id_str.is_valid_int():
@@ -292,6 +360,7 @@ func _try_change_id(new_id_str: String) -> void:
 func _do_change_id(new_id: int) -> void:
 	if not voxel_set or not _voxel:
 		return
+	
 	var old_voxel = _voxel
 	var old_id = voxel_id
 	
@@ -317,6 +386,7 @@ func _do_change_id(new_id: int) -> void:
 	voxel_id = new_id
 	_voxel = old_voxel
 	_id_line_edit.text = str(new_id)
+	_hide_id_buttons()
 	
 	if has_undo:
 		if _undo_redo_manager:
@@ -331,15 +401,10 @@ func _revert_id() -> void:
 	_confirming_id = false
 	_pending_field = null
 	_id_line_edit.text = str(voxel_id)
+	_hide_id_buttons()
 
 func _on_name_submitted(new_text: String) -> void:
 	_try_change_name(new_text)
-
-func _on_name_focus_lost() -> void:
-	if _confirming_name:
-		return
-	if _voxel:
-		_name_line_edit.text = _voxel.name
 
 func _try_change_name(new_name: String) -> void:
 	if not _voxel or new_name == _voxel.name:
@@ -382,6 +447,7 @@ func _do_change_name(new_name: String) -> void:
 	
 	_voxel.name = new_name
 	_name_line_edit.text = new_name
+	_hide_name_buttons()
 	changed_name.emit(old_name, new_name)
 	changed.emit()
 
@@ -390,6 +456,7 @@ func _revert_name() -> void:
 	_pending_field = null
 	if _voxel:
 		_name_line_edit.text = _voxel.name
+	_hide_name_buttons()
 
 # Forces the dialog to have just "Ok" and "Cancel" buttons.
 func _show_taken_dialog(message: String, on_close : Callable) -> void:
@@ -423,6 +490,7 @@ func _on_dialog_close() -> void:
 func _on_tag_editor_changed() -> void:
 	if _syncing_tags or not _voxel:
 		return
+	
 	# Sync tag_editor's tags back to the voxel
 	var old_tags = _voxel.tags
 	var new_tags = _tag_editor.tags.duplicate()
