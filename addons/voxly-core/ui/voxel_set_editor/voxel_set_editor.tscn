@@ -6,10 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://hbr6xbwnatyg" path="res://addons/voxly-core/ui/voxel_set_viewer/voxel_set_viewer.tscn" id="4_o1b2m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kohc5"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
+content_margin_left = 3.0
+content_margin_top = 3.0
+content_margin_right = 3.0
+content_margin_bottom = 3.0
 bg_color = Color(0.1, 0.1, 0.1, 0.6)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
@@ -31,13 +31,17 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+split_offsets = PackedInt32Array(457)
 vertical = true
+split_offset = 457
 
 [node name="VoxelContainer" type="SplitContainer" parent="SplitContainer" unique_id=367752865]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+split_offsets = PackedInt32Array(306)
 vertical = true
+split_offset = 306
 
 [node name="PanelContainer" type="PanelContainer" parent="SplitContainer/VoxelContainer" unique_id=374103657]
 layout_mode = 2
@@ -50,8 +54,12 @@ layout_mode = 2
 [node name="VoxelInspector" parent="SplitContainer/VoxelContainer" unique_id=868877094 instance=ExtResource("3_tngtc")]
 unique_name_in_owner = true
 layout_mode = 2
-show_info = false
 
 [node name="VoxelSetViewer" parent="SplitContainer" unique_id=190935005 instance=ExtResource("4_o1b2m")]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="InfoLabel" type="Label" parent="SplitContainer" unique_id=1341394227]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2

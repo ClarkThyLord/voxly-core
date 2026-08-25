@@ -1,7 +1,9 @@
 @tool
 extends BoxContainer
 
-signal close_requested
+## Emitted when the selection of voxels changes in the viewer.
+## Provides the list of selected voxel IDs.
+signal selected_voxels_changed(selected_ids: Array)
 
 ## The VoxelSet being edited
 @export
@@ -26,6 +28,12 @@ var _split_container : SplitContainer = %SplitContainer
 @onready
 var _voxel_container : SplitContainer = %VoxelContainer
 
+@onready
+var _info_label : Label = %InfoLabel
+
+## Stores the last-seen voxel set so label refreshes can detect swapped sets.
+var _last_label_voxel_set: VoxelSet = null
+
 ## UndoRedo for standalone use. Either this or _undo_redo_manager should be set.
 var _undo_redo: UndoRedo = null
 
@@ -49,7 +57,7 @@ func set_undo_redo_manager(manager: EditorUndoRedoManager) -> void:
 func _propagate_undo_redo() -> void:
 	if not is_inside_tree():
 		return
-	# Children use whichever is set on us — they check both internally.
+	# Children use whichever is set on us
 	voxel_set_viewer.undo_redo = _undo_redo_manager
 	voxel_editor.set_undo_redo(_undo_redo)
 	voxel_editor.set_undo_redo_manager(_undo_redo_manager)
@@ -62,7 +70,6 @@ func set_voxel_set(new_set: VoxelSet) -> void:
 	voxel_set = new_set
 	_selected_voxel_ids.clear()
 	
-	# Guard: children may not be ready yet (e.g., @export fires before _ready)
 	if not voxel_set_viewer or not voxel_editor or not voxel_inspector:
 		_pending_update = true
 		return
@@ -78,17 +85,25 @@ func _apply_voxel_set() -> void:
 	voxel_editor.voxel_set = voxel_set
 	voxel_inspector.voxel_set = voxel_set
 	
+	# Track the voxel set so the info label can refresh on changes
+	if _last_label_voxel_set and _last_label_voxel_set.changed.is_connected(_on_voxel_set_changed):
+		_last_label_voxel_set.changed.disconnect(_on_voxel_set_changed)
+	if voxel_set and not voxel_set.changed.is_connected(_on_voxel_set_changed):
+		voxel_set.changed.connect(_on_voxel_set_changed)
+	_last_label_voxel_set = voxel_set
+	
 	# Sync voxel container orientation with root BoxContainer
 	_voxel_container.vertical = vertical
 	
 	# Show/hide voxel container based on selection
 	_update_edit_panel_visibility()
+	_update_info_label()
 
 func _ready() -> void:
-	# Wire viewer selection → editor + inspector
+	# Wire viewer selection, editor + inspector
 	voxel_set_viewer.selected_voxels_changed.connect(_on_viewer_selection_changed)
 	
-	# Wire editor changes → viewer refresh
+	# Wire editor changes, viewer refresh
 	voxel_editor.changed.connect(_on_child_changed)
 	voxel_inspector.changed.connect(_on_child_changed)
 	
@@ -133,6 +148,10 @@ func _on_viewer_selection_changed(selected_ids: Array) -> void:
 		voxel_inspector.voxel_id = -1
 	
 	_update_edit_panel_visibility()
+	_update_info_label()
+	
+	# Propagate selection change upward so dock can emit palette_voxel_changed
+	selected_voxels_changed.emit(_selected_voxel_ids)
 
 func _on_inspector_id_changed(old_id: int, new_id: int) -> void:
 	# Update the tracked selection to the new ID
@@ -150,3 +169,25 @@ func _on_inspector_id_changed(old_id: int, new_id: int) -> void:
 func _on_child_changed() -> void:
 	if _selected_voxel_ids.size() == 1:
 		voxel_set_viewer.update_button(_selected_voxel_ids[0])
+	_update_info_label()
+
+
+func _on_voxel_set_changed() -> void:
+	_update_info_label()
+
+
+## Updates the info label with contextual VoxelSet information:
+## total voxel count and current selection count.
+func _update_info_label() -> void:
+	if not _info_label:
+		return
+	if not voxel_set:
+		_info_label.text = "No VoxelSet"
+		return
+	var parts: PackedStringArray = []
+	var sel_count := _selected_voxel_ids.size()
+	if sel_count > 0:
+		parts.append("Selected: %d" % sel_count)
+	parts.append("Voxels: %d" % voxel_set.get_voxels_count())
+	parts.append("Materials: %d" % voxel_set.get_materials_count())
+	_info_label.text = " | ".join(parts)
