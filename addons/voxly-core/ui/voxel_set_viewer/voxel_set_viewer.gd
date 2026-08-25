@@ -5,6 +5,18 @@ extends VBoxContainer
 signal selected_voxels_changed(selected_ids: Array)
 
 const VoxelButtonScene := preload("res://addons/voxly-core/ui/voxel_button/voxel_button.tscn")
+const MaterialEditorWindowScript := preload("res://addons/voxly-core/ui/material_editor_window/material_editor_window.gd")
+
+@onready
+var _title_container : HBoxContainer = %TitleHBoxContainer
+
+@onready
+var _title_label : Label = %TitleLabel
+
+## Title text shown in the toolbar. If empty, the title container is hidden.
+@export
+var title: String = "":
+	set = _set_title
 
 @onready
 var search: LineEdit = %Search
@@ -27,6 +39,12 @@ var _remove_menu_button : MenuButton = %RemoveMenuButton
 @onready
 var _import_menu_button: MenuButton = %ImportMenuButton
 
+@onready
+var _materials_button: Button = %MaterialsButton
+
+@onready
+var _material_editor_window := %MaterialEditorWindow
+
 @export
 var voxel_set: VoxelSet = null:
 	set = set_voxel_set
@@ -39,6 +57,12 @@ var show_toolbar: bool = true:
 @export
 var show_search: bool = true:
 	set = _set_show_search
+
+## Enable/disable editing of the voxel set. When disabled, toolbar menu buttons
+## are disabled so the user can still browse but not modify.
+@export
+var editing_enabled: bool = true:
+	set = _set_editing_enabled
 
 @export
 var selection_enabled: bool = true:
@@ -53,7 +77,9 @@ var selection_max: int = -1:
 	set = _set_selection_max
 
 ## Optional undo/redo for editor integration.
-var undo_redo: EditorUndoRedoManager = null
+## Set from the outside; forwarded to the material editor window.
+var undo_redo: EditorUndoRedoManager = null:
+	set = _set_undo_redo
 
 enum ContextAction {
 	ADD,
@@ -83,6 +109,8 @@ func set_voxel_set(new_voxel_set: VoxelSet) -> void:
 	if voxel_set and voxel_set.voxels_changed.is_connected(_rebuild):
 		voxel_set.voxels_changed.disconnect(_rebuild)
 	voxel_set = new_voxel_set
+	if _material_editor_window:
+		_material_editor_window.voxel_set = new_voxel_set
 	clear_selection()
 	if voxel_set and not voxel_set.voxels_changed.is_connected(_rebuild):
 		voxel_set.voxels_changed.connect(_rebuild)
@@ -91,15 +119,56 @@ func set_voxel_set(new_voxel_set: VoxelSet) -> void:
 	else:
 		_rebuild()
 
+func _set_undo_redo(manager: EditorUndoRedoManager) -> void:
+	undo_redo = manager
+	if _material_editor_window:
+		_material_editor_window.set_undo_redo_manager(manager)
+
+func _set_title(new_title: String) -> void:
+	title = new_title
+	_update_title_visibility()
+
+func _update_title_visibility() -> void:
+	if not _title_container or not _title_label:
+		return
+	var has_title := not title.is_empty()
+	_title_container.visible = has_title
+	if has_title:
+		_title_label.text = title
+
+func _set_editing_enabled(value: bool) -> void:
+	editing_enabled = value
+	_update_toolbar_button_states()
+
+func _update_editing_state() -> void:
+	_update_toolbar_button_states()
+
+## Updates toolbar button states based on editing_enabled.
+## When editing is disabled, all buttons are forced disabled.
+## When editing is enabled, buttons follow their normal context-aware state.
+func _update_toolbar_button_states() -> void:
+	if not _tool_bar:
+		return
+	if not editing_enabled:
+		_add_menu_button.disabled = true
+		_remove_menu_button.disabled = true
+		_select_menu_button.disabled = true
+		_import_menu_button.disabled = true
+		_materials_button.disabled = true
+	else:
+		# Re-run the context-aware updates so each button gets its correct state
+		_update_toolbar_add_menu()
+		_update_toolbar_remove_menu()
+		_update_toolbar_select_menu()
+		# Import and Materials are only disabled when editing is off
+		_import_menu_button.disabled = false
+		_materials_button.disabled = voxel_set == null
+
 func _set_selection_enabled(value: bool) -> void:
 	selection_enabled = value
 	if not value:
 		clear_selection()
-	# When selection/editing is off, disable all toolbar actions
-	_add_menu_button.disabled = not value
-	_remove_menu_button.disabled = not value
-	_select_menu_button.disabled = not value
-	_import_menu_button.disabled = not value
+	_update_toolbar_button_states()
 	var cursor := Input.CURSOR_POINTING_HAND if selection_enabled else Input.CURSOR_ARROW
 	for btn in _buttons:
 		if is_instance_valid(btn):
@@ -130,11 +199,15 @@ func _set_show_toolbar(value: bool) -> void:
 		_tool_bar.visible = value
 
 func _ready() -> void:
+	# Apply title visibility
+	_update_title_visibility()
+	
 	if search:
 		_search_panel = search.get_parent() as PanelContainer
 		if _search_panel:
 			_search_panel.visible = show_search
-	_tool_bar.visible = show_toolbar
+	# Apply editing_enabled state
+	_update_editing_state()
 	search.text_changed.connect(_on_search_changed)
 	
 	# Context menu
@@ -144,26 +217,34 @@ func _ready() -> void:
 	_context_menu.id_pressed.connect(_on_context_menu_action)
 	add_child(_context_menu)
 	
-	# Toolbar — Add (rebuilt on open to show duplicate option when selected)
+	# Toolbar: Add
 	_add_menu_button.get_popup().about_to_popup.connect(_update_toolbar_add_menu)
 	_add_menu_button.get_popup().id_pressed.connect(_on_toolbar_add_action)
 	
-	# Toolbar — Remove
+	# Toolbar: Remove
 	_remove_menu_button.get_popup().about_to_popup.connect(_update_toolbar_remove_menu)
 	_remove_menu_button.get_popup().id_pressed.connect(_on_toolbar_remove_action)
 	
-	# Toolbar — Select
+	# Toolbar: Select
 	_select_menu_button.get_popup().about_to_popup.connect(_update_toolbar_select_menu)
 	_select_menu_button.get_popup().id_pressed.connect(_on_toolbar_select_action)
 	_select_menu_button.get_popup().clear(true)
 	_select_menu_button.get_popup().add_item("Select All", 0)
 	_select_menu_button.get_popup().add_item("Unselect All", 1)
 	
-	# Toolbar — Import
+	# Toolba: Import
 	_import_menu_button.get_popup().id_pressed.connect(_on_toolbar_import_action)
 	_import_menu_button.get_popup().clear(true)
 	_import_menu_button.get_popup().add_item("Append...", 0)
 	_import_menu_button.get_popup().add_item("Replace...", 1)
+	
+	# Toolbar: Materials
+	_materials_button.pressed.connect(_open_material_editor)
+	
+	# Material editor window
+	_material_editor_window.setup("Material Editor", voxel_set, "", MaterialEditorWindowScript.EditMode.EDITABLE)
+	if undo_redo:
+		_material_editor_window.set_undo_redo_manager(undo_redo)
 	
 	# Initial toolbar state when no voxels exist
 	_remove_menu_button.disabled = true
@@ -242,8 +323,10 @@ func _rebuild() -> void:
 			selected_ids = valid_ids
 			selected_voxels_changed.emit(selected_ids.duplicate())
 	# Refresh toolbar button enabled states now that voxels are loaded
+	_update_toolbar_add_menu()
 	_update_toolbar_remove_menu()
 	_update_toolbar_select_menu()
+	_materials_button.disabled = not editing_enabled
 	_apply_search()
 
 func _select_button(voxel_id: int) -> void:
@@ -264,7 +347,6 @@ func _deselect_all_buttons() -> void:
 			btn.button_pressed = false
 
 func _add_to_selection(voxel_id: int) -> void:
-	"""Add a voxel to the selection, respecting max. Operates like CTRL+click."""
 	if not selection_enabled:
 		return
 	if voxel_id in selected_ids:
@@ -391,9 +473,6 @@ func _on_import_file_selected(path: String) -> void:
 	
 	if _import_append:
 		# Append mode: add imported voxels with new IDs to avoid conflicts
-		# IMPORTANT: Pre-calculate all new IDs before the undo_redo action,
-		# because next_voxel_id() returns the same value during recording
-		# (voxels aren't actually added until commit_action()).
 		var imported_voxels: Dictionary = imported.get_voxels()
 		var imported_materials: Dictionary = imported.get_materials()
 		var imported_ids := imported_voxels.keys()
@@ -527,6 +606,8 @@ func _on_context_menu_action(id: int) -> void:
 				_duplicate_voxels(selected_ids.duplicate())
 
 func _update_toolbar_add_menu() -> void:
+	# Add is always enabled when there's a VoxelSet
+	_add_menu_button.disabled = voxel_set == null
 	var popup := _add_menu_button.get_popup()
 	popup.clear()
 	popup.add_item("Add New Voxel", ContextAction.ADD)
@@ -577,6 +658,15 @@ func _on_toolbar_select_action(id: int) -> void:
 
 func _on_toolbar_import_action(id: int) -> void:
 	_import_palette(id == 0)
+
+func _open_material_editor() -> void:
+	if not voxel_set or not editing_enabled:
+		return
+	_material_editor_window.voxel_set = voxel_set
+	_material_editor_window.edit_mode = MaterialEditorWindowScript.EditMode.EDITABLE
+	_material_editor_window.picker_allow_unset = false
+	_material_editor_window.picker_allow_default = true
+	_material_editor_window.popup_centered_clamped()
 
 func _on_search_changed(new_text: String) -> void:
 	_apply_search()

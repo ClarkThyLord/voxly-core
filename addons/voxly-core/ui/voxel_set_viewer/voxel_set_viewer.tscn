@@ -1,6 +1,19 @@
 [gd_scene format=3 uid="uid://hbr6xbwnatyg"]
 
 [ext_resource type="Script" uid="uid://dfr4rmebuxfxy" path="res://addons/voxly-core/ui/voxel_set_viewer/voxel_set_viewer.gd" id="1_wolgs"]
+[ext_resource type="PackedScene" uid="uid://honsbu1j4wbr" path="res://addons/voxly-core/ui/material_editor_window/material_editor_window.tscn" id="2_h0ed2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bnoqj"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
 
 [node name="VoxelSetViewer" type="VBoxContainer" unique_id=937536362]
 anchors_preset = 15
@@ -11,34 +24,41 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_wolgs")
+title = "VoxelSet Editor"
 
 [node name="ToolBar" type="HBoxContainer" parent="." unique_id=1798286548]
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="TitleHBoxContainer" type="HBoxContainer" parent="ToolBar" unique_id=1425607290]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ToolBar/TitleHBoxContainer" unique_id=44565157]
+unique_name_in_owner = true
+layout_mode = 2
+text = "VoxelSet Editor"
+
+[node name="VSeparator" type="VSeparator" parent="ToolBar/TitleHBoxContainer" unique_id=1743927758]
+layout_mode = 2
+
 [node name="AddMenuButton" type="MenuButton" parent="ToolBar" unique_id=1913638723]
 unique_name_in_owner = true
 layout_mode = 2
+disabled = true
 text = "Add"
 item_count = 1
 popup/item_0/text = "Add New Voxel"
 popup/item_0/id = 0
-
-[node name="ImportMenuButton" type="MenuButton" parent="ToolBar" unique_id=1144888463]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Import"
-item_count = 2
-popup/item_0/text = "Append..."
-popup/item_0/id = 0
-popup/item_1/text = "Replace..."
-popup/item_1/id = 1
 
 [node name="RemoveMenuButton" type="MenuButton" parent="ToolBar" unique_id=126610324]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "Remove"
+item_count = 1
+popup/item_0/text = "Remove All (0)"
+popup/item_0/id = 0
 
 [node name="SelectMenuButton" type="MenuButton" parent="ToolBar" unique_id=369430087]
 unique_name_in_owner = true
@@ -51,6 +71,27 @@ popup/item_0/id = 0
 popup/item_1/text = "Unselect All"
 popup/item_1/id = 1
 
+[node name="ImportMenuButton" type="MenuButton" parent="ToolBar" unique_id=1144888463]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Import"
+item_count = 2
+popup/item_0/text = "Append..."
+popup/item_0/id = 0
+popup/item_1/text = "Replace..."
+popup/item_1/id = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ToolBar" unique_id=254211244]
+layout_mode = 2
+size_flags_horizontal = 10
+alignment = 2
+
+[node name="MaterialsButton" type="Button" parent="ToolBar/HBoxContainer" unique_id=1371469165]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Materials"
+
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=1901790968]
 layout_mode = 2
 
@@ -59,15 +100,28 @@ unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "Search by id, name, #tag..."
 
-[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1092201314]
+[node name="PanelContainer2" type="PanelContainer" parent="." unique_id=713919289]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_bnoqj")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer2" unique_id=1092201314]
 layout_mode = 2
 size_flags_vertical = 3
 follow_focus = true
 draw_focus_border = true
 horizontal_scroll_mode = 0
 
-[node name="List" type="HFlowContainer" parent="ScrollContainer" unique_id=1641278157]
+[node name="List" type="HFlowContainer" parent="PanelContainer2/ScrollContainer" unique_id=1641278157]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="MaterialEditorWindow" parent="." unique_id=104473677 instance=ExtResource("2_h0ed2")]
+unique_name_in_owner = true
+visible = false
+always_on_top = true
+minimize_disabled = true
+maximize_disabled = true
