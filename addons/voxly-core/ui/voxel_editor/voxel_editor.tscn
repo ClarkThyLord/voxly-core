@@ -2,18 +2,27 @@
 
 [ext_resource type="Script" uid="uid://c8j5lmt2hqtnd" path="res://addons/voxly-core/ui/voxel_editor/voxel_editor.gd" id="1_f5frt"]
 [ext_resource type="PackedScene" uid="uid://dn72slkiuo50k" path="res://addons/voxly-core/ui/voxel_button/voxel_button.tscn" id="3_mq2bi"]
+[ext_resource type="Environment" uid="uid://n0jkl2bvsygf" path="res://addons/voxly-core/ui/voxel_editor/default_env.tres" id="3_xddcr"]
 [ext_resource type="PackedScene" uid="uid://bccafwt8tinsp" path="res://addons/voxly-core/ui/color_picker_window/color_picker_window.tscn" id="5_mq2bi"]
-[ext_resource type="PackedScene" uid="uid://c06i31tos2nkm" path="res://addons/voxly-core/ui/atlas_texture_picker/atlas_texture_picker.tscn" id="6_oe4lp"]
+[ext_resource type="PackedScene" uid="uid://brao0cbshei56" path="res://addons/voxly-core/ui/atlas_texture_picker_window/atlas_texture_picker_window.tscn" id="5_xddcr"]
+[ext_resource type="PackedScene" uid="uid://honsbu1j4wbr" path="res://addons/voxly-core/ui/material_editor_window/material_editor_window.tscn" id="6_ujwmh"]
 
-[sub_resource type="Environment" id="Environment_huxux"]
-ambient_light_source = 2
-ambient_light_color = Color(0.25, 0.25, 0.3, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_huxux"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pm41k"]
 
-[node name="VoxelSetVoxelEditor" type="Control" unique_id=1613042170]
+[node name="VoxelSetVoxelEditor" type="VBoxContainer" unique_id=1764624766]
 custom_minimum_size = Vector2(250, 300)
-layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -21,17 +30,85 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_f5frt")
 
-[node name="Mode2D" type="Control" parent="." unique_id=1693595694]
+[node name="ToolbarHBoxContainer" type="HBoxContainer" parent="." unique_id=162668747]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ToolbarHBoxContainer" unique_id=2106246287]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleContainer" type="HBoxContainer" parent="ToolbarHBoxContainer/HBoxContainer" unique_id=1017542928]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ToolbarHBoxContainer/HBoxContainer/TitleContainer" unique_id=1666774170]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Voxel Editor"
+
+[node name="VSeparator" type="VSeparator" parent="ToolbarHBoxContainer/HBoxContainer/TitleContainer" unique_id=1614862531]
+layout_mode = 2
+
+[node name="SelectMenuButton" type="MenuButton" parent="ToolbarHBoxContainer/HBoxContainer" unique_id=1866295680]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Select"
+item_count = 2
+popup/item_0/text = "Change Environment"
+popup/item_0/id = 13
+popup/item_1/text = "Reset Environment"
+popup/item_1/id = 14
+
+[node name="EditMenuButton" type="MenuButton" parent="ToolbarHBoxContainer/HBoxContainer" unique_id=28939588]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Edit"
+item_count = 2
+popup/item_0/text = "Change Environment"
+popup/item_0/id = 13
+popup/item_1/text = "Reset Environment"
+popup/item_1/id = 14
+
+[node name="SettingsMenuButton" type="MenuButton" parent="ToolbarHBoxContainer/HBoxContainer" unique_id=1391544492]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+item_count = 2
+popup/item_0/text = "Change Environment"
+popup/item_0/id = 16
+popup/item_1/text = "Reset Environment"
+popup/item_1/id = 17
+
+[node name="ModeOptionButton" type="OptionButton" parent="ToolbarHBoxContainer" unique_id=1631625980]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "3D"
+popup/item_0/id = 0
+popup/item_1/text = "2D"
+popup/item_1/id = 1
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1193646048]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_huxux")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=563364935]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="Mode2D" type="Control" parent="PanelContainer/MarginContainer" unique_id=1693595694]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_vertical = 3
 
-[node name="FrontFace" parent="Mode2D" unique_id=1783842367 instance=ExtResource("3_mq2bi")]
+[node name="FrontFace" parent="PanelContainer/MarginContainer/Mode2D" unique_id=1783842367 instance=ExtResource("3_mq2bi")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -45,11 +122,11 @@ offset_right = 21.0
 offset_bottom = 21.0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-display_face = Vector3i(0, 0, -1)
+display_face = 1
 tooltip = false
 metadata/_edit_use_anchors_ = true
 
-[node name="LeftFace" parent="Mode2D" unique_id=1221123524 instance=ExtResource("3_mq2bi")]
+[node name="LeftFace" parent="PanelContainer/MarginContainer/Mode2D" unique_id=1221123524 instance=ExtResource("3_mq2bi")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -63,11 +140,11 @@ offset_right = -22.0
 offset_bottom = 21.0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-display_face = Vector3i(-1, 0, 0)
+display_face = 3
 tooltip = false
 metadata/_edit_use_anchors_ = true
 
-[node name="BackFace" parent="Mode2D" unique_id=662069654 instance=ExtResource("3_mq2bi")]
+[node name="BackFace" parent="PanelContainer/MarginContainer/Mode2D" unique_id=662069654 instance=ExtResource("3_mq2bi")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -81,11 +158,11 @@ offset_right = -65.0
 offset_bottom = 21.0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-display_face = Vector3i(0, 0, 1)
+display_face = 2
 tooltip = false
 metadata/_edit_use_anchors_ = true
 
-[node name="TopFace" parent="Mode2D" unique_id=1088579735 instance=ExtResource("3_mq2bi")]
+[node name="TopFace" parent="PanelContainer/MarginContainer/Mode2D" unique_id=1088579735 instance=ExtResource("3_mq2bi")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -99,11 +176,11 @@ offset_right = 21.0
 offset_bottom = -22.0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-display_face = Vector3i(0, 1, 0)
+display_face = 5
 tooltip = false
 metadata/_edit_use_anchors_ = true
 
-[node name="BottomFace" parent="Mode2D" unique_id=1605666937 instance=ExtResource("3_mq2bi")]
+[node name="BottomFace" parent="PanelContainer/MarginContainer/Mode2D" unique_id=1605666937 instance=ExtResource("3_mq2bi")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -117,11 +194,11 @@ offset_right = 21.0
 offset_bottom = 64.00012
 mouse_default_cursor_shape = 2
 toggle_mode = true
-display_face = Vector3i(0, -1, 0)
+display_face = 6
 tooltip = false
 metadata/_edit_use_anchors_ = true
 
-[node name="RightFace" parent="Mode2D" unique_id=294431785 instance=ExtResource("3_mq2bi")]
+[node name="RightFace" parent="PanelContainer/MarginContainer/Mode2D" unique_id=294431785 instance=ExtResource("3_mq2bi")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -135,166 +212,97 @@ offset_right = 65.0
 offset_bottom = 21.0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-display_face = Vector3i(1, 0, 0)
+display_face = 4
 tooltip = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Mode3D" type="SubViewportContainer" parent="." unique_id=146621875]
+[node name="Mode3D" type="SubViewportContainer" parent="PanelContainer/MarginContainer" unique_id=146621875]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_vertical = 3
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="Mode3D" unique_id=850239225]
+[node name="SubViewport" type="SubViewport" parent="PanelContainer/MarginContainer/Mode3D" unique_id=850239225]
 unique_name_in_owner = true
 own_world_3d = true
 handle_input_locally = false
-size = Vector2i(1152, 648)
+size = Vector2i(1136, 597)
 render_target_update_mode = 4
 
-[node name="Node3D" type="Node3D" parent="Mode3D/SubViewport" unique_id=2011920842]
+[node name="Node3D" type="Node3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport" unique_id=2011920842]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="Mode3D/SubViewport/Node3D" unique_id=1814561956]
-environment = SubResource("Environment_huxux")
+[node name="WorldEnvironment" type="WorldEnvironment" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D" unique_id=1814561956]
+environment = ExtResource("3_xddcr")
 
-[node name="CameraPivot" type="Node3D" parent="Mode3D/SubViewport/Node3D" unique_id=264144458]
+[node name="CameraPivot" type="Node3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D" unique_id=264144458]
 unique_name_in_owner = true
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
-[node name="Camera" type="Camera3D" parent="Mode3D/SubViewport/Node3D/CameraPivot" unique_id=1448458533]
+[node name="Camera" type="Camera3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D/CameraPivot" unique_id=1448458533]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
 current = true
 
-[node name="OmniLight3D" type="OmniLight3D" parent="Mode3D/SubViewport/Node3D/CameraPivot" unique_id=1804496294]
+[node name="OmniLight3D" type="OmniLight3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D/CameraPivot" unique_id=1804496294]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
 
-[node name="VoxelPreview" type="MeshInstance3D" parent="Mode3D/SubViewport/Node3D" unique_id=1000720208]
+[node name="VoxelPreview" type="MeshInstance3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D" unique_id=1000720208]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, -0.5, -0.5)
 
-[node name="StaticBody3D" type="StaticBody3D" parent="Mode3D/SubViewport/Node3D/VoxelPreview" unique_id=2025698170]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
+[node name="StaticBody3D" type="StaticBody3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D/VoxelPreview" unique_id=2025698170]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Mode3D/SubViewport/Node3D/VoxelPreview/StaticBody3D" unique_id=324722681]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D/VoxelPreview/StaticBody3D" unique_id=324722681]
 shape = SubResource("BoxShape3D_pm41k")
 
-[node name="VoxelHighlight" type="MeshInstance3D" parent="Mode3D/SubViewport/Node3D" unique_id=1503405098]
+[node name="VoxelHighlight" type="MeshInstance3D" parent="PanelContainer/MarginContainer/Mode3D/SubViewport/Node3D" unique_id=1503405098]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, -0.5, -0.5)
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=637916575]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -85.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 51.0
-grow_horizontal = 0
+[node name="HBoxContainer" type="MarginContainer" parent="PanelContainer" unique_id=1199276240]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+mouse_filter = 2
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 metadata/_edit_group_ = true
 
-[node name="ContextLabel" type="Label" parent="HBoxContainer" unique_id=597532581]
+[node name="ContextLabel" type="Label" parent="PanelContainer/HBoxContainer" unique_id=597532581]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(124, 0)
 layout_mode = 2
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="ModeOptionButton" type="OptionButton" parent="HBoxContainer" unique_id=1631625980]
-unique_name_in_owner = true
-layout_mode = 2
-selected = 0
-item_count = 2
-popup/item_0/text = "3D"
-popup/item_0/id = 0
-popup/item_1/text = "2D"
-popup/item_1/id = 1
-
-[node name="EditMenuButton" type="MenuButton" parent="HBoxContainer" unique_id=28939588]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Edit"
-flat = false
-item_count = 2
-popup/item_0/text = "Change Environment"
-popup/item_0/id = 13
-popup/item_1/text = "Reset Environment"
-popup/item_1/id = 14
-
-[node name="SettingsMenuButton" type="MenuButton" parent="HBoxContainer" unique_id=1391544492]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Settings"
-flat = false
-item_count = 2
-popup/item_0/text = "Change Environment"
-popup/item_0/id = 16
-popup/item_1/text = "Reset Environment"
-popup/item_1/id = 17
-
 [node name="ColorPickerWindow" parent="." unique_id=104473677 instance=ExtResource("5_mq2bi")]
 unique_name_in_owner = true
 visible = false
+transient = false
+always_on_top = true
+popup_window = false
 
-[node name="AtlasTexturePickerWindow" type="Window" parent="." unique_id=930027623]
+[node name="AtlasTexturePickerWindow" parent="." unique_id=1626093540 instance=ExtResource("5_xddcr")]
 unique_name_in_owner = true
-oversampling_override = 1.0
-initial_position = 4
-size = Vector2i(500, 500)
+
+[node name="MaterialEditorWindow" parent="." unique_id=878086544 instance=ExtResource("6_ujwmh")]
+unique_name_in_owner = true
 visible = false
-transient = true
-exclusive = true
-unresizable = true
-popup_window = true
+always_on_top = true
 minimize_disabled = true
 maximize_disabled = true
-min_size = Vector2i(500, 500)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="AtlasTexturePickerWindow" unique_id=1785447091]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="PanelContainer" type="PanelContainer" parent="AtlasTexturePickerWindow/VBoxContainer" unique_id=1238541987]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="AtlasTexturePicker" parent="AtlasTexturePickerWindow/VBoxContainer/PanelContainer" unique_id=1304973413 instance=ExtResource("6_oe4lp")]
+[node name="ContextMenu" type="PopupMenu" parent="." unique_id=691345967]
 unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-selection_max = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="AtlasTexturePickerWindow/VBoxContainer" unique_id=449328894]
-layout_mode = 2
-theme_override_constants/margin_left = 5
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
-
-[node name="HBoxContainer" type="HBoxContainer" parent="AtlasTexturePickerWindow/VBoxContainer/MarginContainer" unique_id=551828652]
-layout_mode = 2
-alignment = 1
-
-[node name="AtlasTexturePickerWindowOkButton" type="Button" parent="AtlasTexturePickerWindow/VBoxContainer/MarginContainer/HBoxContainer" unique_id=1148139760]
+[node name="FileDialog" type="FileDialog" parent="." unique_id=1564094209]
 unique_name_in_owner = true
-layout_mode = 2
-text = "Ok"
+title = "Open a File"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.tres,*.env;Godot Environment")
 
-[node name="AtlasTexturePickerWindowCancelButton" type="Button" parent="AtlasTexturePickerWindow/VBoxContainer/MarginContainer/HBoxContainer" unique_id=1662053981]
+[node name="AcceptDialog" type="AcceptDialog" parent="." unique_id=1102039548]
 unique_name_in_owner = true
-layout_mode = 2
-text = "Cancel"
+oversampling_override = 1.0
 
 [connection signal="close_requested" from="ColorPickerWindow" to="." method="_on_color_picker_window_close_requested"]
 [connection signal="color_canceled" from="ColorPickerWindow" to="." method="_on_color_picker_window_color_canceled"]

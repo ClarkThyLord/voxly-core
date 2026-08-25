@@ -1,5 +1,7 @@
 @tool
-extends Control
+extends VBoxContainer
+
+const MaterialEditorWindowScript := preload("res://addons/voxly-core/ui/material_editor_window/material_editor_window.gd")
 
 ## Emitted when the user edits the voxel (color, texture, etc).
 signal changed
@@ -10,10 +12,12 @@ enum ViewMode {
 	VIEW_3D,
 	VIEW_2D,
 }
+
 enum EditorMode {
 	EDITABLE,
 	VIEW_ONLY,
 }
+
 enum ContextAction {
 	COLOR_FACE,
 	TEXTURE_FACE,
@@ -33,43 +37,57 @@ enum ContextAction {
 	UNSELECT_ALL_FACES,
 	CHANGE_ENVIRONMENT,
 	RESET_ENVIRONMENT,
+	MATERIAL_FACE,
+	RESET_MATERIAL_FACE,
+	MATERIAL_SELECTED,
+	RESET_SELECTED_MATERIAL,
+	MATERIAL_BASE,
+	RESET_MATERIAL_BASE,
 }
 
 # Face button references
 @onready var _mode_2d: Control = %Mode2D
+
 @onready var _front_face = %FrontFace
+
 @onready var _left_face = %LeftFace
+
 @onready var _back_face = %BackFace
+
 @onready var _top_face = %TopFace
+
 @onready var _bottom_face = %BottomFace
+
 @onready var _right_face = %RightFace
+
 var _face_buttons: Dictionary[Vector3i, Button] = {}
 
 # 3D references
 @onready var _mode_3d: SubViewportContainer = %Mode3D
+
 @onready var _viewport: SubViewport = %SubViewport
+
 @onready var _voxel_preview: MeshInstance3D = %VoxelPreview
+
 @onready var _voxel_highlight: MeshInstance3D = %VoxelHighlight
+
 @onready var _camera_pivot: Node3D = %CameraPivot
+
 @onready var _camera: Camera3D = %Camera
 
 # UI
 @onready var _context_label: Label = %ContextLabel
+
 @onready var _mode_dropdown: OptionButton = %ModeOptionButton
+
+@onready var _select_menu: MenuButton = %SelectMenuButton
+
 @onready var _edit_menu: MenuButton = %EditMenuButton
+
 @onready var _settings_menu: MenuButton = %SettingsMenuButton
 
 @onready
 var _atlas_texture_picker_window: Window = %AtlasTexturePickerWindow
-
-@onready
-var _atlas_texture_picker = %AtlasTexturePicker
-
-@onready
-var _atlas_texture_picker_window_ok_button: Button = %AtlasTexturePickerWindowOkButton
-
-@onready
-var _atlas_texture_picker_window_cancel_button: Button = %AtlasTexturePickerWindowCancelButton
 
 # Exports
 @export var voxel_id: int = 0:
@@ -91,6 +109,10 @@ var _atlas_texture_picker_window_cancel_button: Button = %AtlasTexturePickerWind
 @export var default_env: Environment = null:
 	set = _set_default_env
 
+## Whether face selection is enabled. When false, the Select menu is hidden.
+@export var selection_enabled: bool = true:
+	set = _set_selection_enabled
+
 ## Minimum faces that must remain selected.
 @export var selection_min: int = 0
 
@@ -101,52 +123,96 @@ var _atlas_texture_picker_window_cancel_button: Button = %AtlasTexturePickerWind
 var camera_sensitivity: float = 1.0
 
 var selected_faces: Array[Vector3i] = []
+
 var _voxel: Voxel = null
+
 var _pending_update := false
+
 var _is_dragging := false
+
 var _last_hovered_face: Vector3i = Vector3i.ZERO
+
 var _context_menu_face: Vector3i = Vector3i.ZERO
+
 var _env_path: String = ""
-var _config_path: String = "user://voxel_editor_env.cfg"
+
+const DEFAULT_ENV_PATH := "res://addons/voxly-core/ui/voxel_editor/default_env.tres"
 
 @onready
 var _color_picker_window := %ColorPickerWindow
 
-var _context_menu: PopupMenu = null
+@onready
+var _material_editor_window := %MaterialEditorWindow
+
+@onready
+var _context_menu: PopupMenu = %ContextMenu
+
 var _color_faces: Array[Vector3i]
+
 var _color_callback: Callable
+
 var _atlas_target_faces: Array[Vector3i] = []
-var _atlas_warning_dialog: AcceptDialog = null
+
+@onready
+var _accept_dialog: AcceptDialog = %AcceptDialog
+
 var _highlight_material: StandardMaterial3D = null
+
 var _undo_redo: UndoRedo = null
+
 var _undo_redo_manager: EditorUndoRedoManager = null
-var _env_file_dialog: FileDialog = null
+
+@onready
+var _file_dialog: FileDialog = %FileDialog
 
 # Color picker state
 var _color_originals: Dictionary = {}
+
  # true if editing base_color, false if editing face overrides
 var _is_color_base_mode: bool = false
 
 # Atlas texture picker state
 var _atlas_originals: Dictionary = {}
+
 # true if editing base_texture_xy, false if editing face overrides
 var _is_atlas_base_mode: bool = false
 
+# Material editor state
+var _material_originals: Dictionary = {}
+
+var _material_target_faces: Array[Vector3i] = []
+
+var _is_material_base_mode: bool = false
+
 func set_undo_redo(undo_redo: UndoRedo) -> void:
 	_undo_redo = undo_redo
+	
+	if _material_editor_window:
+		_material_editor_window.set_undo_redo(undo_redo)
 
 func set_undo_redo_manager(manager: EditorUndoRedoManager) -> void:
 	_undo_redo_manager = manager
+	
+	if _material_editor_window:
+		_material_editor_window.set_undo_redo_manager(manager)
 
 func _set_voxel_set(new_set: VoxelSet) -> void:
 	if new_set == voxel_set:
 		return
 	if _voxel and _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.disconnect(_on_voxel_changed)
+	
 	voxel_set = new_set
+	_material_target_faces.clear()
+	_material_originals.clear()
 	_voxel = voxel_set.get_voxel(voxel_id) if voxel_set and voxel_id >= 0 else null
+	
 	if _voxel and not _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.connect(_on_voxel_changed)
+	
+	if _material_editor_window:
+		_material_editor_window.voxel_set = new_set
+	
 	if not is_inside_tree():
 		_pending_update = true
 	else:
@@ -156,11 +222,16 @@ func _set_voxel_set(new_set: VoxelSet) -> void:
 func _set_voxel_id(new_id: int) -> void:
 	if new_id == voxel_id:
 		return
+	
 	if _voxel and _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.disconnect(_on_voxel_changed)
+	
 	voxel_id = new_id
 	selected_faces.clear()
+	_material_target_faces.clear()
+	_material_originals.clear()
 	_voxel = voxel_set.get_voxel(voxel_id) if voxel_set and voxel_id >= 0 else null
+	
 	if _voxel and not _voxel.changed.is_connected(_on_voxel_changed):
 		_voxel.changed.connect(_on_voxel_changed)
 	if not is_inside_tree():
@@ -169,9 +240,18 @@ func _set_voxel_id(new_id: int) -> void:
 		_update_view()
 
 
+func _set_selection_enabled(value: bool) -> void:
+	if value == selection_enabled:
+		return
+	
+	selection_enabled = value
+	_update_toolbar_visibility()
+
+
 func _set_edit_mode(value: EditorMode) -> void:
 	if value == edit_mode:
 		return
+	
 	edit_mode = value
 	var editable := edit_mode == EditorMode.EDITABLE
 	
@@ -183,16 +263,23 @@ func _set_edit_mode(value: EditorMode) -> void:
 	# Clear selection when switching to view-only
 	if not editable and not selected_faces.is_empty():
 		_clear_face_selection()
+	
+	if _material_editor_window:
+		_material_editor_window.edit_mode = MaterialEditorWindowScript.EditMode.EDITABLE if editable else MaterialEditorWindowScript.EditMode.VIEW_ONLY
+	
+	_update_toolbar_visibility()
 
 func _set_default_view(value: ViewMode) -> void:
 	if value == default_view:
 		return
+	
 	default_view = value
 	_apply_default_view()
 
 func _set_default_env(new_env: Environment) -> void:
 	if default_env == new_env:
 		return
+	
 	default_env = new_env
 	if is_inside_tree():
 		if default_env:
@@ -203,6 +290,7 @@ func _set_default_env(new_env: Environment) -> void:
 func _apply_default_view() -> void:
 	if not _mode_dropdown:
 		return
+	
 	var idx := 0 if default_view == ViewMode.VIEW_3D else 1
 	_mode_dropdown.selected = idx
 	_on_mode_changed(idx)
@@ -217,9 +305,22 @@ func _ready() -> void:
 		Vector3i.DOWN: _bottom_face,
 		Vector3i.RIGHT: _right_face,
 	}
+	
 	for face in _face_buttons:
 		var btn = _face_buttons[face]
-		btn.display_face = face
+		# Map Vector3i face to DisplayFace enum
+		if face == Vector3i.FORWARD:
+			btn.display_face = btn.DisplayFace.FRONT
+		elif face == Vector3i.BACK:
+			btn.display_face = btn.DisplayFace.BACK
+		elif face == Vector3i.LEFT:
+			btn.display_face = btn.DisplayFace.LEFT
+		elif face == Vector3i.RIGHT:
+			btn.display_face = btn.DisplayFace.RIGHT
+		elif face == Vector3i.UP:
+			btn.display_face = btn.DisplayFace.TOP
+		elif face == Vector3i.DOWN:
+			btn.display_face = btn.DisplayFace.BOTTOM
 		btn.toggle_mode = true
 		btn.mouse_entered.connect(_on_face_btn_mouse_entered.bind(face))
 		btn.mouse_exited.connect(_on_face_btn_mouse_exited.bind(face))
@@ -233,7 +334,11 @@ func _ready() -> void:
 	# Mode dropdown
 	_mode_dropdown.item_selected.connect(_on_mode_changed)
 	
-	# Edit menu — rebuilt on open with current context
+	# Select menu
+	_select_menu.get_popup().about_to_popup.connect(_populate_select_menu)
+	_select_menu.get_popup().id_pressed.connect(_on_context_menu_action)
+	
+	# Edit menu
 	_edit_menu.get_popup().about_to_popup.connect(_populate_edit_menu)
 	_edit_menu.get_popup().id_pressed.connect(_on_context_menu_action)
 	
@@ -254,28 +359,28 @@ func _ready() -> void:
 		_load_env_config()
 	
 	# Context menu
-	_context_menu = PopupMenu.new()
-	_context_menu.name = "ContextMenu"
 	_context_menu.id_pressed.connect(_on_context_menu_action)
-	add_child(_context_menu)
 	
-	# Env file dialog
-	_env_file_dialog = FileDialog.new()
-	_env_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	_env_file_dialog.add_filter("*.tres,*.env", "Godot Environment")
-	_env_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	_env_file_dialog.file_selected.connect(_on_env_file_selected)
-	add_child(_env_file_dialog)
-	
-	# Atlas warning dialog
-	_atlas_warning_dialog = AcceptDialog.new()
-	_atlas_warning_dialog.title = "Texture Atlas Not Ready"
-	_atlas_warning_dialog.ok_button_text = "Ok"
-	add_child(_atlas_warning_dialog)
+	## Env file dialog
+	_file_dialog.file_selected.connect(_on_env_file_selected)
 	
 	# Atlas picker window
-	_atlas_texture_picker_window_ok_button.pressed.connect(_on_atlas_ok)
-	_atlas_texture_picker_window_cancel_button.pressed.connect(_on_atlas_cancel)
+	_atlas_texture_picker_window.confirmed.connect(_on_atlas_ok)
+	_atlas_texture_picker_window.canceled.connect(_on_atlas_cancel)
+	
+	# Material editor window
+	_material_editor_window.setup("Material Editor", voxel_set, "", MaterialEditorWindowScript.EditMode.EDITABLE)
+	_material_editor_window.changed.connect(_on_material_editor_window_changed)
+	_material_editor_window.material_id_changed.connect(_on_material_editor_material_id_changed)
+	_material_editor_window.confirmed.connect(_on_material_editor_session_finished)
+	_material_editor_window.canceled.connect(_on_material_editor_session_finished)
+	if _undo_redo:
+		_material_editor_window.set_undo_redo(_undo_redo)
+	if _undo_redo_manager:
+		_material_editor_window.set_undo_redo_manager(_undo_redo_manager)
+	
+	# Apply toolbar visibility
+	_update_toolbar_visibility()
 	
 	# Apply default view mode
 	_apply_default_view()
@@ -386,6 +491,10 @@ func _update_selection_overlay() -> void:
 	for face in selected_faces:
 		mesher.add_face(Vector3i.ZERO, voxel_id, face)
 	var mesh := mesher.commit()
+	# Center the mesher-built mesh (grid-corner 0..1 layout) so it sits
+	# centered at the voxel origin like VoxelPreview.generate() now returns.
+	if mesh:
+		VoxelPreview.translate_mesh(mesh, Vector3(-0.5, -0.5, -0.5))
 	_voxel_highlight.mesh = mesh
 	
 	if mesh and mesh.get_surface_count() > 0:
@@ -398,7 +507,7 @@ func _update_context_label() -> void:
 		context += "Hovering: " + Voxel.FACE_NAMES[_last_hovered_face]
 	if not selected_faces.is_empty():
 		if not context.is_empty():
-			context += " | "
+			context += "\n"
 		context += "Selected: "
 		var selected_faces_context = ""
 		for selected_face in selected_faces:
@@ -486,7 +595,6 @@ func _pick_face() -> void:
 
 
 func _on_2d_gui_input(event: InputEvent) -> void:
-	"""Handle right-click on empty area in 2D view."""
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		_show_context_menu_at(get_screen_position() + event.position, Vector3i.ZERO)
 
@@ -500,12 +608,13 @@ func _on_face_right_clicked(_id: int, at_position: Vector2, face: Vector3i) -> v
 
 func _show_context_menu_at(position: Vector2, face_hint: Vector3i = Vector3i.ZERO) -> void:
 	var face := face_hint if face_hint != Vector3i.ZERO else _last_hovered_face
-
+	
 	_last_hovered_face = Vector3i.ZERO
 	_context_menu_face = face
 	_update_context_label()
 	
 	_context_menu.clear()
+	var is_editable := edit_mode == EditorMode.EDITABLE
 	
 	if face != Vector3i.ZERO:
 		if face in selected_faces:
@@ -516,33 +625,85 @@ func _show_context_menu_at(position: Vector2, face_hint: Vector3i = Vector3i.ZER
 		_context_menu.add_item("Select All (%d)" % (6 - selected_faces.size()), ContextAction.SELECT_ALL_FACES)
 	if not selected_faces.is_empty():
 		_context_menu.add_item("Unselect All (%d)" % selected_faces.size(), ContextAction.UNSELECT_ALL_FACES)
-	_context_menu.add_separator()
 	
-	if face != Vector3i.ZERO:
-		var face_str := Voxel.FACE_NAMES[face]
-		_context_menu.add_item("Color %s" % face_str, ContextAction.COLOR_FACE)
-		_context_menu.add_item("Texture %s" % face_str, ContextAction.TEXTURE_FACE)
-		if _voxel.has_face_color(face, false):
-			_context_menu.add_item("Reset %s Color" % face_str, ContextAction.RESET_FACE_COLOR)
-		if _voxel.has_face_texture_xy(face, false):
-			_context_menu.add_item("Reset %s Texture" % face_str, ContextAction.RESET_FACE_TEXTURE_XY)
+	# Only show edit options when in EDITABLE mode
+	if is_editable:
 		_context_menu.add_separator()
-	
-	if not selected_faces.is_empty():
-		_context_menu.add_item("Color Selected (%d)" % selected_faces.size(), ContextAction.COLOR_SELECTED)
-		_context_menu.add_item("Texture Selected (%d)" % selected_faces.size(), ContextAction.TEXTURE_SELECTED)
-		_context_menu.add_item("Reset Selected (%d) Color" % selected_faces.size(), ContextAction.RESET_SELECTED_COLOR)
-		_context_menu.add_item("Reset Selected (%d) Texture" % selected_faces.size(), ContextAction.RESET_SELECTED_TEXTURE)
-		_context_menu.add_separator()
-	
-	_context_menu.add_item("Color Voxel", ContextAction.COLOR_BASE)
-	_context_menu.add_item("Texture Voxel", ContextAction.TEXTURE_BASE)
-	if _voxel.has_base_color():
-		_context_menu.add_item("Reset Base Color", ContextAction.RESET_BASE_COLOR)
-	if _voxel.has_base_texture_xy():
-		_context_menu.add_item("Reset Base Texture", ContextAction.RESET_BASE_TEXTURE)
+		
+		if face != Vector3i.ZERO:
+			var face_str := Voxel.FACE_NAMES[face]
+			_context_menu.add_item("Color %s" % face_str, ContextAction.COLOR_FACE)
+			_context_menu.add_item("Texture %s" % face_str, ContextAction.TEXTURE_FACE)
+			_context_menu.add_item("Material %s" % face_str, ContextAction.MATERIAL_FACE)
+			if _voxel.has_face_color(face, false):
+				_context_menu.add_item("Reset %s Color" % face_str, ContextAction.RESET_FACE_COLOR)
+			if _voxel.has_face_texture_xy(face, false):
+				_context_menu.add_item("Reset %s Texture" % face_str, ContextAction.RESET_FACE_TEXTURE_XY)
+			if _voxel.has_face_material_id(face, false):
+				_context_menu.add_item("Reset %s Material" % face_str, ContextAction.RESET_MATERIAL_FACE)
+			_context_menu.add_separator()
+		
+		if not selected_faces.is_empty():
+			_context_menu.add_item("Color Selected (%d)" % selected_faces.size(), ContextAction.COLOR_SELECTED)
+			_context_menu.add_item("Texture Selected (%d)" % selected_faces.size(), ContextAction.TEXTURE_SELECTED)
+			_context_menu.add_item("Material Selected (%d)" % selected_faces.size(), ContextAction.MATERIAL_SELECTED)
+			var has_face_color_override := false
+			var has_face_tex_override := false
+			var has_face_mat_override := false
+			for sf in selected_faces:
+				if _voxel.has_face_color(sf, false):
+					has_face_color_override = true
+				if _voxel.has_face_texture_xy(sf, false):
+					has_face_tex_override = true
+				if _voxel.has_face_material_id(sf, false):
+					has_face_mat_override = true
+			if has_face_color_override:
+				_context_menu.add_item("Reset Selected (%d) Color" % selected_faces.size(), ContextAction.RESET_SELECTED_COLOR)
+			if has_face_tex_override:
+				_context_menu.add_item("Reset Selected (%d) Texture" % selected_faces.size(), ContextAction.RESET_SELECTED_TEXTURE)
+			if has_face_mat_override:
+				_context_menu.add_item("Reset Selected (%d) Material" % selected_faces.size(), ContextAction.RESET_SELECTED_MATERIAL)
+			_context_menu.add_separator()
+		
+		_context_menu.add_item("Color Base Voxel", ContextAction.COLOR_BASE)
+		_context_menu.add_item("Texture Base Voxel", ContextAction.TEXTURE_BASE)
+		_context_menu.add_item("Material Base Voxel", ContextAction.MATERIAL_BASE)
+		if _voxel.has_base_color():
+			_context_menu.add_item("Reset Base Color", ContextAction.RESET_BASE_COLOR)
+		if _voxel.has_base_texture_xy():
+			_context_menu.add_item("Reset Base Texture", ContextAction.RESET_BASE_TEXTURE)
+		if _voxel.has_base_material_id():
+			_context_menu.add_item("Reset Base Material", ContextAction.RESET_MATERIAL_BASE)
 	
 	_context_menu.popup(Rect2i(position, Vector2i.ZERO))
+
+
+func _populate_select_menu() -> void:
+	## Populates the Select menu with selection-related actions.
+	var popup := _select_menu.get_popup()
+	popup.clear()
+	
+	if not _voxel:
+		return
+	
+	var can_select_more := selected_faces.size() < 6
+	var has_selection := not selected_faces.is_empty()
+	
+	if can_select_more:
+		popup.add_item("Select All (%d)" % (6 - selected_faces.size()), ContextAction.SELECT_ALL_FACES)
+	if has_selection:
+		popup.add_item("Unselect All (%d)" % selected_faces.size(), ContextAction.UNSELECT_ALL_FACES)
+
+
+func _update_toolbar_visibility() -> void:
+	## Shows/hides the Select and Edit menu buttons based on current settings.
+	var can_select := selection_enabled and (selection_max == -1 or selection_max > 0)
+	if _select_menu:
+		_select_menu.visible = can_select
+	
+	var is_editable := edit_mode == EditorMode.EDITABLE
+	if _edit_menu:
+		_edit_menu.visible = is_editable
 
 
 func _populate_edit_menu() -> void:
@@ -552,25 +713,54 @@ func _populate_edit_menu() -> void:
 	if not _voxel:
 		return
 	
-	# Selection-level actions
-	if selected_faces.size() < 6:
-		popup.add_item("Select All (%d)" % (6 - selected_faces.size()), ContextAction.SELECT_ALL_FACES)
+	# Selected-faces actions
 	if not selected_faces.is_empty():
-		popup.add_item("Unselect All (%d)" % selected_faces.size(), ContextAction.UNSELECT_ALL_FACES)
-		popup.add_separator()
 		popup.add_item("Color Selected (%d)" % selected_faces.size(), ContextAction.COLOR_SELECTED)
 		popup.add_item("Texture Selected (%d)" % selected_faces.size(), ContextAction.TEXTURE_SELECTED)
-		popup.add_item("Reset Selected (%d) Color" % selected_faces.size(), ContextAction.RESET_SELECTED_COLOR)
-		popup.add_item("Reset Selected (%d) Texture" % selected_faces.size(), ContextAction.RESET_SELECTED_TEXTURE)
+		popup.add_item("Material Selected (%d)" % selected_faces.size(), ContextAction.MATERIAL_SELECTED)
+		var has_face_color_override := false
+		var has_face_tex_override := false
+		var has_face_mat_override := false
+		for sf in selected_faces:
+			if _voxel.has_face_color(sf, false):
+				has_face_color_override = true
+			if _voxel.has_face_texture_xy(sf, false):
+				has_face_tex_override = true
+			if _voxel.has_face_material_id(sf, false):
+				has_face_mat_override = true
+		if has_face_color_override:
+			popup.add_item("Reset Selected (%d) Color" % selected_faces.size(), ContextAction.RESET_SELECTED_COLOR)
+		if has_face_tex_override:
+			popup.add_item("Reset Selected (%d) Texture" % selected_faces.size(), ContextAction.RESET_SELECTED_TEXTURE)
+		if has_face_mat_override:
+			popup.add_item("Reset Selected (%d) Material" % selected_faces.size(), ContextAction.RESET_SELECTED_MATERIAL)
+		if has_face_color_override or has_face_tex_override or has_face_mat_override:
+			popup.add_separator()
 	
 	# Voxel-level actions
-	popup.add_separator()
-	popup.add_item("Color Voxel", ContextAction.COLOR_BASE)
-	popup.add_item("Texture Voxel", ContextAction.TEXTURE_BASE)
+	popup.add_item("Color Base Voxel", ContextAction.COLOR_BASE)
+	popup.add_item("Texture Base Voxel", ContextAction.TEXTURE_BASE)
+	popup.add_item("Material Base Voxel", ContextAction.MATERIAL_BASE)
 	if _voxel.has_base_color():
 		popup.add_item("Reset Base Color", ContextAction.RESET_BASE_COLOR)
 	if _voxel.has_base_texture_xy():
 		popup.add_item("Reset Base Texture", ContextAction.RESET_BASE_TEXTURE)
+	if _voxel.has_base_material_id():
+		popup.add_item("Reset Base Material", ContextAction.RESET_MATERIAL_BASE)
+	
+	# Face-level editing (for the first hovered/context face)
+	if _context_menu_face != Vector3i.ZERO:
+		popup.add_separator()
+		var face_str := Voxel.FACE_NAMES[_context_menu_face]
+		popup.add_item("Color %s" % face_str, ContextAction.COLOR_FACE)
+		popup.add_item("Texture %s" % face_str, ContextAction.TEXTURE_FACE)
+		popup.add_item("Material %s" % face_str, ContextAction.MATERIAL_FACE)
+		if _voxel.has_face_color(_context_menu_face, false):
+			popup.add_item("Reset %s Color" % face_str, ContextAction.RESET_FACE_COLOR)
+		if _voxel.has_face_texture_xy(_context_menu_face, false):
+			popup.add_item("Reset %s Texture" % face_str, ContextAction.RESET_FACE_TEXTURE_XY)
+		if _voxel.has_face_material_id(_context_menu_face, false):
+			popup.add_item("Reset %s Material" % face_str, ContextAction.RESET_MATERIAL_FACE)
 
 
 func _on_context_menu_action(id: int) -> void:
@@ -609,7 +799,7 @@ func _on_context_menu_action(id: int) -> void:
 		ContextAction.RESET_FACE_COLOR:
 			if _context_menu_face != Vector3i.ZERO:
 				var face := _context_menu_face
-				var old_color := _voxel.get_face_color(face)
+				var old_color := _voxel.get_face_color(face, false)
 				if _create_undo_action("Reset %s Voxel Face Color" % Voxel.FACE_NAMES[face], voxel_set):
 					if _undo_redo_manager:
 						_undo_redo_manager.add_do_method(_voxel, "set_face_color", face, Voxel.UNSET_COLOR)
@@ -644,7 +834,7 @@ func _on_context_menu_action(id: int) -> void:
 			
 		ContextAction.COLOR_SELECTED:
 			if not selected_faces.is_empty():
-				var current := _voxel.get_face_color(selected_faces[0])
+				var current := _voxel.get_face_color(selected_faces[0], false)
 				_is_color_base_mode = false
 				_open_color_picker("Color Selected", current, selected_faces)
 			
@@ -656,7 +846,7 @@ func _on_context_menu_action(id: int) -> void:
 			if not selected_faces.is_empty():
 				if _create_undo_action("Reset %d Voxel Faces Color" % selected_faces.size(), voxel_set):
 					for f in selected_faces:
-						var old_c := _voxel.get_face_color(f)
+						var old_c := _voxel.get_face_color(f, false)
 						if _undo_redo_manager:
 							_undo_redo_manager.add_do_method(_voxel, "set_face_color", f, Voxel.UNSET_COLOR)
 							_undo_redo_manager.add_undo_method(_voxel, "set_face_color", f, old_c)
@@ -670,7 +860,7 @@ func _on_context_menu_action(id: int) -> void:
 				changed.emit()
 				_update_view()
 				_notify_voxel_set_changed()
-			
+		
 		ContextAction.RESET_SELECTED_TEXTURE:
 			if not selected_faces.is_empty():
 				if _create_undo_action("Reset %d Voxel Faces Texture" % selected_faces.size(), voxel_set):
@@ -689,14 +879,14 @@ func _on_context_menu_action(id: int) -> void:
 				changed.emit()
 				_update_view()
 				_notify_voxel_set_changed()
-			
+		
 		ContextAction.COLOR_BASE:
 			_is_color_base_mode = true
 			_open_color_picker("Change Base Color", _voxel.base_color, [])
 		
 		ContextAction.TEXTURE_BASE:
 			_is_atlas_base_mode = true
-			_open_atlas_picker([], "Change Base Texture")
+			_open_atlas_picker([Vector3i.ZERO], "Change Base Texture")
 		
 		ContextAction.RESET_BASE_COLOR:
 			if _create_undo_action("Reset Voxel Base Color", voxel_set):
@@ -730,8 +920,74 @@ func _on_context_menu_action(id: int) -> void:
 			_update_view()
 			_notify_voxel_set_changed()
 		
+		ContextAction.MATERIAL_FACE:
+			if _context_menu_face != Vector3i.ZERO:
+				_is_material_base_mode = false
+				_open_material_editor([_context_menu_face])
+		
+		ContextAction.MATERIAL_SELECTED:
+			_is_material_base_mode = false
+			_open_material_editor(selected_faces)
+		
+		ContextAction.MATERIAL_BASE:
+			_is_material_base_mode = true
+			_open_material_editor([])
+		
+		ContextAction.RESET_MATERIAL_FACE:
+			if _context_menu_face != Vector3i.ZERO:
+				var face := _context_menu_face
+				var old_material := _voxel.get_face_material_id(face, false)
+				if _create_undo_action("Reset %s Voxel Face Material" % Voxel.FACE_NAMES[face], voxel_set):
+					if _undo_redo_manager:
+						_undo_redo_manager.add_do_method(_voxel, "set_face_material_id", face, Voxel.UNSET_MATERIAL_ID)
+						_undo_redo_manager.add_undo_method(_voxel, "set_face_material_id", face, old_material)
+					else:
+						_undo_redo.add_do_method(_voxel.set_face_material_id.bind(face, Voxel.UNSET_MATERIAL_ID))
+						_undo_redo.add_undo_method(_voxel.set_face_material_id.bind(face, old_material))
+					_commit_undo_action()
+				else:
+					_voxel.set_face_material_id(face, Voxel.UNSET_MATERIAL_ID)
+				changed.emit()
+				_update_view()
+				_notify_voxel_set_changed()
+		
+		ContextAction.RESET_SELECTED_MATERIAL:
+			if not selected_faces.is_empty():
+				if _create_undo_action("Reset %d Voxel Faces Material" % selected_faces.size(), voxel_set):
+					for f in selected_faces:
+						var old_m := _voxel.get_face_material_id(f, false)
+						if _undo_redo_manager:
+							_undo_redo_manager.add_do_method(_voxel, "set_face_material_id", f, Voxel.UNSET_MATERIAL_ID)
+							_undo_redo_manager.add_undo_method(_voxel, "set_face_material_id", f, old_m)
+						else:
+							_undo_redo.add_do_method(_voxel.set_face_material_id.bind(f, Voxel.UNSET_MATERIAL_ID))
+							_undo_redo.add_undo_method(_voxel.set_face_material_id.bind(f, old_m))
+					_commit_undo_action()
+				else:
+					for selected_face in selected_faces:
+						_voxel.set_face_material_id(selected_face, Voxel.UNSET_MATERIAL_ID)
+				changed.emit()
+				_update_view()
+				_notify_voxel_set_changed()
+		
+		ContextAction.RESET_MATERIAL_BASE:
+			if _create_undo_action("Reset Voxel Base Material", voxel_set):
+				var old_base_material := _voxel.base_material_id
+				if _undo_redo_manager:
+					_undo_redo_manager.add_do_property(_voxel, "base_material_id", Voxel.UNSET_MATERIAL_ID)
+					_undo_redo_manager.add_undo_property(_voxel, "base_material_id", old_base_material)
+				else:
+					_undo_redo.add_do_property(_voxel, "base_material_id", Voxel.UNSET_MATERIAL_ID)
+					_undo_redo.add_undo_property(_voxel, "base_material_id", old_base_material)
+				_commit_undo_action()
+			else:
+				_voxel.base_material_id = Voxel.UNSET_MATERIAL_ID
+			changed.emit()
+			_update_view()
+			_notify_voxel_set_changed()
+		
 		ContextAction.CHANGE_ENVIRONMENT:
-			_env_file_dialog.popup_centered_clamped(Vector2i(300, 250))
+			_file_dialog.popup_centered_clamped(Vector2i(300, 250))
 		
 		ContextAction.RESET_ENVIRONMENT:
 			_reset_environment()
@@ -747,7 +1003,7 @@ func _open_color_picker(title: String, current: Color, color_faces: Array[Vector
 		_color_originals["base"] = _voxel.base_color
 	else:
 		for face in color_faces:
-			_color_originals[face] = _voxel.get_face_color(face)
+			_color_originals[face] = _voxel.get_face_color(face, false)
 	
 	_color_picker_window.title = title
 	if current.a == 0:
@@ -850,7 +1106,7 @@ func _apply_faces_color(faces: Array[Vector3i], new_color: Color) -> void:
 		return
 	if _create_undo_action("Color %d Voxel Faces" % faces.size(), voxel_set):
 		for face in faces:
-			var old_color := _color_originals.get(face, _voxel.get_face_color(face))
+			var old_color := _color_originals.get(face, _voxel.get_face_color(face, false))
 			if _undo_redo_manager:
 				_undo_redo_manager.add_do_method(_voxel, "set_face_color", face, new_color)
 				_undo_redo_manager.add_undo_method(_voxel, "set_face_color", face, old_color)
@@ -868,7 +1124,7 @@ func _apply_faces_color(faces: Array[Vector3i], new_color: Color) -> void:
 	_notify_voxel_set_changed()
 
 func _show_texture_warning() -> void:
-	if not _atlas_warning_dialog or not voxel_set:
+	if not _accept_dialog or not voxel_set:
 		return
 	
 	var missing: PackedStringArray = []
@@ -878,8 +1134,9 @@ func _show_texture_warning() -> void:
 		missing.append("- A cell size (width x height > 0)")
 	
 	var msg: String = "Texture atlas is not ready.\n\nThe VoxelSet needs:\n" + "\n".join(missing)
-	_atlas_warning_dialog.dialog_text = msg
-	_atlas_warning_dialog.popup_centered_clamped()
+	_accept_dialog.title = "Texture Atlas Not Ready"
+	_accept_dialog.dialog_text = msg
+	_accept_dialog.popup_centered_clamped()
 
 
 func _open_atlas_picker(target_faces: Array[Vector3i], context_name: String) -> void:
@@ -901,27 +1158,22 @@ func _open_atlas_picker(target_faces: Array[Vector3i], context_name: String) -> 
 		for face in target_faces:
 			_atlas_originals[face] = _voxel.get_face_texture_xy(face)
 	
-	_atlas_texture_picker.voxel_id = voxel_id
-	_atlas_texture_picker.voxel_set = voxel_set
-	_atlas_texture_picker.reference_faces = target_faces
-	_atlas_texture_picker.selected_texture_xy = [] as Array[Vector2i]
+	var picker = _atlas_texture_picker_window.get_atlas_texture_picker()
+	picker.voxel_id = voxel_id
+	picker.voxel_set = voxel_set
+	picker.reference_faces = target_faces
+	picker.selected_texture_xy = [] as Array[Vector2i]
 	
 	# Connect live preview
-	if _atlas_texture_picker.texture_xy_selected.is_connected(_on_atlas_preview):
-		_atlas_texture_picker.texture_xy_selected.disconnect(_on_atlas_preview)
-	if _atlas_texture_picker.texture_xy_unselected.is_connected(_on_atlas_preview):
-		_atlas_texture_picker.texture_xy_unselected.disconnect(_on_atlas_preview)
-	_atlas_texture_picker.texture_xy_selected.connect(_on_atlas_preview)
-	_atlas_texture_picker.texture_xy_unselected.connect(_on_atlas_preview)
+	if picker.texture_xy_selected.is_connected(_on_atlas_preview):
+		picker.texture_xy_selected.disconnect(_on_atlas_preview)
+	if picker.texture_xy_unselected.is_connected(_on_atlas_preview):
+		picker.texture_xy_unselected.disconnect(_on_atlas_preview)
+	picker.texture_xy_selected.connect(_on_atlas_preview)
+	picker.texture_xy_unselected.connect(_on_atlas_preview)
 	
-	_atlas_texture_picker_window.title = context_name
-	if _is_atlas_base_mode:
-		_atlas_texture_picker_window_ok_button.text = "Set Base Texture"
-	elif target_faces.size() == 1:
-		_atlas_texture_picker_window_ok_button.text = "Set %s Texture" % Voxel.FACE_NAMES[target_faces[0]]
-	else:
-		_atlas_texture_picker_window_ok_button.text = "Set Texture (%d faces)" % target_faces.size()
-	_atlas_texture_picker_window_cancel_button.text = "Cancel"
+	var ok_text := "Set Base Texture" if _is_atlas_base_mode else ("Set %s Texture" % Voxel.FACE_NAMES[target_faces[0]] if target_faces.size() == 1 else "Set Texture (%d faces)" % target_faces.size())
+	_atlas_texture_picker_window.setup(context_name, ok_text, "Cancel")
 	
 	_atlas_texture_picker_window.popup_centered_clamped()
 
@@ -929,7 +1181,7 @@ func _open_atlas_picker(target_faces: Array[Vector3i], context_name: String) -> 
 func _on_atlas_preview(_uv: Vector2i) -> void:
 	if not _voxel:
 		return
-	var uvs = _atlas_texture_picker.get_selected_texture_xy()
+	var uvs = _atlas_texture_picker_window.get_atlas_texture_picker().get_selected_texture_xy()
 	if uvs.is_empty():
 		return
 	var uv = uvs[0]
@@ -944,13 +1196,14 @@ func _on_atlas_preview(_uv: Vector2i) -> void:
 func _on_atlas_ok() -> void:
 	if not _voxel:
 		return
+	var picker = _atlas_texture_picker_window.get_atlas_texture_picker()
 	# Disconnect live preview
-	if _atlas_texture_picker.texture_xy_selected.is_connected(_on_atlas_preview):
-		_atlas_texture_picker.texture_xy_selected.disconnect(_on_atlas_preview)
-	if _atlas_texture_picker.texture_xy_unselected.is_connected(_on_atlas_preview):
-		_atlas_texture_picker.texture_xy_unselected.disconnect(_on_atlas_preview)
+	if picker.texture_xy_selected.is_connected(_on_atlas_preview):
+		picker.texture_xy_selected.disconnect(_on_atlas_preview)
+	if picker.texture_xy_unselected.is_connected(_on_atlas_preview):
+		picker.texture_xy_unselected.disconnect(_on_atlas_preview)
 	
-	var uvs = _atlas_texture_picker.get_selected_texture_xy()
+	var uvs = picker.get_selected_texture_xy()
 	if uvs.is_empty():
 		return
 	var uv = uvs[0]
@@ -982,7 +1235,6 @@ func _on_atlas_ok() -> void:
 			for face in _atlas_target_faces:
 				_voxel.set_face_texture_xy(face, uv)
 	
-	_atlas_texture_picker_window.hide()
 	changed.emit()
 	_update_view()
 	for face in _atlas_target_faces:
@@ -991,11 +1243,12 @@ func _on_atlas_ok() -> void:
 
 
 func _on_atlas_cancel() -> void:
+	var picker = _atlas_texture_picker_window.get_atlas_texture_picker()
 	# Disconnect live preview
-	if _atlas_texture_picker.texture_xy_selected.is_connected(_on_atlas_preview):
-		_atlas_texture_picker.texture_xy_selected.disconnect(_on_atlas_preview)
-	if _atlas_texture_picker.texture_xy_unselected.is_connected(_on_atlas_preview):
-		_atlas_texture_picker.texture_xy_unselected.disconnect(_on_atlas_preview)
+	if picker.texture_xy_selected.is_connected(_on_atlas_preview):
+		picker.texture_xy_selected.disconnect(_on_atlas_preview)
+	if picker.texture_xy_unselected.is_connected(_on_atlas_preview):
+		picker.texture_xy_unselected.disconnect(_on_atlas_preview)
 	
 	# Restore original textures
 	if _voxel:
@@ -1006,12 +1259,11 @@ func _on_atlas_cancel() -> void:
 				if face is Vector3i:
 					_voxel.set_face_texture_xy(face, _atlas_originals[face])
 		_update_view()
-	_atlas_texture_picker_window.hide()
 
 func _on_settings_action(id: int) -> void:
 	match id:
 		ContextAction.CHANGE_ENVIRONMENT:
-			_env_file_dialog.popup_centered()
+			_file_dialog.popup_centered()
 		ContextAction.RESET_ENVIRONMENT:
 			_reset_environment()
 
@@ -1042,27 +1294,28 @@ func _reset_environment() -> void:
 	_setup_3d_default_environment()
 
 func _setup_3d_default_environment() -> void:
-	var env := Environment.new()
-	env.background_mode = Environment.BG_CLEAR_COLOR
-	env.ambient_light_color = Color(0.25, 0.25, 0.3)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	_set_environment(env)
+	var env := load(DEFAULT_ENV_PATH) as Environment
+	if env:
+		_set_environment(env)
+	else:
+		# Fallback in case the default .tres is missing.
+		var fallback := Environment.new()
+		fallback.background_mode = Environment.BG_CLEAR_COLOR
+		fallback.ambient_light_color = Color(0.25, 0.25, 0.3)
+		fallback.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		_set_environment(fallback)
 
 func _load_env_config() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(_config_path) == OK:
-		_env_path = cfg.get_value("env", "path", "")
-		if not _env_path.is_empty():
-			var env := load(_env_path)
-			if env is Environment:
-				_set_environment(env)
-				return
+	_env_path = VoxlyConfig.get_value("voxel_editor", "voxel_editor", "env_path", "")
+	if not _env_path.is_empty():
+		var env := load(_env_path)
+		if env is Environment:
+			_set_environment(env)
+			return
 	_setup_3d_default_environment()
 
 func _save_env_config() -> void:
-	var cfg := ConfigFile.new()
-	cfg.set_value("env", "path", _env_path)
-	cfg.save(_config_path)
+	VoxlyConfig.set_value("voxel_editor", "voxel_editor", "env_path", _env_path)
 
 func _on_color_picker_window_color_canceled():
 	_cancel_color_picker()
@@ -1072,3 +1325,88 @@ func _on_color_picker_window_color_confirmed(color):
 
 func _on_color_picker_window_close_requested():
 	_cancel_color_picker()
+
+func _open_material_editor(target_faces: Array[Vector3i]) -> void:
+	if not _voxel:
+		return
+	_material_target_faces = target_faces
+	_material_originals.clear()
+	var current_id := ""
+	if _is_material_base_mode:
+		current_id = _voxel.get_base_material_id()
+		_material_originals["base"] = current_id
+	else:
+		for face in target_faces:
+			var fid := _voxel.get_face_material_id(face, false)
+			_material_originals[face] = fid
+			if current_id.is_empty() and not fid.is_empty():
+				current_id = fid
+	_material_editor_window.voxel_set = voxel_set
+	_material_editor_window.edit_mode = MaterialEditorWindowScript.EditMode.EDITABLE
+	_material_editor_window.material_id = current_id
+	_material_editor_window.picker_allow_unset = true
+	_material_editor_window.popup_centered_clamped()
+
+func _on_material_editor_window_changed() -> void:
+	_update_view()
+	changed.emit()
+	_notify_voxel_set_changed()
+
+func _on_material_editor_material_id_changed(new_id: String) -> void:
+	if not _voxel:
+		return
+	if _material_target_faces.is_empty() and not _is_material_base_mode:
+		return
+	if _is_material_base_mode:
+		_voxel.base_material_id = new_id
+	else:
+		for face in _material_target_faces:
+			_voxel.set_face_material_id(face, new_id)
+	_update_view()
+
+func _on_material_editor_session_finished() -> void:
+	if not _voxel:
+		return
+	if _material_target_faces.is_empty() and not _is_material_base_mode:
+		return
+	
+	if _is_material_base_mode:
+		var current_id := _voxel.get_base_material_id()
+		var original_id: String = _material_originals.get("base", "")
+		if current_id != original_id:
+			if _create_undo_action("Edit Voxel Base Material", voxel_set):
+				if _undo_redo_manager:
+					_undo_redo_manager.add_do_property(_voxel, "base_material_id", current_id)
+					_undo_redo_manager.add_undo_property(_voxel, "base_material_id", original_id)
+				else:
+					_undo_redo.add_do_property(_voxel, "base_material_id", current_id)
+					_undo_redo.add_undo_property(_voxel, "base_material_id", original_id)
+				_commit_undo_action()
+		changed.emit()
+		_update_view()
+		_notify_voxel_set_changed()
+	else:
+		var action_name := "Edit %d Voxel Faces Material" % _material_target_faces.size()
+		if _material_target_faces.size() == 1:
+			action_name = "Edit %s Material" % Voxel.FACE_NAMES[_material_target_faces[0]]
+		if _create_undo_action(action_name, voxel_set):
+			for face in _material_target_faces:
+				var current := _voxel.get_face_material_id(face, false)
+				var original: String = _material_originals.get(face, "")
+				if current == original:
+					continue
+				if _undo_redo_manager:
+					_undo_redo_manager.add_do_method(_voxel, "set_face_material_id", face, current)
+					_undo_redo_manager.add_undo_method(_voxel, "set_face_material_id", face, original)
+				else:
+					_undo_redo.add_do_method(_voxel.set_face_material_id.bind(face, current))
+					_undo_redo.add_undo_method(_voxel.set_face_material_id.bind(face, original))
+			_commit_undo_action()
+		changed.emit()
+		_update_view()
+		for face in _material_target_faces:
+			face_edited.emit(voxel_id, face)
+		_notify_voxel_set_changed()
+	
+	_material_target_faces.clear()
+	_material_originals.clear()

@@ -1,0 +1,16 @@
+[gd_resource type="Environment" format=3 uid="uid://n0jkl2bvsygf"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_bd0ut"]
+
+[sub_resource type="Sky" id="Sky_235nm"]
+sky_material = SubResource("ProceduralSkyMaterial_bd0ut")
+
+[resource]
+background_mode = 2
+sky = SubResource("Sky_235nm")
+ssr_enabled = true
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_enabled = true
+glow_enabled = true
+glow_intensity = 2.89
