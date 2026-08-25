@@ -2,17 +2,22 @@
 @icon("res://addons/voxly-core/assets/icons/voxel_model_3d.svg")
 class_name VoxelModel3D
 extends VoxelNode3D
-## Voxel model — items, weapons, clothing, props, etc.
+## Voxel model: for small voxel content such as items, weapons, clothing, etc.
 ## Stores all voxels in memory and renders via a child MeshInstance3D.
-## Supports origin offset for flexible positioning.
 
-## Origin offset for the voxel grid in world units
+## Emitted when the origin offset changes.
+signal origin_changed
+
+## Emitted when the model's shape change.
+signal shape_changed
+
+## Origin offset for model in voxel units.
 @export
 var origin: Vector3 = Vector3.ZERO:
 	get = get_origin,
 	set = set_origin
 
-## Shape/dimensions of the voxel grid in voxel units
+## Delimiting shape of the model in voxel units.
 @export
 var shape: Vector3i = Vector3i(16, 16, 16):
 	get = get_shape,
@@ -30,9 +35,6 @@ func _ready() -> void:
 	var mesh_instance := _get_mesh_instance()
 	mesh_instance.position = origin * voxel_size
 
-## Registers a hidden property "_voxel_data" that stores voxels as a
-## PackedByteArray so they survive scene save/reload. Not exposed in the
-## inspector — purely for storage.
 func _get_property_list() -> Array[Dictionary]:
 	var properties: Array[Dictionary] = []
 	properties.append({
@@ -41,7 +43,6 @@ func _get_property_list() -> Array[Dictionary]:
 		"usage": PROPERTY_USAGE_STORAGE
 	})
 	return properties
-
 
 func _get(property: StringName):
 	if property == &"_voxel_data":
@@ -89,6 +90,7 @@ func set_origin(new_origin: Vector3) -> void:
 	if origin != new_origin:
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Origin changed: %s -> %s" % [origin, new_origin])
 		origin = new_origin
+		origin_changed.emit()
 		if _is_initialized:
 			var mesh_instance := _get_mesh_instance()
 			mesh_instance.position = origin * voxel_size
@@ -103,6 +105,7 @@ func set_shape(new_shape: Vector3i) -> void:
 	if clamped_shape != shape:
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, DEBUG_CONTEXT, "Shape changed: %s -> %s" % [shape, clamped_shape])
 		shape = clamped_shape
+		shape_changed.emit()
 		for voxel_position in _voxels.keys():
 			if not is_voxel_position_valid(voxel_position):
 				remove_voxel(voxel_position)
@@ -125,11 +128,10 @@ func world_to_voxel_position(world_position: Vector3) -> Vector3i:
 func voxel_to_world_position(voxel_position: Vector3i) -> Vector3:
 	return Vector3(voxel_position) * voxel_size + origin * voxel_size
 
-## Raycasts through the voxel grid, shifting the ray origin into
-## the model's local grid space to account for the origin offset.
 func voxel_raycast(ray_origin: Vector3, direction: Vector3, length: float) -> Dictionary:
-	var local_origin := ray_origin - origin * voxel_size
-	return super.voxel_raycast(local_origin, direction, length)
+	var local_origin := to_local(ray_origin)
+	var local_dir := to_local(ray_origin + direction) - local_origin
+	return _dda(local_origin - origin * voxel_size, local_dir, length)
 
 func get_voxel_count() -> int:
 	return _voxels.size()
@@ -206,7 +208,7 @@ func rebuild_mesh() -> void:
 		return
 	
 	if _voxels.is_empty():
-		# No voxels to render, clear mesh if exists
+		# No voxels to render, clear mesh if exists.
 		if _mesh_instance:
 			_mesh_instance.mesh = null
 		return
