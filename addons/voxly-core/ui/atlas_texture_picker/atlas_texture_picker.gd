@@ -60,7 +60,6 @@ var _last_uv_hovered: Vector2i = - Vector2i.ONE
 var _selected_texture_xy: Array[Vector2i] = []
 
 # Maps UV coordinate → array of face names that reference it.
-# Built by _sync_from_voxel() for the reference highlight tooltip.
 var _reference_uvs: Dictionary[Vector2i, Array] = {}
 
 var _context_menu: PopupMenu = null
@@ -166,7 +165,6 @@ func _get_selected_texture_xy() -> Array[Vector2i]:
 	return _selected_texture_xy.duplicate()
 
 ## Reads textures from the voxel's faces and builds _reference_uvs.
-## This is purely visual — does not affect selection.
 func _show_context_menu(uv: Vector2i, at_position: Vector2) -> void:
 	_context_menu.clear()
 	
@@ -219,7 +217,7 @@ func _sync_references() -> void:
 				if not _reference_uvs.has(tex):
 					_reference_uvs[tex] = []
 				_reference_uvs[tex].append(Voxel.FACE_NAMES[face])
-
+	
 	if show_base:
 		var base_tex := voxel.base_texture_xy
 		if base_tex >= Vector2i.ZERO:
@@ -235,7 +233,7 @@ func _refresh() -> void:
 		_pending_refresh = true
 		return
 	_pending_refresh = false
-
+	
 	if voxel_set and voxel_set.is_texture_ready():
 		_atlas_texture.texture = voxel_set.texture_atlas
 		var tex_size := voxel_set.texture_atlas.get_size()
@@ -244,7 +242,7 @@ func _refresh() -> void:
 	else:
 		_atlas_texture.texture = null
 		_atlas_texture.custom_minimum_size = Vector2.ZERO
-
+	
 	queue_redraw()
 
 func _gui_input(event: InputEvent) -> void:
@@ -252,14 +250,12 @@ func _gui_input(event: InputEvent) -> void:
 		_last_uv_hovered = _pos_to_texture(event.position)
 		queue_redraw()
 		_update_tooltip()
-
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		if selection_max == 0:
 			return
 		var uv := _pos_to_texture(event.position)
 		if _is_valid_texture_xy(uv):
 			_show_context_menu(uv, get_screen_position() + event.position)
-
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		if selection_max == 0:
 			return
