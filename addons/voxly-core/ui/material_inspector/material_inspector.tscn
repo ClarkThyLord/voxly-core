@@ -1,0 +1,230 @@
+[gd_scene format=3 uid="uid://g0j2ivb2a07w"]
+
+[ext_resource type="Script" uid="uid://wbxe8qbbn25g" path="res://addons/voxly-core/ui/material_inspector/material_inspector.gd" id="1_mnjhr"]
+
+[node name="MaterialInspector" type="BoxContainer" unique_id=1376326695]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+vertical = true
+script = ExtResource("1_mnjhr")
+
+[node name="RoughnessFoldableContainer" type="FoldableContainer" parent="." unique_id=1089441840]
+layout_mode = 2
+title = "Roughness"
+
+[node name="GridContainer" type="GridContainer" parent="RoughnessFoldableContainer" unique_id=353320972]
+layout_mode = 2
+columns = 2
+
+[node name="RoughnessLabel" type="Label" parent="RoughnessFoldableContainer/GridContainer" unique_id=1776992858]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Roughness"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RoughnessFoldableContainer/GridContainer" unique_id=534361703]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RoughnessValueSpinBox" type="SpinBox" parent="RoughnessFoldableContainer/GridContainer/HBoxContainer" unique_id=1713956584]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+editable = false
+
+[node name="RoughnessHSlider" type="HSlider" parent="RoughnessFoldableContainer/GridContainer/HBoxContainer" unique_id=2143819840]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.01
+value = 1.0
+editable = false
+
+[node name="MetallicFoldableContainer" type="FoldableContainer" parent="." unique_id=1992626296]
+layout_mode = 2
+title = "Metallic"
+
+[node name="GridContainer" type="GridContainer" parent="MetallicFoldableContainer" unique_id=1758737830]
+layout_mode = 2
+columns = 2
+
+[node name="MetallicLabel" type="Label" parent="MetallicFoldableContainer/GridContainer" unique_id=796060150]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Metallic"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MetallicFoldableContainer/GridContainer" unique_id=1804880014]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MetallicValueSpinBox" type="SpinBox" parent="MetallicFoldableContainer/GridContainer/HBoxContainer" unique_id=1646840581]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+editable = false
+
+[node name="MetallicHSlider" type="HSlider" parent="MetallicFoldableContainer/GridContainer/HBoxContainer" unique_id=934996234]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.01
+editable = false
+
+[node name="SpecularLabel" type="Label" parent="MetallicFoldableContainer/GridContainer" unique_id=1452008408]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Specular"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MetallicFoldableContainer/GridContainer" unique_id=985527204]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpecularValueSpinBox" type="SpinBox" parent="MetallicFoldableContainer/GridContainer/HBoxContainer2" unique_id=645332582]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.5
+editable = false
+
+[node name="SpecularHSlider" type="HSlider" parent="MetallicFoldableContainer/GridContainer/HBoxContainer2" unique_id=1799365445]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.01
+value = 0.5
+editable = false
+
+[node name="EmissionFoldableContainer" type="FoldableContainer" parent="." unique_id=1717482404]
+layout_mode = 2
+title = "Emission"
+
+[node name="GridContainer" type="GridContainer" parent="EmissionFoldableContainer" unique_id=392843073]
+layout_mode = 2
+columns = 2
+
+[node name="EmissionEnabledLabel" type="Label" parent="EmissionFoldableContainer/GridContainer" unique_id=1947219526]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Enabled"
+
+[node name="EmissionEnabledCheckBox" type="CheckBox" parent="EmissionFoldableContainer/GridContainer" unique_id=585726462]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 6
+disabled = true
+
+[node name="EmissionEnergyMultiplierLabel" type="Label" parent="EmissionFoldableContainer/GridContainer" unique_id=1785187148]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Energy Multiplier"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="EmissionFoldableContainer/GridContainer" unique_id=946637576]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EmissionEnergyMultiplierValueSpinBox" type="SpinBox" parent="EmissionFoldableContainer/GridContainer/HBoxContainer" unique_id=1427835749]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+max_value = 16.0
+step = 0.01
+value = 1.0
+editable = false
+
+[node name="EmissionEnergyMultiplierHSlider" type="HSlider" parent="EmissionFoldableContainer/GridContainer/HBoxContainer" unique_id=1351683089]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 16.0
+step = 0.01
+value = 1.0
+editable = false
+
+[node name="EmissionColorLabel" type="Label" parent="EmissionFoldableContainer/GridContainer" unique_id=1388532376]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Color"
+
+[node name="EmissionColorPickerButton" type="ColorPickerButton" parent="EmissionFoldableContainer/GridContainer" unique_id=1561297491]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+color = Color(1, 1, 1, 1)
+edit_alpha = false
+
+[node name="RefractionFoldableContainer" type="FoldableContainer" parent="." unique_id=1685341643]
+layout_mode = 2
+title = "Refraction"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RefractionFoldableContainer" unique_id=691869164]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="RefractionFoldableContainer/VBoxContainer" unique_id=1209712815]
+layout_mode = 2
+columns = 2
+
+[node name="RefractionEnabledLabel" type="Label" parent="RefractionFoldableContainer/VBoxContainer/GridContainer" unique_id=338510169]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Enabled"
+
+[node name="RefractionEnabledCheckBox" type="CheckBox" parent="RefractionFoldableContainer/VBoxContainer/GridContainer" unique_id=1962893064]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 6
+disabled = true
+
+[node name="RefractionScaleLabel" type="Label" parent="RefractionFoldableContainer/VBoxContainer/GridContainer" unique_id=1164861758]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Scale"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RefractionFoldableContainer/VBoxContainer/GridContainer" unique_id=1279453213]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RefractionScaleValueSpinBox" type="SpinBox" parent="RefractionFoldableContainer/VBoxContainer/GridContainer/HBoxContainer" unique_id=349114660]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+value = 0.050000000000000044
+editable = false
+
+[node name="RefractionScaleHSlider" type="HSlider" parent="RefractionFoldableContainer/VBoxContainer/GridContainer/HBoxContainer" unique_id=1355833737]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+value = 0.050000000000000044
+editable = false
+
+[node name="RefractionNoticeLabel" type="Label" parent="RefractionFoldableContainer/VBoxContainer" unique_id=484664148]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+text = "To see refraction take effect, voxel color alpha must be reduced"
+horizontal_alignment = 1
