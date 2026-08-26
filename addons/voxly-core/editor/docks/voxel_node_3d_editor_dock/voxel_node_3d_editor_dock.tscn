@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://djq18wfftnenr"]
+
+[ext_resource type="PackedScene" uid="uid://dv4bqecl2iebt" path="res://addons/voxly-core/ui/voxel_node_3d_editor/voxel_node_3d_editor.tscn" id="1_k836f"]
+[ext_resource type="Script" uid="uid://cnxsyhkl4gaf1" path="res://addons/voxly-core/editor/docks/voxel_node_3d_editor_dock/voxel_node_3d_editor_dock.gd" id="1_yiely"]
+
+[node name="VoxelNode3DEditorDock" type="EditorDock" unique_id=1359225043]
+custom_minimum_size = Vector2(0, 400)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+default_slot = 8
+script = ExtResource("1_yiely")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1935475881]
+layout_mode = 2
+follow_focus = true
+
+[node name="VoxelNode3DEditor" parent="ScrollContainer" unique_id=378375359 instance=ExtResource("1_k836f")]
+unique_name_in_owner = true
+layout_mode = 2
