@@ -40,7 +40,7 @@ const _valid_transitions: Dictionary = {
 var current_state: VoxlyState.State = VoxlyState.State.IDLE:
 	get = get_current_state
 
-## The VoxelSet resource currently being edited (if any).
+## The VoxelSet resource currently being edited.
 ## Set by the plugin when a VoxelSet is selected for editing.
 var current_voxel_set: VoxelSet = null
 
@@ -53,6 +53,9 @@ func set_current_voxel_set(vs: VoxelSet) -> void:
 var _editor_plugin: EditorPlugin
 var _current_screen: String = "3D" # Track current main screen
 var _previous_selection: Array[Node] = [] # Saved selection for edit-mode restore
+
+## The node the state machine is currently focused on.
+var _current_focused_node: Node = null
 
 func _init(plugin: EditorPlugin) -> void:
 	_editor_plugin = plugin
@@ -119,52 +122,56 @@ func on_scene_closed(_filepath: String) -> void:
 	transition_to(VoxlyState.State.IDLE)
 
 ## Handles selection changes from the Godot editor. The state machine uses this
-## to determine if it needs to transition to IDLE (deselected) or to a viewing
-## state (new node selected).
+## to determine if it needs to transition to IDLE (deselected/non-handled node)
+## or to an appropriate state for the newly selected node.
+##
+## Behavior by current state:
+##   - Any state + empty/multiple selection → IDLE (close docks, stop editing)
+##   - Any state + non-handled node → IDLE (close docks, stop editing)
+##   - EDITING + different VoxelNode3D → VIEWING (stop editing, show new node)
+##   - VIEWING + same node → no-op
+##   - VIEWING + different handled node → update docks for new node
 func on_selection_changed(selected_nodes: Array[Node]) -> void:
+	# Empty or multiple selection: close everything
 	if selected_nodes.size() != 1:
 		transition_to(VoxlyState.State.IDLE)
 		return
 	
 	var node : Node = selected_nodes[0]
-	if not can_handle(node):
-		node = null
 	
-	if node == null:
-		# Don't interrupt active editing — we may have cleared selection ourselves
-		if current_state != VoxlyState.State.EDITING_VOXEL_MODEL:
-			transition_to(VoxlyState.State.IDLE)
+	# Non-handled node selected: close everything
+	if not can_handle(node):
+		transition_to(VoxlyState.State.IDLE)
 		return
 	
 	var target_state := state_for_node(node)
 	
-	# Don't enter 3D-specific states when not in the 3D viewport
+	# Not in 3D viewport? Can't view/edit 3D nodes
 	if _current_screen != "3D" and target_state in [
 		VoxlyState.State.VIEWING_VOXEL_MODEL,
 	]:
 		transition_to(VoxlyState.State.IDLE)
 		return
 	
-	# Don't interrupt active editing
-	if current_state == VoxlyState.State.EDITING_VOXEL_MODEL and target_state == VoxlyState.State.VIEWING_VOXEL_MODEL:
-		# If the same object and we're editing, stay in editing mode
-		if _is_same_object(node):
-			return
+	# Currently editing to transition to viewing for the new node
+	if current_state == VoxlyState.State.EDITING_VOXEL_MODEL:
+		transition_to(VoxlyState.State.VIEWING_VOXEL_MODEL, node)
+		return
 	
-	# Handle same-state transition when switching to a different node
-	# (e.g., selecting a different VoxelModel3D in the scene tree)
+	# Same state, same node to nothing to do
 	if current_state == target_state:
 		if _is_same_object(node):
-			return # Same node, nothing to do
+			return
 		
-		# Different node in the same state — emit a state change signal so UI
-		# components can react (e.g., update the VoxelSet dock with the new
-		# node's VoxelSet).
+		# Different node in the same state to emit a state change so UI
+		# components can react.
+		_current_focused_node = node
 		var transition := VoxlyState.Transition.new(current_state, target_state, _editor_plugin, node)
 		state_changed.emit(transition)
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "%s" % transition.to_string())
 		return
 	
+	# Different state, valid transition to transition
 	transition_to(target_state, node)
 
 
@@ -195,10 +202,16 @@ func _on_exit(from: VoxlyState.State, to: VoxlyState.State, node: Node3D) -> voi
 			# Save selection before potentially clearing it
 			_save_current_selection()
 
+## Updates _current_focused_node to track which node we're focused on.
+## This uses our independent tracker for same-node detection.
+func _update_focused_node(node) -> void:
+	_current_focused_node = node
+
 func _on_enter(from: VoxlyState.State, to: VoxlyState.State, node: Node3D) -> void:
 	match to:
 		VoxlyState.State.IDLE:
 			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Entered IDLE")
+			_current_focused_node = null
 		
 		VoxlyState.State.VIEWING_VOXEL_SET:
 			if node:
@@ -208,47 +221,52 @@ func _on_enter(from: VoxlyState.State, to: VoxlyState.State, node: Node3D) -> vo
 				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Viewing VoxelSet (resource)")
 				# VoxelSet is a Resource, not a Node3D — selection is handled
 				# by the VoxelSetController via dock/panel integration.
+			_current_focused_node = node
 		
 		VoxlyState.State.VIEWING_VOXEL_MODEL:
 			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Viewing VoxelModel3D: %s" % node.name)
 			_select_node(node)
+			_current_focused_node = node
 		
 		VoxlyState.State.EDITING_VOXEL_MODEL:
 			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_UI, DEBUG_CONTEXT, "Editing VoxelModel3D: %s" % node.name)
 			# Clear selection so gizmo doesn't conflict with painting input
 			_clear_selection()
+			_current_focused_node = node
 
 func _save_current_selection() -> void:
-	var sel := _editor_plugin.get_editor_interface().get_selection()
+	var sel := EditorInterface.get_selection()
 	_previous_selection = sel.get_selected_nodes()
 
 func _restore_selection() -> void:
 	if _previous_selection.is_empty():
 		return
-	var sel := _editor_plugin.get_editor_interface().get_selection()
-	sel.clear()
-	for node in _previous_selection:
-		if is_instance_valid(node):
-			sel.add_node(node)
-	_previous_selection.clear()
+	var sel := EditorInterface.get_selection()
+	if sel.get_selected_nodes().is_empty():
+		for node in _previous_selection:
+			if is_instance_valid(node):
+				EditorInterface.edit_node(node)
+		_previous_selection.clear()
 
 func _clear_selection() -> void:
-	_previous_selection = _editor_plugin.get_editor_interface().get_selection().get_selected_nodes()
-	_editor_plugin.get_editor_interface().get_selection().clear()
+	var sel := EditorInterface.get_selection()
+	_previous_selection = sel.get_selected_nodes().duplicate()
+	#sel.clear()
 
 func _select_node(node: Node3D) -> void:
 	if not node:
 		return
-	var sel := _editor_plugin.get_editor_interface().get_selection()
+	var sel := EditorInterface.get_selection()
 	sel.clear()
-	sel.add_node(node)
+	EditorInterface.edit_node(node)
 
+## Independent tracker rather than Godot's selection,
+## because selection_changed fires AFTER Godot has already updated
+## its selection to the new node.
 func _is_same_object(node: Node3D) -> bool:
-	if not node:
+	if not node or not is_instance_valid(node):
 		return false
-	var sel := _editor_plugin.get_editor_interface().get_selection()
-	var selected := sel.get_selected_nodes()
-	return selected.size() == 1 and selected[0] == node
+	return _current_focused_node == node
 
 func _on_return_to_3d() -> void:
 	# Check if we're handling an object we should restore

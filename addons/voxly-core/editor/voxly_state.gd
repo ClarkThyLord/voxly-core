@@ -5,8 +5,8 @@ extends RefCounted
 
 ## All possible states the editor can be in.
 enum State {
-	IDLE, ## Nothing selected, no editors open
-	VIEWING_VOXEL_SET, ## A VoxelSet is selected and its inspector/panel is visible
+	IDLE,                ## Nothing selected, no editors open
+	VIEWING_VOXEL_SET,   ## A VoxelSet is selected and its inspector/panel is visible
 	VIEWING_VOXEL_MODEL, ## A VoxelModel3D is selected, panel is visible, gizmo active
 	EDITING_VOXEL_MODEL, ## Actively editing a VoxelModel3D (painting), gizmo suppressed
 }
@@ -17,7 +17,7 @@ class Transition:
 	var from_state: State
 	var to_state: State
 	var editor_plugin: EditorPlugin
-	var selected_node: Node3D # The node that was selected (if any)
+	var selected_node: Node3D # The node that was selected
 	
 	func _init(
 		p_from: State,
