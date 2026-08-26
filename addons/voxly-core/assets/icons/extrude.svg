@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="16"
+   height="16"
+   version="1.1"
+   viewBox="0 0 16 16"
+   id="svg3"
+   sodipodi:docname="extrude.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3" />
+  <sodipodi:namedview
+     id="namedview3"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="51.795572"
+     inkscape:cx="7.5971745"
+     inkscape:cy="7.4330678"
+     inkscape:window-width="2400"
+     inkscape:window-height="1476"
+     inkscape:window-x="1085"
+     inkscape:window-y="1878"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g10"
+     showgrid="true" />
+  <g
+     id="g6"
+     transform="matrix(3.0982482,0,0,3.0982482,-24.773446,-22.740041)">
+    <g
+       id="g10"
+       transform="matrix(0.59021575,0,0,0.59021575,7.4057368,3.2081344)"
+       style="display:inline">
+      <path
+         id="rect6"
+         style="fill:#a8a8a8;stroke:none;stroke-width:2.6857;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         d="M 1.0000002,7.0000001 V 13.500324 H 3.2493728 V 9.2493727 H 7.500324 V 7.0000001 Z"
+         sodipodi:nodetypes="ccccccc" />
+      <path
+         id="rect5"
+         style="fill:#f0f0f0;stroke:none;stroke-width:2.47908;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         d="M 1.0000002,7.0000001 V 13.000463 H 3.2493728 V 9.2493727 H 7.0004634 V 7.0000001 Z"
+         sodipodi:nodetypes="ccccccc" />
+    </g>
+    <g
+       id="g11-7-2"
+       transform="matrix(0.59039497,0,0,0.59039497,5.0433952,6.4805971)">
+      <path
+         id="rect10-6-3"
+         style="fill:#a8a8a8;stroke-width:2.47829;stroke-linecap:square;stroke-linejoin:round"
+         d="m 7.25,3.7040522 v 6.4980268 h 6.498027 V 3.7040521 Z m 1.4227732,1.4227733 h 4.1524798 v 4.15248 H 8.6727732 Z"
+         sodipodi:nodetypes="cccccccccc" />
+      <path
+         id="rect11-1-2"
+         style="fill:#f0f0f0;stroke-width:2.47908;stroke-linecap:square;stroke-linejoin:round"
+         d="m 7.25,3.7040522 v 6 h 6 v -6 z m 0.9999999,1 H 12.25 v 4 H 8.2499999 Z" />
+    </g>
+  </g>
+</svg>

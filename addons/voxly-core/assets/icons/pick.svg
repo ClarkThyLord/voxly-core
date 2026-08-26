@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="16"
+   height="16"
+   version="1.1"
+   viewBox="0 0 16 16"
+   id="svg3"
+   sodipodi:docname="pick.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3" />
+  <sodipodi:namedview
+     id="namedview3"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="29.411223"
+     inkscape:cx="3.6210667"
+     inkscape:cy="15.266281"
+     inkscape:window-width="2400"
+     inkscape:window-height="1476"
+     inkscape:window-x="1085"
+     inkscape:window-y="1878"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg3" />
+  <g
+     id="g6"
+     transform="matrix(0.69434924,0.69434924,-0.69434924,0.69434924,7.1535278,-4.4996557)">
+    <g
+       id="g11"
+       transform="matrix(1.1201768,0,0,1.1201768,-2.1502214,-3.639861)">
+      <path
+         id="rect10"
+         style="fill:#a8a8a8;stroke-width:2.47829;stroke-linecap:square;stroke-linejoin:round"
+         d="M 7.75,4.2040522 V 17.777027 h 5.998027 V 4.2040522 Z M 8.6727732,5.1268255 H 12.825253 V 16.854254 H 8.6727732 Z"
+         sodipodi:nodetypes="cccccccccc" />
+      <path
+         id="rect11"
+         style="fill:#f0f0f0;stroke-width:2.47908;stroke-linecap:square;stroke-linejoin:round"
+         d="M 7.25,3.7040522 V 17.279001 h 6 V 3.7040522 Z m 0.9999999,1 H 12.25 V 16.279001 H 8.2499999 Z"
+         sodipodi:nodetypes="cccccccccc" />
+    </g>
+    <g
+       id="g9"
+       transform="matrix(0.79208461,-0.79208461,0.79208461,0.79208461,-1.3029602,20.641607)"
+       style="display:inline">
+      <rect
+         style="fill:#a8a8a8;stroke:none;stroke-width:1.44615;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect8"
+         width="3.5"
+         height="3.5"
+         x="8.5489082"
+         y="1.7292792" />
+      <rect
+         style="fill:#f0f0f0;stroke:none;stroke-width:1.23954;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect9"
+         width="3"
+         height="3"
+         x="8.5489082"
+         y="1.7292792" />
+    </g>
+  </g>
+</svg>
