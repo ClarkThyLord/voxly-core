@@ -4,24 +4,21 @@ extends RefCounted
 ## Extension-based dispatcher that routes file reads to the appropriate reader.
 ##
 ## Usage:
-##   var result = VoxlyReader.read_file("path/to/model.vox")
-##   if result.error == OK:
-##       print("Read ", result.voxels.size(), " voxels")
+## var result = VoxlyReader.read_file("path/to/model.vox")
+## if result.error == OK:
+##    print("Read ", result.voxels.size(), " voxels")
 ##
 ## Returned Dictionary format:
 ##   {
-##       error: int,              # OK or error code
-##       voxels: Dictionary,      # {Vector3i: int} — grid position -> voxel ID (optional)
-##       palette: Dictionary,     # {int: Voxel} — voxel ID -> Voxel resource (optional)
-##       materials: Dictionary,   # {int: Dictionary} — material ID -> material properties (optional)
+##    error: int,              # OK or error code
+##    voxels: Dictionary,      # {Vector3i: int} — grid position -> voxel ID (optional)
+##    palette: Dictionary,     # {int: Voxel} — voxel ID -> Voxel resource (optional)
+##    materials: Dictionary,   # {int: Dictionary} — material ID -> material properties (optional)
 ##   }
 
 const DEBUG_CONTEXT := "VoxlyReader"
 
 ## Reads a file by dispatching to the appropriate sub-reader based on extension.
-## @param file_path: Path to the file to read
-## @param options: Optional dictionary of reader-specific options
-## @return: Dictionary with read results
 static func read_file(file_path: String, options: Dictionary = {}) -> Dictionary:
 	var result := { "error": ERR_FILE_UNRECOGNIZED }
 	var ext := file_path.get_extension().to_lower()
@@ -56,9 +53,6 @@ static func read_file(file_path: String, options: Dictionary = {}) -> Dictionary
 	return result
 
 ## Reads a file and returns the result as a VoxelSet resource.
-## @param file_path: Path to the file to read
-## @param options: Optional reader-specific options dictionary
-## @return: VoxelSet resource if successful, null otherwise
 static func read_file_as_voxel_set(file_path: String, options: Dictionary = {}) -> VoxelSet:
 	var result := read_file(file_path, options)
 	if result["error"] != OK:
@@ -68,19 +62,22 @@ static func read_file_as_voxel_set(file_path: String, options: Dictionary = {}) 
 	
 	# Add materials if present
 	if result.has("materials") and not result["materials"].is_empty():
+		var palette: Dictionary = result.get("palette", {})
 		var materials_dict: Dictionary = result["materials"]
 		for mat_id in materials_dict:
 			var mat_data: Dictionary = materials_dict[mat_id]
 			var material := StandardMaterial3D.new()
-			if mat_data.has("color"):
-				material.albedo_color = mat_data["color"]
-			if mat_data.has("metallic"):
-				material.metallic = mat_data["metallic"]
-			if mat_data.has("roughness"):
-				material.roughness = mat_data["roughness"]
-			if mat_data.has("emission"):
-				material.emission = mat_data["emission"]
-				material.emission_energy_multiplier = mat_data.get("emission_energy", 1.0)
+			
+			# Get palette color for this material
+			var pal_idx := int(mat_id) - 1
+			var palette_color := Color.WHITE
+			if palette.has(pal_idx):
+				var pal_voxel: Voxel = palette[pal_idx]
+				palette_color = pal_voxel.base_color
+			
+			# Apply all MagicaVoxel material properties to Godot StandardMaterial3D
+			VoxReader.apply_material_properties(material, mat_data, palette_color)
+			
 			material.vertex_color_use_as_albedo = true
 			voxel_set.set_material(str(mat_id), material)
 	
@@ -93,9 +90,58 @@ static func read_file_as_voxel_set(file_path: String, options: Dictionary = {}) 
 	
 	return voxel_set
 
+## Shifts all voxel positions so the minimum corner becomes (0,0,0).
+## Returns the shift amount (the original minimum position).
+## Modifies the voxels dictionary in-place.
+static func shift_voxels_to_non_negative(voxels: Dictionary) -> Vector3i:
+	if voxels.is_empty():
+		return Vector3i.ZERO
+	
+	var min_pos := Vector3i.ZERO
+	var first := true
+	for pos in voxels:
+		var p: Vector3i = pos
+		if first:
+			min_pos = p
+			first = false
+		else:
+			min_pos = Vector3i(min(min_pos.x, p.x), min(min_pos.y, p.y), min(min_pos.z, p.z))
+	
+	if min_pos == Vector3i.ZERO:
+		return Vector3i.ZERO
+	
+	var shifted: Dictionary = {}
+	for pos in voxels:
+		shifted[pos - min_pos] = voxels[pos]
+	voxels.clear()
+	for pos in shifted:
+		voxels[pos] = shifted[pos]
+	
+	return min_pos
+
+## Calculates the bounding box size of voxels (max - min + 1).
+## Returns Vector3i(1, 1, 1) for empty dictionaries.
+static func calc_voxel_bounds(voxels: Dictionary) -> Vector3i:
+	if voxels.is_empty():
+		return Vector3i(1, 1, 1)
+	
+	var min_pos := Vector3i.ZERO
+	var max_pos := Vector3i.ZERO
+	var first := true
+	for pos in voxels:
+		var p: Vector3i = pos
+		if first:
+			min_pos = p
+			max_pos = p
+			first = false
+		else:
+			min_pos = Vector3i(min(min_pos.x, p.x), min(min_pos.y, p.y), min(min_pos.z, p.z))
+			max_pos = Vector3i(max(max_pos.x, p.x), max(max_pos.y, p.y), max(max_pos.z, p.z))
+	
+	return Vector3i(max_pos.x - min_pos.x + 1, max_pos.y - min_pos.y + 1, max_pos.z - min_pos.z + 1)
+
+
 ## Creates a VoxelModel3D scene from a read result.
-## @param result: Dictionary returned by read_file()
-## @return: PackedScene if voxels exist, null otherwise
 static func read_result_to_scene(result: Dictionary, voxel_size: Vector3 = Vector3(0.5, 0.5, 0.5)) -> PackedScene:
 	if result["error"] != OK or not result.has("voxels") or result["voxels"].is_empty():
 		return null
@@ -111,7 +157,7 @@ static func read_result_to_scene(result: Dictionary, voxel_size: Vector3 = Vecto
 	for grid_pos in voxels:
 		model.set_voxel(grid_pos, voxels[grid_pos])
 	
-	model.update_mesh()
+	model.update()
 	
 	var scene := PackedScene.new()
 	scene.pack(model)

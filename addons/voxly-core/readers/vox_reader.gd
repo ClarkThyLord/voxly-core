@@ -2,14 +2,6 @@
 class_name VoxReader
 extends RefCounted
 ## MagicaVoxel (.vox) file reader.
-##
-## Parses the VOX format (version 150-200) and returns:
-##   - "voxels": Single flat dictionary of ALL voxels merged together (backward compat)
-##   - "scene_models": Array per-scene-model data with transforms applied
-##   - "palette": {int -> Voxel} palette entries
-##   - "materials": {int -> Dictionary} material properties
-##
-## Each scene_model entry: { voxels: {Vector3i: int}, transform: Transform3D, size: Vector3i }
 
 const DEBUG_CONTEXT := "VoxReader"
 
@@ -89,8 +81,6 @@ const MAGICA_VOXEL_PALETTE: Array[Color] = [
 
 
 ## Parses the contents of an already-opened .vox file.
-## @param file: An open FileAccess in READ mode, positioned at the start of a .vox file
-## @return: Dictionary with "error", "voxels", "scene_models", "palette", and "materials" keys
 static func read(file: FileAccess) -> Dictionary:
 	var result := {
 		"error": OK,
@@ -165,22 +155,76 @@ static func read(file: FileAccess) -> Dictionary:
 				var mat_id: int = file.get_32()
 				var mat_dict := _read_dict(file)
 				var mat_props: Dictionary = { "id": mat_id }
+				
+				# Read material type (all MagicaVoxel materials store _type to identify their category)
 				if mat_dict.has("_type"):
 					mat_props["type"] = mat_dict["_type"].get_string_from_utf8()
+				
+				# _diffuse: some files store an RGBA color override string "r g b a" (optional)
 				if mat_dict.has("_diffuse"):
 					var rgba := _parse_color_string(mat_dict["_diffuse"].get_string_from_utf8())
 					if rgba: mat_props["color"] = rgba
-				if mat_dict.has("_specular"):
-					mat_props["specular"] = mat_dict["_specular"].get_float()
-				if mat_dict.has("_roughness"):
-					mat_props["roughness"] = 1.0 - (mat_dict["_roughness"].get_float() / 65535.0)
-				if mat_dict.has("_metallic"):
-					mat_props["metallic"] = mat_dict["_metallic"].get_float() / 65535.0
-				if mat_dict.has("_emit"):
+				
+				# MagicaVoxel MATL specular key is _sp (float 0.0-1.0), not _specular
+				if mat_dict.has("_sp"):
+					var sp_str = mat_dict["_sp"].get_string_from_utf8()
+					if sp_str.is_valid_float():
+						mat_props["_sp"] = clampf(sp_str.to_float(), 0.0, 1.0)
+				
+				# MagicaVoxel MATL roughness key is _rough (float 0.0-1.0), not _roughness
+				if mat_dict.has("_rough"):
+					var rough_str = mat_dict["_rough"].get_string_from_utf8()
+					if rough_str.is_valid_float():
+						mat_props["_rough"] = clampf(rough_str.to_float(), 0.0, 1.0)
+				
+				# MagicaVoxel MATL metallic key is _metal (float 0.0-1.0), not _metallic
+				if mat_dict.has("_metal"):
+					var metal_str = mat_dict["_metal"].get_string_from_utf8()
+					if metal_str.is_valid_float():
+						mat_props["_metal"] = clampf(metal_str.to_float(), 0.0, 1.0)
+				
+				# Also parse _weight (used by _diffuse for blend strength, by _emit for emission blend)
+				if mat_dict.has("_weight"):
+					var weight_str = mat_dict["_weight"].get_string_from_utf8()
+					if weight_str.is_valid_float():
+						mat_props["_weight"] = clampf(weight_str.to_float(), 0.0, 1.0)
+				
+				# Emission handling per MagicaVoxel spec
+				var mat_type: String = mat_props.get("type", "")
+				if mat_type == "_emit":
 					mat_props["emission"] = true
-					mat_props["emission_energy"] = mat_dict["_emit"].get_float() / 65535.0
+					
+					# _flux is the preferred emission power value (modern format, stored as float string)
+					var emission_value := 1.0
+					if mat_dict.has("_flux"):
+						var flux_str = mat_dict["_flux"].get_string_from_utf8()
+						if flux_str.is_valid_float():
+							emission_value = flux_str.to_float()
+					
+					# Fall back to _emit if _flux is not present (legacy format, 0-65535 integer)
+					if not mat_dict.has("_flux") and mat_dict.has("_emit"):
+						var emit_str = mat_dict["_emit"].get_string_from_utf8()
+						if emit_str.is_valid_float():
+							# MagicaVoxel stores _emit as an integer 0-65535.
+							# Normalize to 0.0-1.0 range, but ensure minimum visible emission.
+							emission_value = maxf(emit_str.to_float() / 65535.0, 1.0)
+					
+					var emit_weight: float = mat_props.get("_weight", 1.0)
+					mat_props["emission_flux"] = emission_value
+					mat_props["emission_weight"] = emit_weight
+				
+				# Legacy fallback: some files may set _emit without _type
+				elif mat_dict.has("_emit"):
+					mat_props["emission"] = true
+					var emit_str = mat_dict["_emit"].get_string_from_utf8()
+					if emit_str.is_valid_float():
+						mat_props["emission_flux"] = maxf(emit_str.to_float() / 65535.0, 1.0)
+					else:
+						mat_props["emission_flux"] = 1.0
+					mat_props["emission_weight"] = mat_props.get("_weight", 1.0)
+				
 				result["materials"][mat_id] = mat_props
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "MATL chunk: material %d" % mat_id)
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "MATL chunk: material %d with type '%s'" % [mat_id, mat_props.get("type", "(unset)")])
 			
 			"nTRN":
 				var node_id: int = file.get_32()
@@ -255,10 +299,13 @@ static func read(file: FileAccess) -> Dictionary:
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Loaded palette: %d colors (index 0 alpha=%.2f)" % [result["palette"].size(), fv.base_color.a])
 	
 	# Apply materials to palette
+	# MATL material_ids are 1-indexed (1-256) but palette is 0-indexed (0-255).
+	# Material 1 corresponds to palette index 0, material 2 to palette index 1, etc.
 	if not result["materials"].is_empty():
 		for mat_id in result["materials"]:
-			if result["palette"].has(mat_id):
-				var v: Voxel = result["palette"][mat_id]
+			var pal_idx := int(mat_id) - 1
+			if result["palette"].has(pal_idx):
+				var v: Voxel = result["palette"][pal_idx]
 				v.base_material_id = str(mat_id)
 	
 	# Build scene tree
@@ -320,7 +367,14 @@ static func _read_dict(file: FileAccess) -> Dictionary:
 		dict[key] = value
 	return dict
 
-## Unpacks a MagicaVoxel rotation byte and translation string into a Transform3D.
+## Unpacks a MagicaVoxel rotation byte and translation string into a Transform3D
+## expressed in voxly-core's working coordinates.
+##
+## MagicaVoxel stores rotations as a single byte encoding a row-major 3x3
+## rotation matrix: each 2-bit pair selects which axis that row's +/-1 sits on,
+## and bits 4-6 hold the row signs. Godot's Basis treats the three vectors
+## passed to its constructor as COLUMNS (axial vectors), so the raw rows must
+## be transposed to recover the true MagicaVoxel rotation matrix.
 static func _unpack_transform(rotation_raw, translation_raw) -> Transform3D:
 	var rot_x := Vector3(1, 0, 0)
 	var rot_y := Vector3(0, 1, 0)
@@ -330,89 +384,102 @@ static func _unpack_transform(rotation_raw, translation_raw) -> Transform3D:
 	if rotation_raw != null:
 		var rotation_bits: int = int(rotation_raw.get_string_from_ascii())
 		
-		var rot_matrix := [
-			Vector3(1, 0, 0),
-			Vector3(0, 1, 0),
-			Vector3(0, 0, 1)
-		]
 		var row0_idx: int = rotation_bits & 3
 		var row1_idx: int = (rotation_bits >> 2) & 3
-		var row0 = rot_matrix[row0_idx]
-		var row1 = rot_matrix[row1_idx]
-		rot_matrix.erase(row0)
-		rot_matrix.erase(row1)
-		var row2 = rot_matrix.front()
 		
-		if rotation_bits & (1 << 4): row0 = -row0
-		if rotation_bits & (1 << 5): row1 = -row1
-		if rotation_bits & (1 << 6): row2 = -row2
+		# Each row carries its +/-1 in a distinct column (0, 1, or 2).
+		# Anything else is a corrupt rotation byte.
+		if row0_idx == row1_idx or row0_idx > 2 or row1_idx > 2:
+			VoxlyDebug.error(DEBUG_CONTEXT, "Invalid rotation byte %d: row indices (%d, %d)" % [rotation_bits, row0_idx, row1_idx])
+			return Transform3D.IDENTITY
+		var row2_idx := 3 - row0_idx - row1_idx
 		
-		# Build the MV rotation matrix (rows from the unpacked rotation byte)
-		var mv_basis := Basis(row0, row1, row2)
-		var euler := mv_basis.get_euler()
+		# Decode the byte into the ROWS of the MV row-major rotation matrix.
+		var rows := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+		rows[0][row0_idx] = 1.0 if (rotation_bits & (1 << 4)) == 0 else -1.0
+		rows[1][row1_idx] = 1.0 if (rotation_bits & (1 << 5)) == 0 else -1.0
+		rows[2][row2_idx] = 1.0 if (rotation_bits & (1 << 6)) == 0 else -1.0
 		
-		# Convert MV coordinates (+X right, +Y up, +Z forward) to Godot
-		# (+X right, +Y up, -Z forward) by swizzling Euler angles:
-		#   MV X → Godot X  (pitch)
-		#   MV Y → Godot -Z (roll, negated)
-		#   MV Z → Godot -Y (yaw, negated)
-		var corrected_basis := Basis.from_euler(Vector3(euler.x, -euler.z, -euler.y))
+		# Basis(rows...) interprets the vectors as COLUMNS, producing R^T.
+		# Transposing recovers the true row-major MV rotation matrix.
+		var mv_basis := Basis(rows[0], rows[1], rows[2]).transposed()
 		
-		rot_x = corrected_basis.x
-		rot_y = corrected_basis.y
-		rot_z = corrected_basis.z
+		# Conjugate into voxly-core's coordinate convention C (see doc above).
+		# C = diag(-1, swap(y, z)); C^-1 == C.
+		var coord_map := Basis(Vector3(-1, 0, 0), Vector3(0, 0, 1), Vector3(0, 1, 0))
+		var godot_basis := coord_map * mv_basis * coord_map
 		
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Rotation bits=%d -> basis x=%s y=%s z=%s" % [rotation_bits, rot_x, rot_y, rot_z])
+		rot_x = godot_basis.x
+		rot_y = godot_basis.y
+		rot_z = godot_basis.z
+		
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+			"Rotation bits=%d rows=%s mv_basis=%s -> godot_basis x=%s y=%s z=%s" % [rotation_bits, rows, mv_basis, rot_x, rot_y, rot_z])
 	
 	if translation_raw != null:
 		var parts = translation_raw.get_string_from_ascii().split_floats(" ")
 		if parts.size() >= 3:
-			# MV coordinates (+X right, +Y up, +Z forward) → Godot coordinates (+X right, +Y up, -Z forward).
-			# X is negated to match the voxel-level x-flip for facing direction.
-			# Y maps directly (up is up).
-			# Z is negated (MV forward = +Z, Godot forward = -Z).
+			# MV translation to Godot:
+			#   origin = C * t_mv = (-t.x, t.z, t.y)
 			origin = Vector3(-parts[0], parts[2], parts[1])
-			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Translation: (%d, %d, %d) -> origin=%s" % [parts[0], parts[1], parts[2], origin])
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+				"Translation: (%d, %d, %d) -> origin=%s" % [parts[0], parts[1], parts[2], origin])
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+		"Unpacked transform: rotation=%s origin=%s" % [Basis(rot_x, rot_y, rot_z), origin])
 	
 	return Transform3D(rot_x, rot_y, rot_z, origin)
 
-static func _build_tree(node_id: int, nodes: Dictionary, models: Array) -> Dictionary:
+## Recursively builds the scene tree from the node graph, accumulating the
+## full transform chain as it descends.
+##
+## `parent_transform` is the accumulated Transform3D of all ancestor nTRN
+## nodes. Every nTRN transform is applied in its parent's space, so a chain
+## A -> B -> shape yields T_A * T_B applied to the shape's voxels. Shape
+## nodes receive the fully accumulated transform (IDENTITY if none).
+static func _build_tree(node_id: int, nodes: Dictionary, models: Array, parent_transform: Transform3D = Transform3D.IDENTITY, inherited_name := "") -> Dictionary:
+	if not nodes.has(node_id):
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: node %d missing from node graph" % node_id)
+		return { "type": "NONE" }
+	
 	var node = nodes[node_id]
-	var transform_node: Dictionary = {}
+	var tree_node: Dictionary = { "type": "NONE" }
 	
 	if node.type == NodeType.TRANSFORM and node.has("child_id"):
-		transform_node = node
-		if nodes.has(node.child_id):
-			node = nodes[node.child_id]
-		else:
-			return { "type": "NONE" }
-	
-	var tree_node: Dictionary = {}
-	if not transform_node.is_empty():
-		tree_node = {
-			"type": "NONE",
-			"name": transform_node.get("name", ""),
-			"transform": transform_node["transform"],
-		}
+		# Accumulate this transform into the chain.
+		var node_transform: Transform3D = node["transform"]
+		var combined: Transform3D = parent_transform * node_transform
+		var combined_name := inherited_name
+		if combined_name.is_empty():
+			combined_name = node.get("name", "")
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+			"Tree: nTRN %d -> child %d: accumulated transform=%s name='%s'" % [node_id, node.child_id, combined, combined_name])
+		return _build_tree(node.child_id, nodes, models, combined, combined_name)
 	
 	if node.type == NodeType.GROUP:
 		tree_node["type"] = "GROUP"
 		tree_node["children"] = []
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: nGRP %d with %d children (chain=%s)" % [node_id, node.child_ids.size(), parent_transform])
 		for child_id in node.child_ids:
-			tree_node["children"].append(_build_tree(child_id, nodes, models))
+			tree_node["children"].append(_build_tree(child_id, nodes, models, parent_transform, inherited_name))
 	
 	elif node.type == NodeType.SHAPE:
 		tree_node["type"] = "SHAPE"
 		var model_id: int = node.model_id
 		if model_id >= 0 and model_id < models.size():
 			tree_node["model"] = models[model_id]
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: nSHP %d -> model %d (chain=%s name='%s')" % [node_id, model_id, parent_transform, inherited_name])
+		else:
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: nSHP %d references missing model %d" % [node_id, model_id])
+		tree_node["transform"] = parent_transform
+		tree_node["name"] = inherited_name
 	
 	return tree_node
 
 ## Walks the scene tree and collects each shape node with its full transform applied.
 ## Each entry: { voxels: {Vector3i: int}, transform: Transform3D, size: Vector3i, name: String }
 ## The voxels are transformed from local model space to scene space.
-## Pivot is applied (per Voxel-Core-3: ceil for X, floor for Y/Z).
+## Pivot is applied per model (floor(size / 2)), matching the reference importer.
 static func _collect_scene_models(tree: Dictionary) -> Array[Dictionary]:
 	var models: Array[Dictionary] = []
 	
@@ -420,6 +487,21 @@ static func _collect_scene_models(tree: Dictionary) -> Array[Dictionary]:
 		var entry := _transform_model(tree)
 		if entry["voxels"].size() > 0:
 			models.append(entry)
+			# Log the bounding box of each collected scene model for verification.
+			var min_pos := Vector3i.ZERO
+			var max_pos := Vector3i.ZERO
+			var first := true
+			for pos in entry["voxels"]:
+				var p: Vector3i = pos
+				if first:
+					min_pos = p
+					max_pos = p
+					first = false
+				else:
+					min_pos = Vector3i(min(min_pos.x, p.x), min(min_pos.y, p.y), min(min_pos.z, p.z))
+					max_pos = Vector3i(max(max_pos.x, p.x), max(max_pos.y, p.y), max(max_pos.z, p.z))
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+				"Scene model '%s': %d voxels, bounds min=%s max=%s" % [entry.get("name", ""), entry["voxels"].size(), min_pos, max_pos])
 	
 	if tree.has("children"):
 		for child in tree["children"]:
@@ -429,44 +511,154 @@ static func _collect_scene_models(tree: Dictionary) -> Array[Dictionary]:
 	
 	return models
 
-## Transforms a single shape node's voxels by its parent transforms.
-## Pivot-centers the model first, then applies the full transform chain.
+## Transforms a single shape node's voxels by its full accumulated transform chain.
+##
+## MagicaVoxel rotates each model around its own center pivot, and the pivot
+## convention depends on the parity of each axis in MagicaVoxel space:
+##   even s -> s/2 - 0.5   (half-voxel boundary between the two middle cells)
+##   odd  s -> s/2         (whole-voxel center, integer division)
 static func _transform_model(tree: Dictionary) -> Dictionary:
 	var voxels: Dictionary = tree["model"]["voxels"].duplicate()
 	var size: Vector3i = tree["model"]["size"]
+	var size_v := Vector3(size)
 	
-	# Apply pivot offset (center model around pivot)
-	var center := Vector3(
-		ceil(size.x / 2.0),
-		floor(size.y / 2.0),
-		floor(size.z / 2.0)
-	)
+	# Recover the MagicaVoxel-space dimensions.
+	var mx := size_v.x
+	var mz := size_v.y
+	var my := size_v.z
 	
-	# If this shape has a transform, apply it (including pivot adjustment)
-	if tree.has("transform"):
-		var transform: Transform3D = tree["transform"]
-		transform = transform.translated(-center)
-		
-		var transformed: Dictionary = {}
-		for key in voxels:
-			var pos := Vector3(key) + Vector3(0.5, 0.5, 0.5)
-			pos = transform * pos
-			pos -= Vector3(0.5, 0.5, 0.5)
-			var grid_pos := Vector3i(roundi(pos.x), roundi(pos.y), roundi(pos.z))
-			transformed[grid_pos] = voxels[key]
-		voxels = transformed
-	else:
-		# No transform — just apply pivot offset
-		var shifted: Dictionary = {}
-		for key in voxels:
-			shifted[key - Vector3i(center)] = voxels[key]
-		voxels = shifted
+	# Per-axis MagicaVoxel pivot:
+	# even = half-voxel boundary (s/2 - 0.5);
+	# odd  = whole-voxel center (s/2, integer division).
+	var cx: float = mx / 2.0 - 0.5 if int(mx) % 2 == 0 else floor(mx / 2.0)
+	var cy: float = my / 2.0 - 0.5 if int(my) % 2 == 0 else floor(my / 2.0)
+	var cz: float = mz / 2.0 - 0.5 if int(mz) % 2 == 0 else floor(mz / 2.0)
+	
+	# Map the MV pivot through the XYZI affine flip:
+	# key = (mx-1-bx, bz, by).
+	var center_local := Vector3(-cx + (mx - 1.0), cz, cy)
+	
+	var chain: Transform3D = tree.get("transform", Transform3D.IDENTITY)
+	var origin_eff: Vector3 = chain.origin - chain.basis * center_local
+	var eff := Transform3D(chain.basis, origin_eff)
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+		"Transforming model '%s': size=%s center_local=%s chain=%s origin_eff=%s" % [
+			tree.get("name", ""), size, center_local, chain, origin_eff])
+	
+	var transformed: Dictionary = {}
+	for key in voxels:
+		var world_pos := eff * Vector3(key)
+		var grid_pos := Vector3i(floori(world_pos.x), floori(world_pos.y), floori(world_pos.z))
+		transformed[grid_pos] = voxels[key]
+	voxels = transformed
+	
+	# Log a few sample placements for verification.
+	var samples: Array = []
+	var sample_keys := voxels.keys()
+	for i in min(3, sample_keys.size()):
+		var p: Vector3i = sample_keys[i]
+		samples.append(p)
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+		"Transformed model '%s': %d voxels, sample positions=%s" % [tree.get("name", ""), voxels.size(), samples])
 	
 	return {
 		"voxels": voxels,
+		"transform": eff,
 		"size": size,
 		"name": tree.get("name", ""),
 	}
+
+## Applies MagicaVoxel material properties to a Godot StandardMaterial3D.
+## Translates the MATL chunk dictionary values to Godot's PBR properties
+## based on the material _type ("_diffuse", "_metal", "_glass", "_emit").
+static func apply_material_properties(
+	material: StandardMaterial3D, 
+	mat_data: Dictionary, 
+	palette_color: Color = Color.WHITE) -> void:
+	var mat_type: String = mat_data.get("type", "_diffuse")
+	
+	# Read MagicaVoxel raw values with defaults
+	var sp: float = mat_data.get("_sp", 0.0)       # specular 0.0-1.0
+	var rough: float = mat_data.get("_rough", 0.0)  # roughness 0.0-1.0
+	var metal: float = mat_data.get("_metal", 0.0)  # metallic 0.0-1.0
+	var weight: float = mat_data.get("_weight", 1.0) # blend/opacity 0.0-1.0
+	
+	# Use override color if provided, otherwise use palette color
+	var albedo: Color = mat_data.get("color", palette_color)
+	
+	# Apply PBR mapping based on MagicaVoxel material type
+	match mat_type:
+		"_diffuse":
+			# Pure diffuse/matte surface
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+			material.metallic = 0.0
+			material.roughness = 1.0
+			material.metallic_specular = 0.5  # default
+			
+			# If weight < 1.0, enable transparency (opacity blend)
+			if weight < 1.0:
+				material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				material.albedo_color = Color(albedo.r, albedo.g, albedo.b, weight)
+			else:
+				material.albedo_color = albedo
+		
+		"_metal":
+			# Metallic surface
+			# In Godot PBR, metallic is the primary control; _sp is less relevant
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+			if mat_data.has("_metal"):
+				material.metallic = metal
+			else:
+				# Fallback: use _sp as metallic if _metal is missing
+				material.metallic = sp
+			material.roughness = rough if mat_data.has("_rough") else 0.1
+			material.metallic_specular = 0.5
+			material.albedo_color = albedo
+		
+		"_glass":
+			# Dielectric (non-metal) transparent surface
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+			material.metallic = 0.0
+			if mat_data.has("_rough"):
+				material.roughness = rough
+			else:
+				# Invert _sp for roughness (shiny = low roughness)
+				material.roughness = 1.0 - sp
+			material.metallic_specular = sp  # _sp controls reflection intensity for dielectrics
+			material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			material.albedo_color = Color(albedo.r, albedo.g, albedo.b, weight)
+		
+		"_emit":
+			# Emissive surface — handled separately below
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+			material.metallic = 0.0
+			material.roughness = 1.0
+			material.albedo_color = albedo
+		
+		_:
+			# Unknown type or _type missing
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+			material.metallic = 0.0
+			material.roughness = 1.0
+			material.metallic_specular = 0.5
+			material.albedo_color = albedo
+	
+	# Emission handling
+	if mat_data.has("emission"):
+		material.set_feature(BaseMaterial3D.FEATURE_EMISSION, true)
+		material.emission = albedo
+		
+		# Convert MagicaVoxel emission to Godot 4's emission_energy_multiplier.
+		# Formula: emission_flux * emission_weight * GLOW_SCALE
+		# - emission_flux: raw emission power (from _flux or _emit)
+		# - emission_weight: blend percentage from _weight (0.0-1.0)
+		# - GLOW_SCALE (2.5): adjusts MagicaVoxel's arbitrary intensity to
+		#   Godot's PBR-compatible range for realistic bloom/glow
+		const GLOW_SCALE := 2.5
+		var emission_flux: float = mat_data.get("emission_flux", 1.0)
+		var emission_weight: float = mat_data.get("emission_weight", 1.0)
+		material.emission_energy_multiplier = emission_flux * emission_weight * GLOW_SCALE
 
 static func _parse_color_string(color_str: String) -> Color:
 	var parts := color_str.split_floats(" ")

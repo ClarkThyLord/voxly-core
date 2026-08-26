@@ -2,7 +2,6 @@
 class_name PaletteReader
 extends RefCounted
 ## Multi-format palette file reader.
-##
 ## Reads color palette files from various external tools and converts them into
 ## Voxel Resources suitable for use in VoxelSets.
 ##
@@ -12,21 +11,15 @@ extends RefCounted
 ##   - .json — Custom JSON palette format (see read_json() for schema)
 ##   - .pal  — Paint.NET palette (RGB hex values, one per line)
 ##   - .hex  — Simple hex color list (RRGGBB or #RRGGBB, one per line)
-##
-## Usage:
-##   var result = PaletteReader.read_file("path/to/palette.gpl")
-##   if result.error == OK:
-##       print("Loaded ", result.palette.size(), " colors")
 
-## Reads a palette file and returns voxel palette and an empty voxels dictionary.
-## @param palette_path: Path to the palette file
-## @param options: Optional dictionary; supports "allow_repeated" (bool).
-##   When false (default), duplicate color values are removed keeping only unique colors.
-##   When true, all color entries are kept including duplicates.
-## @return: Dictionary with "error", "voxels", and "palette" keys
+## Reads a palette file and returns voxel palette and an empty voxels dictionary, optional dictionary:
+## supports "allow_repeated" (bool).
+## When false (default), duplicate color values are removed keeping only unique colors.
+## When true, all color entries are kept including duplicates.
+## Return: Dictionary with "error", "voxels", and "palette" keys
 static func read_file(palette_path: String, options: Dictionary = {}) -> Dictionary:
 	var ext := palette_path.get_extension().to_lower()
-	# Invert allow_repeated: when false, deduplicate (unique only). when true, keep all.
+	# When false remove duplicates, when true keep all.
 	var allow_repeated : bool = options.get("allow_repeated", false)
 	
 	match ext:
@@ -41,7 +34,7 @@ static func read_file(palette_path: String, options: Dictionary = {}) -> Diction
 		"hex":
 			return _read_hex(palette_path, allow_repeated)
 		_:
-			# Fallback: try as text with one hex color per line
+			# Try as text with one hex color per line
 			return _read_txt(palette_path, allow_repeated)
 
 ## Normalizes tabs to spaces so splitting logic is consistent regardless
@@ -50,14 +43,13 @@ static func _normalize_tabs(line: String) -> String:
 	return line.replace("\t", " ")
 
 ## Tracks seen color values to optionally deduplicate palette entries.
-## A set of already-seen color keys is maintained across calls to _is_duplicate_color().
 static var _seen_color_keys: Dictionary = {}
 
 ## Resets the seen-color tracking set.
 static func _reset_seen_colors() -> void:
 	_seen_color_keys.clear()
 
-## Returns true if the color has already been seen (a duplicate).
+## Returns true if the color has already been seen.
 static func _is_duplicate_color(color: Color) -> bool:
 	var key := "%d_%d_%d" % [roundi(color.r8), roundi(color.g8), roundi(color.b8)]
 	if _seen_color_keys.has(key):
@@ -296,9 +288,9 @@ static func _read_txt(file_path: String, allow_repeated: bool = false) -> Dictio
 	
 	return result
 
-## Parses a single line of text as a color.
-## Supports: Hex (FF0000, #FF0000), 8-char hex with alpha prefix (AARRGGBB),
-##           RGB decimal (255 0 0), CSV (255,0,0)
+## Parses a single line of text as a color, parsing:
+## Hex (FF0000, #FF0000), 8-char hex with alpha prefix (AARRGGBB),
+## RGB decimal (255 0 0), CSV (255,0,0)
 static func _parse_txt_color(line: String) -> Color:
 	# Try hex format
 	var hex: String = line.replace("#", "").strip_edges()
@@ -321,9 +313,8 @@ static func _parse_txt_color(line: String) -> Color:
 	return Color.TRANSPARENT
 
 ## Parses a hex color string into a Color.
-## Supports: "RRGGBB", "RRGGBBAA", "#RRGGBB", "AARRGGBB" (alpha prefix).
-## For 8-char hex, the first 2 chars are treated as alpha (AARRGGBB format
-## commonly used by Lospec and other palette exports).
+## Supports: "RRGGBB", "RRGGBBAA", "#RRGGBB", "AARRGGBB"
+## For 8-char hex, the first 2 chars are treated as alpha.
 static func _parse_hex_color(hex: String) -> Color:
 	var h: String = hex.replace("#", "").strip_edges()
 	
@@ -335,20 +326,20 @@ static func _parse_hex_color(hex: String) -> Color:
 		c.a = alpha
 		return c
 	
-	# RRGGBB or RRGGBBAA (standard Godot interpretation)
+	# RRGGBB or RRGGBBAA
 	return Color("#" + h)
 
 ## Reads a Paint.NET palette file (.pal).
 ## Supports two formats:
-##   1. JASC-PAL format (header + decimal "R G B" values):
-##        JASC-PAL
-##        0100
-##        <count>
-##        R G B
+## JASC-PAL format (header + decimal "R G B" values):
+## JASC-PAL
+## 0100
+## <count>
+## R G B
 ##
-##   2. Simple hex format (one "RRGGBB" hex per line):
-##        FF0000
-##        00FF00
+## Simple hex format (one "RRGGBB" hex per line):
+## FF0000
+## 00FF00
 static func _read_pal(file_path: String, allow_repeated: bool = false) -> Dictionary:
 	var result := {
 		"error": OK,
@@ -379,7 +370,7 @@ static func _read_pal(file_path: String, allow_repeated: bool = false) -> Dictio
 			if line.is_empty() or line.begins_with(";"):
 				continue
 			
-			# Parse: R G B (space separated decimal values 0-255)
+			# Parse R G B (space separated decimal values 0-255)
 			var parts := line.split(" ", false)
 			if parts.size() >= 3:
 				var r := float(parts[0]) / 255.0
@@ -397,7 +388,7 @@ static func _read_pal(file_path: String, allow_repeated: bool = false) -> Dictio
 				result["palette"][next_id] = voxel
 				next_id += 1
 	else:
-		# Simple hex format: one "RRGGBB" hex per line
+		# Simple hex format, one "RRGGBB" hex per line
 		# The first line was already read, process it too
 		if not first_line.is_empty() and not first_line.begins_with(";"):
 			if first_line.length() == 6 and first_line.is_valid_html_color():
