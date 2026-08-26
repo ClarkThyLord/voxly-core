@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bx55mkr5kt1o3"
-path="res://.godot/imported/voxly-core.svg-e98cec4b7b81c7e4ae4b738c034bf934.ctex"
+uid="uid://jkb3sa65ckp6"
+path="res://.godot/imported/voxly-core.png-71db83c81082795a21ba59c97d7935ed.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://voxly-core.svg"
-dest_files=["res://.godot/imported/voxly-core.svg-e98cec4b7b81c7e4ae4b738c034bf934.ctex"]
+source_file="res://voxly-core.png"
+dest_files=["res://.godot/imported/voxly-core.png-71db83c81082795a21ba59c97d7935ed.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

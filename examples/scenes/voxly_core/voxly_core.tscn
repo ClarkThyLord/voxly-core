@@ -1,0 +1,138 @@
+[gd_scene format=4 uid="uid://ce1mn6ngtf0qh"]
+
+[ext_resource type="PackedScene" uid="uid://bko6ob20icape" path="res://tools/capture/capture.tscn" id="1_3vnbg"]
+[ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="1_cx3au"]
+[ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="2_3vnbg"]
+[ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="3_fcepx"]
+
+[sub_resource type="Environment" id="Environment_pm41k"]
+background_mode = 1
+background_color = Color(1, 1, 1, 1)
+background_energy_multiplier = 0.8
+ssao_enabled = true
+ssao_intensity = 2.5
+ssil_enabled = true
+ssil_intensity = 2.0
+
+[sub_resource type="Resource" id="Resource_awoyq"]
+script = ExtResource("2_3vnbg")
+base_color = Color(1, 0, 0, 1)
+base_material_id = "0"
+
+[sub_resource type="Resource" id="Resource_n2mj1"]
+script = ExtResource("2_3vnbg")
+base_color = Color(0, 1, 0, 1)
+base_material_id = "1"
+
+[sub_resource type="Resource" id="Resource_lxico"]
+script = ExtResource("2_3vnbg")
+base_color = Color(0, 0, 1, 1)
+base_material_id = "2"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ov0g7"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cx3au"]
+vertex_color_use_as_albedo = true
+metallic_specular = 0.0
+emission = Color(1, 0, 0, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3vnbg"]
+vertex_color_use_as_albedo = true
+metallic_specular = 0.0
+emission = Color(0, 1, 0, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fcepx"]
+vertex_color_use_as_albedo = true
+metallic_specular = 0.0
+emission = Color(0, 0, 1, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="Resource" id="Resource_6f1tp"]
+script = ExtResource("3_fcepx")
+default_material = SubResource("StandardMaterial3D_ov0g7")
+materials = Dictionary[String, BaseMaterial3D]({
+"0": SubResource("StandardMaterial3D_cx3au"),
+"1": SubResource("StandardMaterial3D_3vnbg"),
+"2": SubResource("StandardMaterial3D_fcepx")
+})
+_voxels = Dictionary[int, ExtResource("2_3vnbg")]({
+0: SubResource("Resource_awoyq"),
+1: SubResource("Resource_n2mj1"),
+2: SubResource("Resource_lxico")
+})
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_3vnbg"]
+_surfaces = [{
+"aabb": AABB(0, 1, 0, 1, 2, 3),
+"attribute_data": PackedByteArray("/wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA/w=="),
+"format": 34359742479,
+"index_count": 60,
+"index_data": PackedByteArray("AAABAAIAAQADAAIABAAFAAYABQAHAAYACAAJAAoACQALAAoADAANAA4ADQAPAA4AEAARABIAEQATABIAFAAVABYAFQAXABYAGAAZABoAGQAbABoAHAAdAB4AHQAfAB4AIAAhACIAIQAjACIAJAAlACYAJQAnACYA"),
+"material": SubResource("StandardMaterial3D_cx3au"),
+"name": "0_not_textured",
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 40,
+"vertex_data": PackedByteArray("AAAAAAAAQEAAAEBAAAAAAAAAQEAAAABAAACAPwAAQEAAAEBAAACAPwAAQEAAAABAAAAAAAAAQEAAAABAAAAAAAAAQEAAAAAAAACAPwAAQEAAAABAAACAPwAAQEAAAAAAAACAPwAAAEAAAABAAACAPwAAAEAAAAAAAAAAAAAAAEAAAABAAAAAAAAAAEAAAAAAAACAPwAAgD8AAABAAACAPwAAAEAAAABAAAAAAAAAgD8AAABAAAAAAAAAAEAAAABAAACAPwAAAEAAAAAAAACAPwAAQEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQEAAAAAAAACAPwAAQEAAAEBAAACAPwAAgD8AAEBAAAAAAAAAQEAAAEBAAAAAAAAAgD8AAEBAAACAPwAAQEAAAABAAACAPwAAgD8AAABAAACAPwAAQEAAAEBAAACAPwAAgD8AAEBAAACAPwAAQEAAAIA/AACAPwAAAEAAAIA/AACAPwAAQEAAAABAAACAPwAAAEAAAABAAAAAAAAAgD8AAABAAAAAAAAAQEAAAABAAAAAAAAAgD8AAEBAAAAAAAAAQEAAAEBAAAAAAAAAAEAAAAAAAAAAAAAAQEAAAAAAAAAAAAAAAEAAAABAAAAAAAAAQEAAAABA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78=")
+}, {
+"aabb": AABB(1, 0, 0, 2, 3, 1),
+"attribute_data": PackedByteArray("AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/"),
+"format": 34359742479,
+"index_count": 54,
+"index_data": PackedByteArray("AAABAAIAAQADAAIABAAFAAYABQAHAAYACAAJAAoACQALAAoADAANAA4ADQAPAA4AEAARABIAEQATABIAFAAVABYAFQAXABYAGAAZABoAGQAbABoAHAAdAB4AHQAfAB4AIAAhACIAIQAjACIA"),
+"material": SubResource("StandardMaterial3D_3vnbg"),
+"name": "1_not_textured",
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 36,
+"vertex_data": PackedByteArray("AACAPwAAQEAAAIA/AACAPwAAQEAAAAAAAABAQAAAQEAAAIA/AABAQAAAQEAAAAAAAAAAQAAAAEAAAIA/AAAAQAAAAEAAAAAAAACAPwAAAEAAAIA/AACAPwAAAEAAAAAAAABAQAAAAAAAAIA/AABAQAAAAAAAAAAAAAAAQAAAAAAAAIA/AAAAQAAAAAAAAAAAAABAQAAAAEAAAAAAAABAQAAAQEAAAAAAAACAPwAAAEAAAAAAAACAPwAAQEAAAAAAAABAQAAAAAAAAAAAAABAQAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAEAAAAAAAABAQAAAQEAAAIA/AABAQAAAAEAAAIA/AACAPwAAQEAAAIA/AACAPwAAAEAAAIA/AABAQAAAAEAAAIA/AABAQAAAgD8AAIA/AAAAQAAAAEAAAIA/AAAAQAAAgD8AAIA/AABAQAAAQEAAAAAAAABAQAAAAAAAAAAAAABAQAAAQEAAAIA/AABAQAAAAAAAAIA/AAAAQAAAAAAAAAAAAAAAQAAAAEAAAAAAAAAAQAAAAAAAAIA/AAAAQAAAAEAAAIA//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID///9//3//v////3//f/+/////f/9//7////9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/")
+}, {
+"aabb": AABB(0, 0, 1, 3, 1, 2),
+"attribute_data": PackedByteArray("AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//w=="),
+"format": 34359742479,
+"index_count": 60,
+"index_data": PackedByteArray("AAABAAIAAQADAAIABAAFAAYABQAHAAYACAAJAAoACQALAAoADAANAA4ADQAPAA4AEAARABIAEQATABIAFAAVABYAFQAXABYAGAAZABoAGQAbABoAHAAdAB4AHQAfAB4AIAAhACIAIQAjACIAJAAlACYAJQAnACYA"),
+"material": SubResource("StandardMaterial3D_fcepx"),
+"name": "2_not_textured",
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 40,
+"vertex_data": PackedByteArray("AACAPwAAgD8AAEBAAACAPwAAgD8AAABAAABAQAAAgD8AAEBAAABAQAAAgD8AAABAAAAAQAAAgD8AAABAAAAAQAAAgD8AAIA/AABAQAAAgD8AAABAAABAQAAAgD8AAIA/AABAQAAAAAAAAEBAAABAQAAAAAAAAABAAAAAAAAAAAAAAEBAAAAAAAAAAAAAAABAAABAQAAAAAAAAABAAABAQAAAAAAAAIA/AAAAQAAAAAAAAABAAAAAQAAAAAAAAIA/AAAAQAAAAAAAAABAAAAAQAAAgD8AAABAAAAAAAAAAAAAAABAAAAAAAAAgD8AAABAAABAQAAAgD8AAEBAAABAQAAAAAAAAEBAAAAAAAAAgD8AAEBAAAAAAAAAAAAAAEBAAABAQAAAgD8AAABAAABAQAAAAAAAAABAAABAQAAAgD8AAEBAAABAQAAAAAAAAEBAAABAQAAAgD8AAIA/AABAQAAAAAAAAIA/AABAQAAAgD8AAABAAABAQAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAgD8AAABAAAAAAAAAAAAAAEBAAAAAAAAAgD8AAEBAAAAAQAAAAAAAAIA/AAAAQAAAgD8AAIA/AAAAQAAAAAAAAABAAAAAQAAAgD8AAABA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7///////38AgP//////fwCA//////9/AID//////38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78=")
+}]
+
+[node name="VoxlyCore" type="Node3D" unique_id=1289279163]
+
+[node name="Capture" parent="." unique_id=602709800 instance=ExtResource("1_3vnbg")]
+save_to = "res://voxly-core.png"
+transparent_background = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1311058256]
+environment = SubResource("Environment_pm41k")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1960017853]
+transform = Transform3D(-0.7071067, 0.35355327, -0.6123725, 0, 0.8660255, 0.49999985, 0.7071067, 0.35355327, -0.6123725, 0, 0, 0)
+light_angular_distance = 5.0
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=570250219]
+transform = Transform3D(0.7071067, -0.35355335, 0.6123725, 0, 0.86602545, 0.49999997, -0.7071068, -0.35355332, 0.6123724, 2.8484507, 2.3712187, 2.8484507)
+projection = 1
+size = 7.0
+far = 50.0
+
+[node name="VoxelModel3D" type="Node3D" parent="." unique_id=75191219]
+script = ExtResource("1_cx3au")
+origin = Vector3(-1.5, -1.5, -1.5)
+shape = Vector3i(3, 3, 3)
+_voxel_data = PackedByteArray("AAAAAAEAAAACAAAAAAAAAAAAAAACAAAAAgAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAABAAAAAAAAAAEAAAACAAAAAAAAAAEAAAACAAAAAgAAAAAAAAABAAAAAgAAAAAAAAAAAAAAAQAAAAIAAAABAAAAAAAAAAEAAAAAAAAAAAAAAAIAAAACAAAAAQAAAAAAAAACAAAAAgAAAAIAAAAAAAAAAgAAAAIAAAACAAAAAAAAAAEAAAACAAAA")
+voxel_set = SubResource("Resource_6f1tp")
+metadata/_custom_type_script = "uid://ptbwa2u0mxpf"
+metadata/_edit_group_ = true
+metadata/_voxly_core_editing_ = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="VoxelModel3D" unique_id=648320719]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, -1.5, -1.5)
+mesh = SubResource("ArrayMesh_3vnbg")
