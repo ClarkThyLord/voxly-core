@@ -2,13 +2,8 @@
 extends EditorImportPlugin
 ## Imports palette files (.gpl, .json, .txt, .pal, .hex) as VoxelSet.
 ## Also imports image files (.png, .jpg, etc.) and .vox files as VoxelSet.
-## The VoxelSet always imports the complete palette — for compact/reference
+## The VoxelSet always imports the complete palette; for compact/reference
 ## options, use the VoxelModel3D importer instead.
-##
-## Import options:
-##   - allow_repeated (bool): When disabled (default), duplicate color values
-##     are skipped, keeping only unique colors in the resulting palette.
-##     Enable to keep all color entries including duplicate values.
 
 const DEBUG_CONTEXT := "VoxelSetImport"
 
@@ -37,7 +32,7 @@ func _get_import_options(path: String, preset_index: int) -> Array[Dictionary]:
 	var ext := path.get_extension().to_lower()
 	var options: Array[Dictionary] = []
 	
-	# Allow repeated colors option (available for all palette/image formats)
+	# Allow repeated colors options.
 	var is_palette_or_image := ext in ["gpl", "json", "txt", "pal", "hex", "png", "bmp", "jpg", "jpeg", "tga"]
 	if is_palette_or_image:
 		options.append({
@@ -46,7 +41,7 @@ func _get_import_options(path: String, preset_index: int) -> Array[Dictionary]:
 			"usage": PROPERTY_USAGE_DEFAULT,
 		})
 	
-	# If importing a .vox file as a set, add the import_mode option
+	# If importing a .vox file as a set.
 	if path.ends_with(".vox"):
 		options.append({
 			"name": "import_mode",
@@ -80,18 +75,21 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 	if include_materials and read_result.has("materials") and not read_result["materials"].is_empty():
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Adding %d materials to VoxelSet" % read_result["materials"].size())
 		var mat_dict: Dictionary = read_result["materials"]
+		var palette: Dictionary = read_result.get("palette", {})
 		for mat_id in mat_dict:
 			var mat_data: Dictionary = mat_dict[mat_id]
 			var material := StandardMaterial3D.new()
-			if mat_data.has("color"):
-				material.albedo_color = mat_data["color"]
-			if mat_data.has("metallic"):
-				material.metallic = mat_data["metallic"]
-			if mat_data.has("roughness"):
-				material.roughness = mat_data["roughness"]
-			if mat_data.has("emission"):
-				material.emission = mat_data["emission"]
-				material.emission_energy_multiplier = mat_data.get("emission_energy", 1.0)
+			
+			# Get palette color for this material (MATL material_ids are 1-indexed, palette keys are 0-indexed)
+			var pal_idx := int(mat_id) - 1
+			var palette_color := Color.WHITE
+			if palette.has(pal_idx):
+				var pal_voxel: Voxel = palette[pal_idx]
+				palette_color = pal_voxel.base_color
+			
+			# Apply all MagicaVoxel material properties to Godot StandardMaterial3D
+			VoxReader.apply_material_properties(material, mat_data, palette_color)
+			
 			material.vertex_color_use_as_albedo = true
 			voxel_set.set_material(str(mat_id), material)
 	

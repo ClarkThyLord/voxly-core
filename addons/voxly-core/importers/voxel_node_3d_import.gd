@@ -25,7 +25,7 @@ func _get_preset_count() -> int:
 	return Presets.size()
 
 func _get_recognized_extensions() -> PackedStringArray:
-	return PackedStringArray(["vox", "png", "jpg", "jpeg", "bmp", "tga", "webp"])
+	return PackedStringArray(["vox", "png", "jpg", "jpeg", "bmp", "tga", "webp", "dds", "exr", "hdr", "svg", "svgz"])
 
 func _get_resource_type() -> String:
 	return "PackedScene"
@@ -85,6 +85,165 @@ func get_shared_options(preset: int) -> Array[Dictionary]:
 			pass
 	
 	return options
+
+## Returns true if the given file path has a recognized image extension.
+static func is_image_file(path: String) -> bool:
+	var ext := path.get_extension().to_lower()
+	return ext in PackedStringArray(["png", "jpg", "jpeg", "bmp", "tga", "webp", "dds", "exr", "hdr", "svg", "svgz"])
+
+## Returns the import options specific to image files.
+## Shown only for image sources and passed through to ImageReader.
+static func get_image_import_options() -> Array[Dictionary]:
+	return [
+		{
+			"name": "alpha_threshold",
+			"default_value": 0.1,
+			"property_hint": PROPERTY_HINT_RANGE,
+			"hint_string": "0.0, 1.0, 0.01",
+			"usage": PROPERTY_USAGE_DEFAULT,
+		},
+		{
+			"name": "depth",
+			"default_value": 1,
+			"property_hint": PROPERTY_HINT_RANGE,
+			"hint_string": "1, 64, 1",
+			"usage": PROPERTY_USAGE_DEFAULT,
+		},
+		{
+			"name": "flip_x",
+			"default_value": false,
+			"usage": PROPERTY_USAGE_DEFAULT,
+		},
+		{
+			"name": "flip_y",
+			"default_value": false,
+			"usage": PROPERTY_USAGE_DEFAULT,
+		},
+	]
+
+## Collects the unique voxel IDs present in a voxel dictionary,
+## in first-seen order. Used for Compact palette mode.
+static func collect_used_voxel_ids(voxels: Dictionary) -> Array:
+	var used: Array = []
+	var seen: Dictionary = {}
+	for pos in voxels:
+		var vid: int = voxels[pos]
+		if not seen.has(vid):
+			seen[vid] = true
+			used.append(vid)
+	return used
+
+## Reads a source file and builds a VoxelSet plus the flattened voxel dictionary.
+## Handles Full/Compact/Reference palette modes.
+## Returns {"error": int, "voxel_set": VoxelSet, "voxels": Dictionary}
+func read_voxel_content(source_file: String, options: Dictionary) -> Dictionary:
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Reading file: '%s'" % source_file)
+	var read_result := VoxlyReader.read_file(source_file, options)
+	var error: int = read_result.get("error", ERR_FILE_CORRUPT)
+	if error != OK:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Failed to read file: error=%d" % error)
+		return { "error": error, "voxel_set": null, "voxels": {} }
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Read result: voxels=%d, palette=%d, materials=%d" % [
+		read_result.get("voxels", {}).size(),
+		read_result.get("palette", {}).size(),
+		read_result.get("materials", {}).size(),
+	])
+	
+	var palette_mode: int = options.get("palette_mode", PaletteMode.FULL)
+	var reference_path: String = options.get("reference_voxel_set_path", "")
+	
+	var used_voxel_ids: Array = []
+	if palette_mode == PaletteMode.COMPACT:
+		used_voxel_ids = collect_used_voxel_ids(read_result.get("voxels", {}))
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Compact mode: %d unique palette IDs used by %d voxels" % [used_voxel_ids.size(), read_result.get("voxels", {}).size()])
+	
+	var voxel_set: VoxelSet = null
+	if palette_mode == PaletteMode.REFERENCE:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Reference mode: loading VoxelSet from '%s'" % reference_path)
+		voxel_set = create_voxel_set(read_result, palette_mode, [], reference_path)
+		if voxel_set == null:
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Failed to load reference VoxelSet, aborting")
+			return { "error": ERR_FILE_CANT_OPEN, "voxel_set": null, "voxels": {} }
+	else:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Creating VoxelSet from read result (mode: %s)..." % ["Full", "Compact"][palette_mode])
+		voxel_set = create_voxel_set(read_result, palette_mode, used_voxel_ids)
+		if voxel_set == null:
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Failed to create VoxelSet, aborting")
+			return { "error": ERR_FILE_CANT_OPEN, "voxel_set": null, "voxels": {} }
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "VoxelSet ready with %d voxels and %d materials" % [
+		voxel_set.get_voxels_count(),
+		voxel_set.get_materials_count(),
+	])
+	
+	return {
+		"error": OK,
+		"voxel_set": voxel_set,
+		"voxels": read_result.get("voxels", {}),
+	}
+
+## Builds an ArrayMesh from a flat voxel dictionary using the current VoxelMesher.
+## The mesh_mode option selects the meshing algorithm (Brute/Naive/Greedy).
+## The voxels dictionary is converted to a typed Dictionary[Vector3i, int]
+## because the mesher's methods require typed dictionaries.
+static func build_array_mesh(voxels: Dictionary, voxel_set: VoxelSet, options: Dictionary) -> ArrayMesh:
+	var voxel_size_value: float = options.get("voxel_size", 0.5)
+	var mesh_mode: int = options.get("mesh_mode", VoxelNode3D.MeshMode.GREEDY)
+	
+	# Convert to a typed dictionary.
+	var typed_voxels: Dictionary[Vector3i, int] = {}
+	for pos in voxels:
+		typed_voxels[pos] = voxels[pos]
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, "VoxelNode3DImportPlugin", "Building ArrayMesh: %d voxels, mesh_mode=%d, voxel_size=%.2f" % [typed_voxels.size(), mesh_mode, voxel_size_value])
+	
+	var mesher := VoxelMesher.create()
+	mesher.begin(
+		Vector3(voxel_size_value, voxel_size_value, voxel_size_value),
+		voxel_set,
+		options.get("voxels_colored", true),
+		options.get("voxels_textured", true)
+	)
+	
+	match mesh_mode:
+		VoxelNode3D.MeshMode.BRUTE:
+			mesher.add_all_faces(typed_voxels)
+		VoxelNode3D.MeshMode.NAIVE:
+			mesher.add_culled_faces(typed_voxels)
+		_: # GREEDY default
+			mesher.add_greedy_faces(typed_voxels)
+	
+	var mesh := mesher.commit()
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_MESHER, "VoxelNode3DImportPlugin", "Mesh built: %d surfaces" % mesh.get_surface_count())
+	return mesh
+
+## Returns a copy of the voxel dictionary shifted so the lowest voxel rests
+## on the Y=0 plane. Returns the dictionary unchanged when snapping is disabled.
+static func maybe_snap_voxels_to_ground(voxels: Dictionary, enable_snap: bool) -> Dictionary:
+	if not enable_snap or voxels.is_empty():
+		return voxels
+	
+	var min_y := 0
+	var first := true
+	for pos in voxels:
+		var p: Vector3i = pos
+		if first:
+			min_y = p.y
+			first = false
+		else:
+			min_y = mini(min_y, p.y)
+	
+	if min_y == 0:
+		return voxels
+	
+	var shifted: Dictionary = {}
+	for pos in voxels:
+		var p: Vector3i = pos
+		shifted[Vector3i(p.x, p.y - min_y, p.z)] = voxels[pos]
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, "VoxelNode3DImportPlugin", "Snapped voxels to ground: min_y=%d, shifted %d voxels" % [min_y, shifted.size()])
+	return shifted
 
 ## Creates a VoxelSet from a reader result's palette and materials.
 ## palette_mode controls which palette entries are included:
@@ -158,17 +317,22 @@ func create_voxel_set(read_result: Dictionary, palette_mode: int = PaletteMode.F
 		for mat_id in materials_dict:
 			var mat_data: Dictionary = materials_dict[mat_id]
 			var material := StandardMaterial3D.new()
-			if mat_data.has("color"):
-				material.albedo_color = mat_data["color"]
-			if mat_data.has("metallic"):
-				material.metallic = mat_data["metallic"]
-			if mat_data.has("roughness"):
-				material.roughness = mat_data["roughness"]
-			if mat_data.has("emission"):
-				material.emission = mat_data["emission"]
-				material.emission_energy_multiplier = mat_data.get("emission_energy", 1.0)
+			
+			# Get palette color for this material (MATL material_ids are 1-indexed, palette keys are 0-indexed)
+			var pal_idx := int(mat_id) - 1
+			var palette_color := Color.WHITE
+			if palette.has(pal_idx):
+				var pal_voxel: Voxel = palette[pal_idx]
+				palette_color = pal_voxel.base_color
+			
+			# Apply all MagicaVoxel material properties to Godot StandardMaterial3D
+			VoxReader.apply_material_properties(material, mat_data, palette_color)
+			
 			material.vertex_color_use_as_albedo = true
 			voxel_set.set_material(str(mat_id), material)
+			
+			if mat_data.has("emission"):
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Material %d: emission enabled, type=%s, energy=%.2f" % [mat_id, mat_data.get("type", "?"), material.emission_energy_multiplier])
 
 	# Add voxels from palette
 	if not palette.is_empty():

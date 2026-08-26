@@ -1,11 +1,7 @@
 @tool
 extends VoxelNode3DImportPlugin
-## Imports voxel files (.vox, .png, .jpg) as a singular VoxelNode3d node or 
+## Imports voxel files (.vox, .png, .jpg) as a singular VoxelNode3D node or 
 ## composed scenes.
-##
-## Creates a complete VoxelModel3D node with voxels, palette, and materials
-## from the imported file. Supports voxel size and palette modes:
-## Full (all palette), Compact (used only), and Reference (point to external VoxelSet).
 
 func _init() -> void:
 	DEBUG_CONTEXT = "VoxelModel3DImport"
@@ -17,8 +13,6 @@ func _get_importer_name() -> String:
 	return "Voxly-Core.VoxelModel3D"
 
 func _get_import_options(path: String, preset_index: int) -> Array[Dictionary]:
-	var is_image := _is_image_file(path)
-	
 	var options: Array[Dictionary] = [
 		{
 			"name": "name",
@@ -41,49 +35,22 @@ func _get_import_options(path: String, preset_index: int) -> Array[Dictionary]:
 		},
 	]
 	
-	# Image-specific import options (only shown for image files)
-	if is_image:
-		options.append({
-			"name": "alpha_threshold",
-			"default_value": 0.1,
-			"property_hint": PROPERTY_HINT_RANGE,
-			"hint_string": "0.0, 1.0, 0.01",
-			"usage": PROPERTY_USAGE_DEFAULT,
-		})
-		options.append({
-			"name": "depth",
-			"default_value": 1,
-			"property_hint": PROPERTY_HINT_RANGE,
-			"hint_string": "1, 64, 1",
-			"usage": PROPERTY_USAGE_DEFAULT,
-		})
-		options.append({
-			"name": "flip_x",
-			"default_value": false,
-			"usage": PROPERTY_USAGE_DEFAULT,
-		})
-		options.append({
-			"name": "flip_y",
-			"default_value": false,
-			"usage": PROPERTY_USAGE_DEFAULT,
-		})
+	# Image-specific import options
+	if is_image_file(path):
+		options.append_array(get_image_import_options())
 	
 	options.append_array(get_shared_options(preset_index))
 	return options
 
-func _is_image_file(path: String) -> bool:
-	var ext := path.get_extension().to_lower()
-	return ext in PackedStringArray(["png", "jpg", "jpeg", "bmp", "tga", "webp"])
-
 func _get_option_visibility(path: String, option_name: StringName, options: Dictionary) -> bool:
-	# Hide palette_mode and related options for image files (not relevant)
+	# Hide palette_mode and related options for image files.
 	var image_only_opts := PackedStringArray(["alpha_threshold", "depth", "flip_x", "flip_y"])
 	if option_name in image_only_opts:
-		return _is_image_file(path)
+		return is_image_file(path)
 	
-	# Show palette_mode only for non-image files
+	# Show palette_mode only for non-image files.
 	if option_name in PackedStringArray(["palette_mode", "reference_voxel_set_path"]):
-		return not _is_image_file(path)
+		return not is_image_file(path)
 	
 	return true
 
@@ -91,7 +58,6 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Importing file: '%s' -> '%s'" % [source_file, save_path])
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Import options: %s" % options)
 	
-	# Read the file
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Reading file with VoxlyReader...")
 	var read_result := VoxlyReader.read_file(source_file, options)
 	var error: int = read_result.get("error", ERR_FILE_CORRUPT)
@@ -105,11 +71,11 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 		read_result.get("materials", {}).size(),
 	])
 	
-	# Collect palette_mode and palette options
+	# Collect palette_mode and palette options.
 	var palette_mode: int = options.get("palette_mode", PaletteMode.FULL)
 	var reference_path: String = options.get("reference_voxel_set_path", "")
 	
-	# Collect used voxel IDs for Compact mode
+	# Collect used voxel IDs for Compact mode.
 	var used_voxel_ids: Array = []
 	if palette_mode == PaletteMode.COMPACT:
 		var all_voxels: Dictionary = read_result.get("voxels", {})
@@ -121,7 +87,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 				used_voxel_ids.append(vid)
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Compact mode: %d unique palette IDs used by %d voxels" % [used_voxel_ids.size(), all_voxels.size()])
 	
-	# Create the VoxelSet
+	# Create the VoxelSet.
 	var voxel_set: VoxelSet = null
 	
 	if palette_mode == PaletteMode.REFERENCE:
@@ -143,7 +109,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "No VoxelSet available, aborting")
 		return ERR_FILE_CANT_OPEN
 	
-	# Create root node
+	# Create root Node.
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Creating root node...")
 	var name: String = options.get("name", "")
 	if name.is_empty():
@@ -154,7 +120,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 	var import_mode: int = options.get("import_mode", 0) # 0=Merged, 1=Hierarchical
 	var bounds_mode: int = options.get("bounds_mode", 0) # 0=Fit to Voxels, 1=Original Chunk Size
 	
-	# Get scene models from reader
+	# Get scene models from reader.
 	var scene_models: Array = read_result.get("scene_models", [])
 	var model: Node
 	
@@ -169,7 +135,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 			var sm: Dictionary = scene_models[i]
 			var sm_voxels: Dictionary = sm["voxels"].duplicate()
 			
-			var child_shift := _shift_to_non_negative(sm_voxels)
+			var child_shift := VoxlyReader.shift_voxels_to_non_negative(sm_voxels)
 			
 			var child := VoxelModel3D.new()
 			var scene_name: String = sm.get("name", "")
@@ -187,7 +153,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 			if bounds_mode == 1 and sm.has("size"):
 				# Original Chunk Size: use the original SIZE chunk dimensions
 				var original_size: Vector3i = sm["size"]
-				var fitted := _calc_bounds(sm_voxels)
+				var fitted := VoxlyReader.calc_voxel_bounds(sm_voxels)
 				# Ensure shape is at least as large as the actual voxel bounds
 				child.shape = Vector3i(
 					max(original_size.x, fitted.x),
@@ -197,7 +163,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Original chunk size: %s, fitted: %s -> shape=%s" % [original_size, fitted, child.shape])
 			else:
 				# Fit to Voxels: tight bounding of actual voxel positions (default)
-				child.shape = _calc_bounds(sm_voxels)
+				child.shape = VoxlyReader.calc_voxel_bounds(sm_voxels)
 			
 			child.origin = Vector3(child_shift)
 			
@@ -206,7 +172,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 			
 			parent.add_child(child)
 			child.owner = parent
-			child.rebuild_mesh()
+			child.update()
 			# Override MeshInstance3D owner from parent back to child so
 			# PackedScene.pack(parent) correctly serializes the grandchild tree.
 			for grandchild in child.get_children():
@@ -215,7 +181,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 		model = parent
 	
 	else:
-		# Merged (default): single VoxelModel3D with all voxels merged together
+		# Merged: single VoxelModel3D with all voxels merged together
 		var flat_voxels: Dictionary = read_result.get("voxels", {}).duplicate()
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Merged import with %d voxels" % flat_voxels.size())
 		
@@ -228,8 +194,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 		single.voxels_textured = options.get("voxels_textured", true)
 		
 		if not flat_voxels.is_empty():
-			var shift := _shift_to_non_negative(flat_voxels)
-			single.shape = _calc_bounds(flat_voxels)
+			var shift := VoxlyReader.shift_voxels_to_non_negative(flat_voxels)
+			single.shape = VoxlyReader.calc_voxel_bounds(flat_voxels)
 			single.origin = Vector3(shift)
 			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Shift applied: origin=%s shape=%s" % [single.origin, single.shape])
 		
@@ -237,7 +203,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 			single.set_voxel(pos, flat_voxels[pos])
 		
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_IMPORTERS, DEBUG_CONTEXT, "Rebuilding mesh (%d voxels set)..." % flat_voxels.size())
-		single.rebuild_mesh()
+		single.update()
 		# Ensure MeshInstance3D child is owned by the model so PackedScene.pack()
 		# includes it (and its mesh) in the serialized scene.
 		for child in single.get_children():
@@ -261,52 +227,3 @@ func _import(source_file: String, save_path: String, options: Dictionary, r_plat
 	
 	model.free()
 	return error
-
-## Shifts all voxels so the minimum position becomes (0,0,0).
-## Returns the shift amount (original min_pos).
-## Modifies the voxels dict in-place.
-static func _shift_to_non_negative(voxels: Dictionary) -> Vector3i:
-	if voxels.is_empty():
-		return Vector3i.ZERO
-	
-	var min_pos := Vector3i.ZERO
-	var first := true
-	for pos in voxels:
-		var p: Vector3i = pos
-		if first:
-			min_pos = p
-			first = false
-		else:
-			min_pos = Vector3i(min(min_pos.x, p.x), min(min_pos.y, p.y), min(min_pos.z, p.z))
-	
-	if min_pos == Vector3i.ZERO:
-		return Vector3i.ZERO
-	
-	var shifted: Dictionary = {}
-	for pos in voxels:
-		shifted[pos - min_pos] = voxels[pos]
-	voxels.clear()
-	for pos in shifted:
-		voxels[pos] = shifted[pos]
-	
-	return min_pos
-
-## Calculates the bounding box size of voxels (max - min + 1).
-static func _calc_bounds(voxels: Dictionary) -> Vector3i:
-	if voxels.is_empty():
-		return Vector3i(1, 1, 1)
-	
-	var min_pos := Vector3i.ZERO
-	var max_pos := Vector3i.ZERO
-	var first := true
-	for pos in voxels:
-		var p: Vector3i = pos
-		if first:
-			min_pos = p
-			max_pos = p
-			first = false
-		else:
-			min_pos = Vector3i(min(min_pos.x, p.x), min(min_pos.y, p.y), min(min_pos.z, p.z))
-			max_pos = Vector3i(max(max_pos.x, p.x), max(max_pos.y, p.y), max(max_pos.z, p.z))
-	
-	return Vector3i(max_pos.x - min_pos.x + 1, max_pos.y - min_pos.y + 1, max_pos.z - min_pos.z + 1)
