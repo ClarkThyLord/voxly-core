@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://c10ew8cumsrcl"]
+
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_8g1dt"]
+[ext_resource type="PackedScene" uid="uid://dglavgogidpxw" path="res://examples/scenes/magica_room/magica_room.vox" id="2_yplhn"]
+
+[node name="MagicaRoom" type="Node3D" unique_id=2131558723]
+
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("1_8g1dt")]
+
+[node name="CameraPivot" parent="ExampleSetup" index="2" unique_id=296509562]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, 0)
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" index="0" unique_id=1150340663]
+transform = Transform3D(-1, 2.622015e-08, -1.4870184e-07, 0, 0.9848078, 0.1736482, 1.509958e-07, 0.1736482, -0.9848078, 0, 2, -9)
+
+[node name="magica_room" parent="." unique_id=1999188263 instance=ExtResource("2_yplhn")]
+metadata/_edit_group_ = true
+
+[editable path="ExampleSetup"]
+[editable path="magica_room"]

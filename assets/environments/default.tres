@@ -8,3 +8,9 @@ sky_material = SubResource("ProceduralSkyMaterial_bd0ut")
 [resource]
 background_mode = 2
 sky = SubResource("Sky_235nm")
+ssr_enabled = true
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_enabled = true
+glow_enabled = true
+glow_intensity = 2.89

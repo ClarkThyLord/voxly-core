@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://dxtlgnae4kyjn"]
+
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_aqsjr"]
+[ext_resource type="ArrayMesh" uid="uid://domnmf7876sqy" path="res://examples/import/vox_as_mesh/chr_knight.vox" id="2_po4ps"]
+
+[node name="VoxAsMesh" type="Node3D" unique_id=53352345]
+
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("1_aqsjr")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, 1.5180806e-08, -8.609463e-08, 0, 0.9848078, 0.17364818, 8.742278e-08, 0.17364818, -0.9848078, 0, 5, -7)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1537796743]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+mesh = ExtResource("2_po4ps")
+
+[editable path="ExampleSetup"]

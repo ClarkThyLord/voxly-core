@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/chr_knight.vox-c0abec43afbf98164abb3ab58678d5
 
 [params]
 
-import_mode=0
+import_mode=1

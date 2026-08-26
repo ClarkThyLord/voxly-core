@@ -38,6 +38,7 @@ _surfaces = [{
 "index_count": 108,
 "index_data": PackedByteArray("AAABAAIAAQADAAIABAAFAAYABQAHAAYACAAJAAoACQALAAoADAANAA4ADQAPAA4AEAARABIAEQATABIAFAAVABYAFQAXABYAGAAZABoAGQAbABoAHAAdAB4AHQAfAB4AIAAhACIAIQAjACIAJAAlACYAJQAnACYAKAApACoAKQArACoALAAtAC4ALQAvAC4AMAAxADIAMQAzADIANAA1ADYANQA3ADYAOAA5ADoAOQA7ADoAPAA9AD4APQA/AD4AQABBAEIAQQBDAEIARABFAEYARQBHAEYA"),
 "material": SubResource("StandardMaterial3D_1mqff"),
+"name": "not_textured",
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 72,
@@ -52,12 +53,12 @@ script = ExtResource("1_f5lo6")
 [node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
 transform = Transform3D(-1, 1.5180806e-08, -8.609463e-08, 0, 0.9848078, 0.17364818, 8.742278e-08, 0.17364818, -0.9848078, 0, 2, -4)
 
-[node name="VoxelModel3D" type="Node3D" parent="." unique_id=236562426]
+[node name="VoxelModel3D" type="Node3D" parent="." unique_id=837683269]
 script = ExtResource("2_fbyfd")
 _voxel_data = PackedByteArray("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAACAAAAAAAAAAIAAAA=")
 voxel_set = SubResource("Resource_f2ugm")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="VoxelModel3D" unique_id=711277500]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="VoxelModel3D" unique_id=1231610026]
 mesh = SubResource("ArrayMesh_48qpt")
 
 [editable path="ExampleSetup"]

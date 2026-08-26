@@ -39,6 +39,6 @@ func _rebuild_scene():
 	add_child(voxel_model_3d)
 	voxel_model_3d.name = "VoxelModel3D"
 	voxel_model_3d.owner = self
-	voxel_model_3d.rebuild_mesh()
+	voxel_model_3d.update()
 
 	print("Example scene built successfully!")

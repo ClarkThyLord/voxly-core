@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://cxae7xq51e432"]
+
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_jm4wy"]
+[ext_resource type="ArrayMesh" uid="uid://clc26gk2kaddb" path="res://examples/import/png_as_mesh/sword_diamond.png" id="2_yhsea"]
+
+[node name="PngAsMesh" type="Node3D" unique_id=1348704182]
+
+[node name="ExampleSetup" parent="." unique_id=1698688896 instance=ExtResource("1_jm4wy")]
+
+[node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
+transform = Transform3D(-1, -2.262668e-08, 8.444392e-08, 0, 0.9659258, 0.25881904, -8.742278e-08, 0.25881904, -0.9659258, 0, 4, -8)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1562424785]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, -5.5, 0)
+mesh = ExtResource("2_yhsea")
+
+[editable path="ExampleSetup"]

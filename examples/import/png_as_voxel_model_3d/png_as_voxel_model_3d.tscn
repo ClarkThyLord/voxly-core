@@ -10,7 +10,9 @@
 [node name="Camera3D" parent="ExampleSetup/CameraPivot" parent_id_path=PackedInt32Array(1698688896, 296509562) index="0" unique_id=1150340663]
 transform = Transform3D(-1, -2.262668e-08, 8.444392e-08, 0, 0.9659258, 0.25881904, -8.742278e-08, 0.25881904, -0.9659258, 0, 4, -8)
 
-[node name="sword_diamond" parent="." unique_id=133062205 instance=ExtResource("1_sn71b")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -5, 0)
+[node name="sword_diamond" parent="." unique_id=1105352056 instance=ExtResource("1_sn71b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, -6, 0)
+metadata/_edit_group_ = true
+metadata/_voxly_core_editing_ = false
 
 [editable path="ExampleSetup"]

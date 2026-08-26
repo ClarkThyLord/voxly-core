@@ -36,6 +36,6 @@ func _rebuild_scene():
 			for z in range(3 - y):
 				voxel_model_3d.set_voxel(Vector3i(x, y, z), y % 3)
 	
-	voxel_model_3d.rebuild_mesh()
+	voxel_model_3d.update()
 	
 	print("Example scene built successfully!")
