@@ -1,0 +1,730 @@
+[gd_scene format=3 uid="uid://dv4bqecl2iebt"]
+
+[ext_resource type="Script" uid="uid://bihgup11lankj" path="res://addons/voxly-core/ui/voxel_node_3d_editor/voxel_node_3d_editor.gd" id="1_a6a7i"]
+[ext_resource type="Texture2D" uid="uid://dkb31hv64yje0" path="res://addons/voxly-core/assets/icons/mirror_x.svg" id="2_y7vov"]
+[ext_resource type="Texture2D" uid="uid://4txyjep8rkvv" path="res://addons/voxly-core/assets/icons/mirror_y.svg" id="3_p4ii0"]
+[ext_resource type="Texture2D" uid="uid://drfua06tdty8u" path="res://addons/voxly-core/assets/icons/mirror_z.svg" id="4_72ssg"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_y7vov"]
+device = -1
+keycode = 32
+unicode = 32
+
+[sub_resource type="Shortcut" id="Shortcut_8op8x"]
+events = [SubResource("InputEventKey_y7vov")]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_613lk"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_06131"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="VoxelNode3DEditor" type="BoxContainer" unique_id=291125357]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical = true
+script = ExtResource("1_a6a7i")
+title = "VoxelNode3D Editor"
+
+[node name="ToolbarContainer" type="HBoxContainer" parent="." unique_id=1376160923]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FlowContainer" type="FlowContainer" parent="ToolbarContainer" unique_id=84825261]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleHBoxContainer" type="HBoxContainer" parent="ToolbarContainer/FlowContainer" unique_id=1193723173]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ToolbarContainer/FlowContainer/TitleHBoxContainer" unique_id=98494366]
+unique_name_in_owner = true
+layout_mode = 2
+text = "VoxelNode3D Editor"
+
+[node name="VBoxContainer" type="HBoxContainer" parent="ToolbarContainer/FlowContainer" unique_id=1485767698]
+layout_mode = 2
+
+[node name="EditingCheckBox" type="CheckBox" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1638798510]
+unique_name_in_owner = true
+layout_mode = 2
+shortcut = SubResource("Shortcut_8op8x")
+text = "Editing"
+
+[node name="VSeparator" type="VSeparator" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=808998058]
+layout_mode = 2
+
+[node name="SelectMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1871278738]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Select"
+
+[node name="EditMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1948966504]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Edit"
+
+[node name="ImportMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1269091848]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Import"
+item_count = 2
+popup/item_0/text = "Append..."
+popup/item_0/id = 0
+popup/item_1/text = "Replace..."
+popup/item_1/id = 1
+
+[node name="SettingsMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=950767497]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+item_count = 2
+popup/item_0/text = "Grid Settings"
+popup/item_0/id = 0
+popup/item_1/text = "Preview Settings"
+popup/item_1/id = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ToolbarContainer" unique_id=764172829]
+layout_mode = 2
+alignment = 2
+
+[node name="NoticeHBoxContainer" type="HBoxContainer" parent="ToolbarContainer/HBoxContainer" unique_id=1931203449]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="NoticeLabel" type="Label" parent="ToolbarContainer/HBoxContainer/NoticeHBoxContainer" unique_id=1725535307]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.81960785, 0.73333335, 0.45882353, 1)
+text = "No VoxelSet attached!"
+
+[node name="NewVoxelSetButton" type="Button" parent="ToolbarContainer/HBoxContainer/NoticeHBoxContainer" unique_id=947487]
+unique_name_in_owner = true
+custom_maximum_size = Vector2(150, -1)
+layout_mode = 2
+size_flags_vertical = 3
+text = "Add VoxelSet"
+
+[node name="VoxelSetEditorButton" type="Button" parent="ToolbarContainer/HBoxContainer/NoticeHBoxContainer" unique_id=932096118]
+unique_name_in_owner = true
+custom_maximum_size = Vector2(150, -1)
+layout_mode = 2
+size_flags_vertical = 3
+text = "VoxelSet"
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=508660784]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_613lk")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=2055920635]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HSplitContainer" type="HSplitContainer" parent="PanelContainer/MarginContainer" unique_id=630408570]
+layout_mode = 2
+theme_override_constants/separation = 20
+theme_override_constants/minimum_grab_thickness = 20
+split_offsets = PackedInt32Array(344)
+split_offset = 344
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer" unique_id=54279665]
+layout_mode = 2
+
+[node name="MirroringContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer" unique_id=1221230380]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 1
+
+[node name="XMirrorCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/MirroringContainer" unique_id=2129289843]
+unique_name_in_owner = true
+layout_mode = 2
+text = "X Mirror"
+icon = ExtResource("2_y7vov")
+
+[node name="YMirrorCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/MirroringContainer" unique_id=1459243324]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Y Mirror"
+icon = ExtResource("3_p4ii0")
+
+[node name="ZMirrorCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/MirroringContainer" unique_id=1266494726]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Z Mirror"
+icon = ExtResource("4_72ssg")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer" unique_id=116527156]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BoxContainer" type="BoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer" unique_id=61171276]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical = true
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer/BoxContainer" unique_id=1654770291]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Brushes:"
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer/BoxContainer" unique_id=1949336756]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_06131")
+
+[node name="BrushContainer" type="HFlowContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer/BoxContainer/PanelContainer" unique_id=2099586962]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+last_wrap_alignment = 2
+
+[node name="BoxContainer2" type="BoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer" unique_id=715913904]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical = true
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer/BoxContainer2" unique_id=1562096455]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Tools:"
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer/BoxContainer2" unique_id=1483153685]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_06131")
+
+[node name="ToolsContainer" type="HFlowContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer/HBoxContainer/BoxContainer2/PanelContainer" unique_id=1505710581]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+last_wrap_alignment = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer" unique_id=104613062]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2" unique_id=1815327775]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer" unique_id=2120882972]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer" unique_id=731908863]
+layout_mode = 2
+text = "Options:"
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer" unique_id=1739343404]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_06131")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer" unique_id=701248524]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer" unique_id=1969280426]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer/ScrollContainer" unique_id=1677476191]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BrushOptionsFoldableContainer" type="FoldableContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer/ScrollContainer/VBoxContainer" unique_id=2011182527]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Brush"
+
+[node name="BrushOptionsGridContainer" type="GridContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer/ScrollContainer/VBoxContainer/BrushOptionsFoldableContainer" unique_id=1922244145]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 2
+
+[node name="ToolOptionsFoldableContainer" type="FoldableContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer/ScrollContainer/VBoxContainer" unique_id=2108525262]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Tool"
+
+[node name="ToolOptionsGridContainer" type="GridContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer/ScrollContainer/VBoxContainer/ToolOptionsFoldableContainer" unique_id=72945231]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer" unique_id=342582075]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2" unique_id=541937065]
+layout_mode = 2
+text = "Node:"
+
+[node name="NodeContextContainer" type="PanelContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2" unique_id=1080272453]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_06131")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer" unique_id=340649124]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer" unique_id=1042935591]
+layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer" unique_id=1334338545]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VoxelNode3DContainer" type="FoldableContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer" unique_id=2005252137]
+unique_name_in_owner = true
+layout_mode = 2
+title = "VoxelNode3D"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer" unique_id=158029758]
+layout_mode = 2
+
+[node name="VoxelSizeContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer" unique_id=307646879]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer" unique_id=1053770078]
+layout_mode = 2
+text = "Voxel Size:"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer" unique_id=1148008409]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer/HBoxContainer" unique_id=2062577969]
+layout_mode = 2
+text = "X:"
+
+[node name="VoxelSizeXSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer/HBoxContainer" unique_id=103154113]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.01
+step = 0.01
+value = 1.0
+allow_greater = true
+custom_arrow_step = 0.1
+
+[node name="Label2" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer/HBoxContainer" unique_id=1877717916]
+layout_mode = 2
+text = "Y:"
+
+[node name="VoxelSizeYSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer/HBoxContainer" unique_id=343215994]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.01
+step = 0.01
+value = 1.0
+allow_greater = true
+custom_arrow_step = 0.1
+
+[node name="Label3" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer/HBoxContainer" unique_id=1188991630]
+layout_mode = 2
+text = "Z:"
+
+[node name="VoxelSizeZSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelNode3DContainer/VBoxContainer/VoxelSizeContainer/HBoxContainer" unique_id=1362581642]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.01
+step = 0.01
+value = 1.0
+allow_greater = true
+custom_arrow_step = 0.1
+
+[node name="VoxelModel3DContextContainer" type="FoldableContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer" unique_id=1598062055]
+unique_name_in_owner = true
+layout_mode = 2
+title = "VoxelModel3D"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer" unique_id=1289042157]
+layout_mode = 2
+
+[node name="OriginContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer" unique_id=745063029]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer" unique_id=1836812248]
+layout_mode = 2
+text = "Origin:"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer" unique_id=500351409]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer/HBoxContainer" unique_id=110352280]
+layout_mode = 2
+text = "X:"
+
+[node name="OriginXSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer/HBoxContainer" unique_id=1500592177]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+step = 0.01
+allow_greater = true
+allow_lesser = true
+custom_arrow_step = 1.0
+
+[node name="Label2" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer/HBoxContainer" unique_id=926368793]
+layout_mode = 2
+text = "Y:"
+
+[node name="OriginYSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer/HBoxContainer" unique_id=1125677455]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+step = 0.01
+allow_greater = true
+allow_lesser = true
+custom_arrow_step = 1.0
+
+[node name="Label3" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer/HBoxContainer" unique_id=410395814]
+layout_mode = 2
+text = "Z:"
+
+[node name="OriginZSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer/HBoxContainer" unique_id=1153376184]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+step = 0.01
+allow_greater = true
+allow_lesser = true
+custom_arrow_step = 1.0
+
+[node name="OriginContainer2" type="VBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer" unique_id=665970182]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2" unique_id=1908904920]
+layout_mode = 2
+text = "Shape:"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2" unique_id=1959504371]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2/HBoxContainer" unique_id=1623892758]
+layout_mode = 2
+text = "X:"
+
+[node name="ShapeXSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2/HBoxContainer" unique_id=2082098487]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 16.0
+rounded = true
+allow_greater = true
+
+[node name="Label2" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2/HBoxContainer" unique_id=1839874039]
+layout_mode = 2
+text = "Y:"
+
+[node name="ShapeYSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2/HBoxContainer" unique_id=22522172]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 16.0
+rounded = true
+allow_greater = true
+
+[node name="Label3" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2/HBoxContainer" unique_id=1521708118]
+layout_mode = 2
+text = "Z:"
+
+[node name="ShapeZSpinBox" type="SpinBox" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer/VBoxContainer2/NodeContextContainer/MarginContainer/ScrollContainer/VBoxContainer/VoxelModel3DContextContainer/VBoxContainer/OriginContainer2/HBoxContainer" unique_id=98096045]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 16.0
+rounded = true
+allow_greater = true
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2" unique_id=1303751480]
+layout_mode = 2
+
+[node name="InfoLabel" type="Label" parent="PanelContainer/MarginContainer/HSplitContainer/VBoxContainer2/HBoxContainer2" unique_id=105016091]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+
+[node name="SettingsWindow" type="Window" parent="." unique_id=1372755036]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "VoxelNode3D Editor Settings"
+initial_position = 4
+size = Vector2i(500, 250)
+visible = false
+wrap_controls = true
+transient = true
+
+[node name="SettingsTabContainer" type="TabContainer" parent="SettingsWindow" unique_id=1954168891]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 250)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 0
+tab_0/title = "Grid"
+tab_1/title = "Preview"
+
+[node name="GridSettingsContainer" type="MarginContainer" parent="SettingsWindow/SettingsTabContainer" unique_id=1364134561]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+metadata/_tab_index = 0
+metadata/_tab_name = "Grid"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer" unique_id=1284471212]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer" unique_id=822909890]
+layout_mode = 2
+columns = 2
+
+[node name="GridVisibleLabel" type="Label" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=1573583787]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Grid Visible"
+
+[node name="GridVisibleCheckBox" type="CheckBox" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=790265745]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GridColoredLabel" type="Label" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=473418198]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Grid Colored"
+
+[node name="GridColoredOptionButton" type="OptionButton" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=1367977154]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "By Axis"
+popup/item_0/id = 0
+popup/item_1/text = "Custom Color"
+popup/item_1/id = 1
+
+[node name="GridColorLabel" type="Label" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=1579881706]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Grid Color"
+
+[node name="GridColorPickerButton" type="ColorPickerButton" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=259969148]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GridModeLabel" type="Label" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=652624799]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Grid Mode"
+
+[node name="GridModeOptionButton" type="OptionButton" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer/GridContainer" unique_id=970098994]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 5
+popup/item_0/text = "Floor"
+popup/item_0/id = 0
+popup/item_1/text = "Floor Wired"
+popup/item_1/id = 1
+popup/item_2/text = "Bounding"
+popup/item_2/id = 2
+popup/item_3/text = "Bounding Wired"
+popup/item_3/id = 3
+popup/item_4/text = "Bounding Solid"
+popup/item_4/id = 4
+
+[node name="ResetGridSettingsButton" type="Button" parent="SettingsWindow/SettingsTabContainer/GridSettingsContainer/VBoxContainer" unique_id=124477429]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset Grid Settings"
+
+[node name="PreviewSettingsContainer" type="MarginContainer" parent="SettingsWindow/SettingsTabContainer" unique_id=1898670937]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+metadata/_tab_index = 1
+metadata/_tab_name = "Preview"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer" unique_id=1319987550]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer/VBoxContainer" unique_id=321464496]
+layout_mode = 2
+columns = 2
+
+[node name="PreviewVisibleLabel" type="Label" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer/VBoxContainer/GridContainer" unique_id=1676603166]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Preview Visible"
+
+[node name="PreviewVisibleCheckBox" type="CheckBox" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer/VBoxContainer/GridContainer" unique_id=1661386845]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PreviewMirroredLabel" type="Label" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer/VBoxContainer/GridContainer" unique_id=305059383]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Preview Mirrored"
+
+[node name="PreviewMirroredCheckBox" type="CheckBox" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer/VBoxContainer/GridContainer" unique_id=1607684480]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ResetPreviewSettingsButton" type="Button" parent="SettingsWindow/SettingsTabContainer/PreviewSettingsContainer/VBoxContainer" unique_id=1904901864]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset Preview Settings"
+
+[node name="ProgressWindow" type="Window" parent="." unique_id=2019137079]
+unique_name_in_owner = true
+oversampling_override = 1.0
+initial_position = 4
+size = Vector2i(134, 111)
+visible = false
+wrap_controls = true
+transient = true
+unresizable = true
+popup_window = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="ProgressWindow" unique_id=641862516]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ProgressWindow/MarginContainer" unique_id=473622549]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+
+[node name="ImportProgressBar" type="ProgressBar" parent="ProgressWindow/MarginContainer/VBoxContainer" unique_id=839002009]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ImportLabel" type="Label" parent="ProgressWindow/MarginContainer/VBoxContainer" unique_id=1208553319]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Importing \"\"..."
+
+[node name="ContextWindow" type="Window" parent="." unique_id=104473677]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Context Window"
+initial_position = 4
+size = Vector2i(104, 100)
+visible = false
+wrap_controls = true
+unresizable = true
+always_on_top = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="ContextWindow" unique_id=1453680835]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ContextWindow/MarginContainer" unique_id=1749502670]
+layout_mode = 2
+
+[node name="ContextWindowGridContainer" type="GridContainer" parent="ContextWindow/MarginContainer/VBoxContainer" unique_id=1668340832]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ContextWindow/MarginContainer/VBoxContainer" unique_id=2072861650]
+layout_mode = 2
+alignment = 1
+
+[node name="ContextWindowOkButton" type="Button" parent="ContextWindow/MarginContainer/VBoxContainer/HBoxContainer" unique_id=100263285]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ok"
+
+[node name="ContextWindowCancelButton" type="Button" parent="ContextWindow/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1508812855]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"
