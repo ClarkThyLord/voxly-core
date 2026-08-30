@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://bq1iyal1joi1b"]
 
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_mor1y"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="1_mor1y"]
 [ext_resource type="PackedScene" uid="uid://bm05pd8qgncoa" path="res://examples/import/vox_as_mesh_instance_3d/chr_knight.vox" id="2_cs05c"]
+
 
 [node name="VoxAsMeshInstance" type="Node3D" unique_id=53352345]
 

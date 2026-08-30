@@ -1,3 +1,7 @@
+## First-person character controller for the forest example.
+##
+## WASD + mouse-look movement with jump, gravity, coyote time, jump buffering,
+## and a head-bob camera effect. Esc captures/releases the mouse.
 extends CharacterBody3D
 
 ## Movement speed in meters/second.
@@ -34,19 +38,29 @@ extends CharacterBody3D
 @export var pitch_limit := 1.45
 
 @export_group("Head Bob")
+## Whether the head-bob camera effect is enabled.
 @export var head_bob_enabled := true
+## Head-bob oscillation frequency in radians per second.
 @export var head_bob_frequency := 9.0
+## Head-bob vertical amplitude in meters.
 @export var head_bob_amplitude := 0.05
 
+## The player camera that mouse-look and head-bob drive.
 @onready var camera: Camera3D = %CharacterCamera3D
 
+## True while the mouse is captured for look input.
 var _mouse_captured := false
+## Remaining time the player can still jump after leaving the ground.
 var _coyote_timer := 0.0
+## Remaining time a jump press is remembered before landing.
 var _jump_buffer_timer := 0.0
+## Accumulated head-bob phase in seconds.
 var _head_bob_time := 0.0
+## Camera Y offset used as the head-bob rest position.
 var _head_bob_base_y := 0.5
 
 
+## Configures the camera and captures the mouse on play.
 func _ready() -> void:
 	camera.current = true
 	# Render continuously between physics ticks instead of snapping per tick.
@@ -56,6 +70,7 @@ func _ready() -> void:
 	_capture_mouse()
 
 
+## Handles mouse look and escape-to-release input.
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and _mouse_captured:
 		# Yaw follows the character body, pitch is clamped on the camera.
@@ -70,6 +85,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_capture_mouse()
 
 
+## Moves the character each physics tick.
 func _physics_process(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	
@@ -113,6 +129,7 @@ func _physics_process(delta: float) -> void:
 	_update_head_bob(delta, h_vel.length())
 
 
+## Applies the head-bob camera offset based on horizontal speed.
 func _update_head_bob(delta: float, horizontal_speed: float) -> void:
 	if not head_bob_enabled or not is_instance_valid(camera):
 		return
@@ -133,6 +150,7 @@ func _update_head_bob(delta: float, horizontal_speed: float) -> void:
 	camera.position = Vector3(bob_x, _head_bob_base_y + bob_y, 0)
 
 
+## Captures the mouse for look input.
 func _capture_mouse() -> void:
 	_mouse_captured = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)

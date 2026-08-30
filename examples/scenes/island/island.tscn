@@ -1,10 +1,11 @@
 [gd_scene format=4 uid="uid://c4himk5oa72tk"]
 
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_oanh4"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="1_oanh4"]
 [ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="2_24c1s"]
 [ext_resource type="Resource" uid="uid://bdalqmbxrulg4" path="res://assets/voxel_sets/kenney_voxel_pack.tres" id="3_24c1s"]
 [ext_resource type="Shader" uid="uid://bgd3d6g8kav18" path="res://addons/voxly-core/shaders/greedy_meshing_textured.gdshader" id="4_01rmn"]
 [ext_resource type="Texture2D" uid="uid://dcd4tt2ib4m8f" path="res://assets/textures/kenney_voxel_pack.png" id="5_g0x0c"]
+
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_01rmn"]
 render_priority = 0

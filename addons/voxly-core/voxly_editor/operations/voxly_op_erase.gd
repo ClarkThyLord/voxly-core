@@ -1,8 +1,9 @@
+## Removes the targeted voxels. Targets the selection when one exists,
+## otherwise all filled voxels.
 @tool
 extends VoxlyEditOperation
-## Removes the targeted voxels. Targets the selection when one exists,
-## otherwise all filled voxels
 
+## Registers the erase operation in the registry.
 func _init() -> void:
 	id = "erase_voxels"
 	category = "edit"
@@ -10,17 +11,19 @@ func _init() -> void:
 	uses_selection_fallback = true
 	modifies_voxels = true
 
-func is_available(editor) -> bool:
+## Returns whether voxels can be erased.
+func is_available(editor: VoxlyEditor) -> bool:
 	return _target_has_content(editor)
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Erases the selected voxels.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	var target := _get_target(editor)
 	if target == null:
 		return
 	var positions := _resolve_positions(editor)
 	if positions.is_empty():
 		return
-
+	
 	undo_redo.create_action("Voxly Erase")
 	_record_remove_all(undo_redo, target, positions)
 	_record_rebuild(undo_redo, target)

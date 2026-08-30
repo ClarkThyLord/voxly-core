@@ -1,31 +1,32 @@
+## Preview overlay for the voxel editor. Uses a [MultiMeshInstance3D] to show
+## voxels at the brush positions, giving visual feedback of what will be
+## modified before it is committed.
+##
+## The preview source is fully determined by the active tool's declared
+## PreviewSource (resolved through [method VoxlyEditor.get_preview_source]):
+## - PALETTE_VOXEL : the accurate palette voxel mesh with ghost materials.
+## - FLAT_COLOR : a simple colored box, color from the tool.
+##
+## Also hosts the persistent selection overlay: a second MultiMeshInstance3D
+## rendering wireframe box outlines around every selected voxel. This layer is
+## fully separate from the normal preview so it survives tool/brush changes and
+## mouse-outs.
+##
+## Debug visualization (requires the editor_logic category):
+## - Voxel (0,0,0) origin marker (pink).
+## - DDA traversal cells along the ray (yellow).
+## - Hit position marker (green).
+## - Ray line from camera to hit (orange).
+##
+## All debug boxes are rendered in the same MultiMesh as the preview.
 @tool
 class_name VoxlyEditorPreview
 extends Node3D
-## Preview overlay for the voxel editor. Uses a MultiMeshInstance3D to
-## show voxels at the brush positions, giving visual feedback
-## of what will be modified before commited.
-##
-## The preview source is fully determined by the active tool's declared
-## PreviewSource (resolved through VoxlyEditor.get_preview_source()):
-##   - PALETTE_VOXEL — the accurate palette voxel mesh with ghost materials
-##   - FLAT_COLOR    — a simple colored box, color from the tool
-##
-## Also hosts the persistent selection overlay: a second MultiMeshInstance3D
-## rendering wireframe box outlines around every selected voxel. This layer
-## is fully separate from the normal preview so it survives tool/brush
-## changes and mouse-outs.
-##
-## Debug visualization (requires editor_logic category):
-##   - Voxel (0,0,0) origin marker (pink)
-##   - DDA traversal cells along the ray (yellow)
-##   - Hit position marker (green)
-##   - Ray line from camera to hit (orange)
-##
-## All debug boxes are rendered in the same MultiMesh as the preview.
 
 ## Whether mirrored preview positions are shown (visual-only ghost mirroring;
 ## commits always mirror via the editor's mirror axes). The setter writes the
-## backing field; the getter reads it so the property stays the source of truth.
+## backing field; the getter reads it so the property stays the source of
+## truth.
 var preview_mirrored: bool:
 	get = get_preview_mirrored,
 	set = set_preview_mirrored
@@ -61,12 +62,18 @@ var max_instances: int = 5120
 ## Maximum number of selection outline instances.
 var max_selection_instances: int = 5120
 
-# Internal
+# Internal preview state.
+## MultiMesh instance drawing the preview voxels.
 var _multi_mesh_instance: MultiMeshInstance3D = null
+## MultiMesh holding the preview box instances.
 var _multi_mesh: MultiMesh = null
+## Box mesh used for the preview voxels.
 var _box_mesh: BoxMesh = null
+## Preview voxel positions.
 var _positions: Array[Vector3i] = []
+## True when the instance transforms must be updated.
 var _needs_update: bool = false
+## True when the MultiMesh must be rebuilt.
 var _needs_rebuild: bool = true
 
 ## True while the preview MultiMesh is showing the palette-voxel mesh.
@@ -74,22 +81,21 @@ var _needs_rebuild: bool = true
 ## per-face vertex colors / UVs show through cleanly.
 var _textured_active: bool = false
 
-## Cache key for the current preview source so we only rebuild when the
-## inputs actually change.
+## Cache key for the current preview source so we only rebuild when the inputs
+## actually change.
 var _textured_key: String = ""
 
-## Tracks the atlas + uv-scale combo so the per-voxel mesh cache is reset
-## when the texture atlas or cell size changes.
+## Tracks the atlas + uv-scale combo so the per-voxel mesh cache is reset when
+## the texture atlas or cell size changes.
 var _textured_atlas_key: String = ""
 
-## Tracks the voxel size so the per-voxel mesh cache is reset when the
-## model's voxel size changes.
-## Starts as an impossible sentinel so the first build always regenerates
-## meshes with the current centered convention.
+## Tracks the voxel size so the per-voxel mesh cache is reset when the model's
+## voxel size changes. Starts as an impossible sentinel so the first build
+## always regenerates meshes with the current centered convention.
 var _textured_voxel_size_key: Vector3 = Vector3(INF, INF, INF)
 
 ## Cached palette preview meshes, keyed by voxel ID. Each mesh keeps its own
-## clean per-surface preview materials, so switching palette voxels shows the 
+## clean per-surface preview materials, so switching palette voxels shows the
 ## correct texture per voxel.
 var _textured_meshes: Dictionary = {}
 
@@ -103,44 +109,63 @@ var _flat_material: StandardMaterial3D = null
 ## atlas-space UVs); non-textured surfaces use the vertex-color ghost material,
 ## which renders the mesher's baked per-face colors accurately and translucent.
 var _palette_textured_material: StandardMaterial3D = null
+## Material for semi-transparent preview voxels.
 var _palette_ghost_material: StandardMaterial3D = null
 
-# Selection outline layer
+# Selection outline layer.
+## MultiMesh instance drawing the selection outlines.
 var _selection_multi_mesh_instance: MultiMeshInstance3D = null
+## MultiMesh holding the selection boxes.
 var _selection_multi_mesh: MultiMesh = null
+## Box mesh used for the selection outlines.
 var _selection_box_mesh: BoxMesh = null
+## Shader material for the selection outlines.
 var _selection_material: ShaderMaterial = null
+## Positions of the selected voxels.
 var _selection_positions: Array[Vector3i] = []
 
-## Offset applied to the MultiMeshInstance to align with model origin.
-## Set by the controller when editing VoxelModel3D nodes with a non-zero origin.
+## Offset applied to the MultiMeshInstance to align with the model origin.
+## Set by the controller when editing [VoxelModel3D] nodes with a non-zero
+## origin.
 var origin_offset: Vector3 = Vector3.ZERO:
 	set = set_origin_offset
 
-# Debug ray line (separate node since it's a line mesh, not boxes)
+# Debug ray line (separate node since it's a line mesh, not boxes).
+## Debug line showing the pointer ray.
 var _debug_ray_line: MeshInstance3D = null
+## True once the debug ray node exists.
 var _debug_ray_initialized: bool = false
 
+## Debug marker slots keyed by name.
 var _debug_slots: Dictionary = {}
+## True while debug overlays are active.
 var _debug_enabled: bool = false
+
+## Cached debug data set by the controller each frame.
+var _cached_hit_position: Vector3i = Vector3i.MAX
+## Cached DDA raycast positions for debug display.
+var _cached_dda_positions: Array = []
 
 const _BOX_OUTLINE_SHADER := preload("res://addons/voxly-core/shaders/box_outline.gdshader")
 
+## Creates the preview node structure.
 func _init() -> void:
 	name = "VoxlyEditorPreview"
 
+## Builds the preview on entry.
 func _ready() -> void:
 	_setup_nodes()
 
+## Creates the preview meshes and materials.
 func _setup_nodes() -> void:
 	if _multi_mesh_instance:
 		return
 	
-	# Create a simple cube mesh
+	# Create a simple cube mesh.
 	_box_mesh = BoxMesh.new()
 	_box_mesh.size = Vector3.ONE
 	
-	# MultiMesh for efficient rendering
+	# MultiMesh for efficient rendering.
 	_multi_mesh = MultiMesh.new()
 	_multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
 	_multi_mesh.use_colors = true
@@ -153,14 +178,14 @@ func _setup_nodes() -> void:
 	_multi_mesh_instance.multimesh = _multi_mesh
 	add_child(_multi_mesh_instance)
 	
-	# Create a transparent material for preview boxes
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_flat_material = mat
-	_multi_mesh_instance.material_override = mat
+	# Create a transparent material for preview boxes.
+	var material := StandardMaterial3D.new()
+	material.vertex_color_use_as_albedo = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.no_depth_test = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_flat_material = material
+	_multi_mesh_instance.material_override = material
 	
 	_selection_box_mesh = BoxMesh.new()
 	_selection_box_mesh.size = Vector3.ONE
@@ -184,7 +209,7 @@ func _setup_nodes() -> void:
 	_selection_multi_mesh_instance.multimesh = _selection_multi_mesh
 	add_child(_selection_multi_mesh_instance)
 	
-	# Ray line (separate since it's a line, not a box mesh)
+	# Ray line (separate since it's a line, not a box mesh).
 	_debug_ray_line = MeshInstance3D.new()
 	_debug_ray_line.name = "DebugRayLine"
 	add_child(_debug_ray_line)
@@ -205,8 +230,9 @@ func _set_multimesh_use_colors(enabled: bool) -> void:
 
 ## Selects and caches the mesh/material used for every preview instance.
 ##
-## Palette path: When the tool declares PreviewSource.PALETTE_VOXEL.
-## Flat path: When the tool declares PreviewSource.FLAT_COLOR or missing palette voxel.
+## Palette path: when the tool declares PreviewSource.PALETTE_VOXEL.
+## Flat path: when the tool declares PreviewSource.FLAT_COLOR or missing
+## palette voxel.
 func build_preview_source(voxel_id: int, voxel_set: VoxelSet, preview_source: int) -> void:
 	if not _multi_mesh_instance or not _multi_mesh or not _box_mesh:
 		return
@@ -267,7 +293,6 @@ func build_preview_source(voxel_id: int, voxel_set: VoxelSet, preview_source: in
 	_textured_active = false
 	_set_multimesh_use_colors(true)
 
-
 ## Assigns clean preview materials to every surface of the generated voxel mesh.
 func _apply_textured_surface_materials(mesh: ArrayMesh, voxel_set: VoxelSet) -> void:
 	if _palette_textured_material == null:
@@ -280,7 +305,7 @@ func _apply_textured_surface_materials(mesh: ArrayMesh, voxel_set: VoxelSet) -> 
 	if _palette_ghost_material == null:
 		_palette_ghost_material = _palette_textured_material.duplicate()
 	
-	# Atlas may have changed (or been removed) — keep the textured material in
+	# Atlas may have changed (or been removed), keep the textured material in
 	# sync. The ghost material always stays texture-free so baked per-face
 	# vertex colors render cleanly.
 	_palette_textured_material.albedo_texture = voxel_set.texture_atlas
@@ -306,7 +331,6 @@ func update_preview(positions: Array[Vector3i], color: Color) -> void:
 	_preview_color = color
 	_apply_update()
 
-
 ## Updates the preview with per-voxel coloring.
 ## Takes an array of position+color pairs.
 func update_preview_colored(colored_positions: Array[Dictionary]) -> void:
@@ -320,39 +344,39 @@ func update_preview_colored(colored_positions: Array[Dictionary]) -> void:
 		return
 	
 	var half := voxel_size / 2.0
-	var scale_vec := voxel_size * 0.9
+	var scale_vector := voxel_size * 0.9
 	
 	var count := mini(colored_positions.size(), max_instances - 64)
 	
 	for i in count:
 		var entry := colored_positions[i]
-		var pos := entry.get("position", Vector3i.ZERO)
+		var position := entry.get("position", Vector3i.ZERO)
 		var color := entry.get("color", Color.WHITE)
 		
-		var world_pos := Vector3(pos) * voxel_size + half
-		var t := Transform3D()
-		t.origin = world_pos
-		t.basis = Basis().scaled(scale_vec)
-		_multi_mesh.set_instance_transform(i, t)
+		var world_pos := Vector3(position) * voxel_size + half
+		var transform := Transform3D()
+		transform.origin = world_pos
+		transform.basis = Basis().scaled(scale_vector)
+		_multi_mesh.set_instance_transform(i, transform)
 		_multi_mesh.set_instance_color(i, color)
 	
 	var total_count := count
 	
 	if _debug_enabled:
-		total_count = _fill_debug_instances(total_count, half, scale_vec)
+		total_count = _fill_debug_instances(total_count, half, scale_vector)
 	
 	_multi_mesh.visible_instance_count = total_count
 
-
+## Tint applied to ghost preview voxels.
 var _preview_color: Color = Color.WHITE
 
-
+## Applies the pending instance transform update.
 func _apply_update() -> void:
 	if not _multi_mesh:
 		return
 	
 	var half := voxel_size / 2.0
-	var scale_vec := voxel_size * 0.9  # Slightly smaller than full voxel
+	var scale_vector := voxel_size * 0.9  # Slightly smaller than the full voxel.
 	
 	var total_count := 0
 	var is_visible := preview_visible
@@ -360,27 +384,26 @@ func _apply_update() -> void:
 	var use_instance_colors := _multi_mesh.use_colors
 	
 	if is_visible:
-		# Count how many instances we need
+		# Count how many instances we need.
 		var preview_count := mini(_positions.size(), max_instances - 64)
 		total_count = preview_count
 		
-		# Fill in preview positions
+		# Fill in the preview positions.
 		for i in preview_count:
-			var pos := Vector3(_positions[i])
-			var world_pos := pos * voxel_size + half
-			var t := Transform3D()
-			t.origin = world_pos
-			t.basis = Basis().scaled(scale_vec)
-			_multi_mesh.set_instance_transform(i, t)
+			var position := Vector3(_positions[i])
+			var world_pos := position * voxel_size + half
+			var transform := Transform3D()
+			transform.origin = world_pos
+			transform.basis = Basis().scaled(scale_vector)
+			_multi_mesh.set_instance_transform(i, transform)
 			if use_instance_colors:
 				_multi_mesh.set_instance_color(i, _preview_color)
 		
-		# Add debug visuals if enabled
+		# Add debug visuals if enabled.
 		if _debug_enabled:
-			total_count = _fill_debug_instances(total_count, half, scale_vec)
+			total_count = _fill_debug_instances(total_count, half, scale_vector)
 	
 	_multi_mesh.visible_instance_count = total_count
-
 
 ## Clears the preview.
 func clear_preview() -> void:
@@ -391,11 +414,10 @@ func clear_preview() -> void:
 
 ## Updates the persistent selection outline to show the given positions.
 ## This is independent of the normal preview and is not cleared by
-## clear_preview().
+## [method clear_preview].
 func update_selection_preview(positions: Array[Vector3i]) -> void:
 	_selection_positions = positions
 	_apply_selection_update()
-
 
 ## Clears the persistent selection outline.
 func clear_selection_preview() -> void:
@@ -403,7 +425,7 @@ func clear_selection_preview() -> void:
 	if _selection_multi_mesh:
 		_selection_multi_mesh.visible_instance_count = 0
 
-
+## Applies the pending selection outline update.
 func _apply_selection_update() -> void:
 	if not _selection_multi_mesh:
 		return
@@ -414,17 +436,17 @@ func _apply_selection_update() -> void:
 		return
 	
 	var half := voxel_size / 2.0
-	var scale_vec := voxel_size * 0.96
+	var scale_vector := voxel_size * 0.96
 	
 	var count := mini(_selection_positions.size(), max_selection_instances)
 	
 	for i in count:
-		var pos := Vector3(_selection_positions[i])
-		var world_pos := pos * voxel_size + half
-		var t := Transform3D()
-		t.origin = world_pos
-		t.basis = Basis().scaled(scale_vec)
-		_selection_multi_mesh.set_instance_transform(i, t)
+		var position := Vector3(_selection_positions[i])
+		var world_pos := position * voxel_size + half
+		var transform := Transform3D()
+		transform.origin = world_pos
+		transform.basis = Basis().scaled(scale_vector)
+		_selection_multi_mesh.set_instance_transform(i, transform)
 	
 	_selection_multi_mesh.visible_instance_count = count
 
@@ -432,124 +454,118 @@ func _apply_selection_update() -> void:
 func update_debug_visibility() -> void:
 	_debug_enabled = VoxlyDebug.is_category_enabled(VoxlyDebug.CATEGORY_EDITOR_LOGIC)
 	if not _debug_enabled:
-		# Clear debug DDA instances
+		# Clear debug DDA instances.
 		if _multi_mesh:
 			_multi_mesh.visible_instance_count = mini(_multi_mesh.visible_instance_count, _positions.size())
 		clear_debug_ray()
-	# Rebuild preview to include/exclude debug
+	# Rebuild the preview to include/exclude debug.
 	_apply_update()
-
 
 ## Fills debug instances into the MultiMesh after the preview positions.
 ## Returns the new total instance count.
-func _fill_debug_instances(start_idx: int, half: Vector3, scale: Vector3) -> int:
-	var idx := start_idx
+func _fill_debug_instances(start_index: int, half: Vector3, scale: Vector3) -> int:
+	var index := start_index
 	
 	# Debug colors only apply when instance colors are enabled (the palette
 	# voxel path runs with use_colors = false so its baked colors show through).
 	var use_instance_colors := _multi_mesh.use_colors
 	
-	# Origin marker at (0,0,0): hot pink
-	var origin_pos := Vector3(0, 0, 0) + half
-	_multi_mesh.set_instance_transform(idx, Transform3D(Basis().scaled(scale), origin_pos))
+	# Origin marker at (0,0,0): hot pink.
+	var origin_position := Vector3(0, 0, 0) + half
+	_multi_mesh.set_instance_transform(index, Transform3D(Basis().scaled(scale), origin_position))
 	if use_instance_colors:
-		_multi_mesh.set_instance_color(idx, Color(1, 0, 1, 0.8))
-	idx += 1
+		_multi_mesh.set_instance_color(index, Color(1, 0, 1, 0.8))
+	index += 1
 	
-	# Hit position marker (from _cached_hit): green
+	# Hit position marker (from _cached_hit_position): green.
 	if _cached_hit_position != Vector3i.MAX:
-		var hit_pos := Vector3(_cached_hit_position) * voxel_size + half
-		_multi_mesh.set_instance_transform(idx, Transform3D(Basis().scaled(scale), hit_pos))
+		var hit_position := Vector3(_cached_hit_position) * voxel_size + half
+		_multi_mesh.set_instance_transform(index, Transform3D(Basis().scaled(scale), hit_position))
 		if use_instance_colors:
-			_multi_mesh.set_instance_color(idx, Color(0, 1, 0, 0.7))
-		idx += 1
+			_multi_mesh.set_instance_color(index, Color(0, 1, 0, 0.7))
+		index += 1
 	
-	# DDA traversal cells: yellow
-	for dda_pos in _cached_dda_positions:
-		if idx >= max_instances:
+	# DDA traversal cells: yellow.
+	for dda_position in _cached_dda_positions:
+		if index >= max_instances:
 			break
-		var dda_world := Vector3(dda_pos) * voxel_size + half
-		_multi_mesh.set_instance_transform(idx, Transform3D(Basis().scaled(scale * 0.7), dda_world))
+		var dda_world := Vector3(dda_position) * voxel_size + half
+		_multi_mesh.set_instance_transform(index, Transform3D(Basis().scaled(scale * 0.7), dda_world))
 		if use_instance_colors:
-			_multi_mesh.set_instance_color(idx, Color(1, 1, 0, 0.35))
-		idx += 1
+			_multi_mesh.set_instance_color(index, Color(1, 1, 0, 0.35))
+		index += 1
 	
-	return idx
+	return index
 
-
-## Cached debug data set by the controller each frame.
-var _cached_hit_position: Vector3i = Vector3i.MAX
-var _cached_dda_positions: Array = []
-
-## Stores hit and DDA data for the next _apply_update() call.
-func set_debug_hit_data(hit_pos: Vector3i, dda_positions: Array) -> void:
-	_cached_hit_position = hit_pos
+## Stores hit and DDA data for the next [method _apply_update] call.
+func set_debug_hit_data(hit_position: Vector3i, dda_positions: Array) -> void:
+	_cached_hit_position = hit_position
 	_cached_dda_positions = dda_positions
 
-
-## Shows a debug ray line from camera origin to far point in world space.
+## Shows a debug ray line from the camera origin to a far point in world space.
 ## Uses a thin cylinder for better visibility.
-func show_debug_ray(camera: Camera3D, screen_pos: Vector2) -> void:
+func show_debug_ray(camera: Camera3D, screen_position: Vector2) -> void:
 	if not _debug_enabled:
 		clear_debug_ray()
 		return
 	elif not camera:
 		return
 	
-	var from := camera.project_ray_origin(screen_pos)
-	var direction := camera.project_ray_normal(screen_pos)
+	var from := camera.project_ray_origin(screen_position)
+	var direction := camera.project_ray_normal(screen_position)
 	var length := 100.0
 	
-	# Create or reuse the cylinder mesh
+	# Create or reuse the cylinder mesh.
 	var cylinder := CylinderMesh.new()
 	cylinder.top_radius = 0.03
 	cylinder.bottom_radius = 0.03
 	cylinder.height = length
 	
-	# Always apply the orange material
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1, 0.5, 0, 0.8)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	cylinder.material = mat
+	# Always apply the orange material.
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(1, 0.5, 0, 0.8)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.no_depth_test = true
+	cylinder.material = material
 	_debug_ray_line.mesh = cylinder
 	
-	# Position the cylinder at its midpoint and align its Y axis with the ray
-	var mid_point := from + direction * (length / 2.0)
+	# Position the cylinder at its midpoint and align its Y axis with the ray.
+	var midpoint := from + direction * (length / 2.0)
 	
-	# Build a basis where Y (cylinder long axis) = direction
-	var up_ref := Vector3.UP if abs(direction.dot(Vector3.UP)) < 0.99 else Vector3.RIGHT
-	var x_axis := up_ref.cross(direction).normalized()
+	# Build a basis where Y (cylinder long axis) = direction.
+	var up_reference := Vector3.UP if abs(direction.dot(Vector3.UP)) < 0.99 else Vector3.RIGHT
+	var x_axis := up_reference.cross(direction).normalized()
 	var y_axis := direction
 	var z_axis := x_axis.cross(y_axis).normalized()
 	var basis := Basis(x_axis, y_axis, z_axis)
-	_debug_ray_line.transform = Transform3D(basis, mid_point)
+	_debug_ray_line.transform = Transform3D(basis, midpoint)
 	_debug_ray_line.visible = true
-
 
 ## Clears the debug ray line.
 func clear_debug_ray() -> void:
 	if _debug_ray_line:
 		_debug_ray_line.visible = false
 
+## Updates the preview voxel size.
 func set_voxel_size(new_size: Vector3) -> void:
 	voxel_size = new_size
 
-
+## Shows or hides the preview.
 func set_preview_visible(visible: bool) -> void:
 	preview_visible = visible
 	if not visible:
 		clear_preview()
 		clear_selection_preview()
 
-
+## Returns whether the mirrored preview is enabled.
 func get_preview_mirrored() -> bool:
 	return _preview_mirrored
 
+## Toggles the mirrored preview.
 func set_preview_mirrored(mirrored: bool) -> void:
 	_preview_mirrored = mirrored
 
-
+## Moves the preview to the origin offset.
 func set_origin_offset(offset: Vector3) -> void:
 	if origin_offset == offset:
 		return
@@ -560,7 +576,7 @@ func set_origin_offset(offset: Vector3) -> void:
 	if _selection_multi_mesh_instance:
 		_selection_multi_mesh_instance.position = offset
 
-
+## Updates the selection outline color.
 func set_selection_outline_color(color: Color) -> void:
 	if selection_outline_color == color:
 		return
@@ -569,7 +585,7 @@ func set_selection_outline_color(color: Color) -> void:
 	if _selection_material:
 		_selection_material.set_shader_parameter("outline_color", color)
 
-
+## Updates the selection outline thickness.
 func set_selection_outline_thickness(thickness: float) -> void:
 	if selection_outline_thickness == thickness:
 		return

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b31wqea4gnxlp"]
 
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_nt1qs"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="1_nt1qs"]
 [ext_resource type="PackedScene" uid="uid://cwe5tuqqxg5h2" path="res://examples/import/png_as_voxel_model_3d/sword_diamond.png" id="1_sn71b"]
 
 [node name="PngAsVoxelModel3D" type="Node3D" unique_id=1348704182]

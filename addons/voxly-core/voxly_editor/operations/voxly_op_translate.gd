@@ -1,13 +1,16 @@
+## Translates the targeted voxels by an integer grid offset.
+## Targets the selection when one exists, otherwise all filled voxels.
 @tool
 extends VoxlyEditOperation
-## Translate the targeted voxels by an integer grid offset.
-## Targets the selection when one exists, otherwise all filled voxels.
 
 ## Offset applied along each axis, in voxel units.
 var offset_x: int = 0
+## Translation offset along Y.
 var offset_y: int = 0
+## Translation offset along Z.
 var offset_z: int = 0
 
+## Registers the translate operation in the registry.
 func _init() -> void:
 	id = "translate_voxels"
 	category = "transform"
@@ -16,7 +19,8 @@ func _init() -> void:
 	modifies_voxels = true
 	prompts_for_options = true
 
-func is_available(editor) -> bool:
+## Returns whether the model can be translated.
+func is_available(editor: VoxlyEditor) -> bool:
 	return _target_has_content(editor)
 
 ## Returns the option schema used by the editor's ContextWindow to prompt the
@@ -52,7 +56,8 @@ func get_options() -> Array[Dictionary]:
 		},
 	]
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Translates the selected voxels by the offsets.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	var target := _get_target(editor)
 	if target == null:
 		return
@@ -64,22 +69,22 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 	if delta == Vector3i.ZERO:
 		return
 	
-	# Capture source ids, then compute translated destinations.
-	var voxel_ids: Dictionary = {}
-	for pos in positions:
-		voxel_ids[pos] = target.get_voxel(pos)
+	# Capture source IDs, then compute translated destinations.
+	var voxel_ids: Dictionary[Vector3i, int] = {}
+	for position in positions:
+		voxel_ids[position] = target.get_voxel(position)
 	
-	var dest_to_id: Dictionary = {}
+	var dest_to_id: Dictionary[Vector3i, int] = {}
 	var seen: Dictionary[Vector3i, bool] = {}
-	for pos in positions:
-		var dest := pos + delta
+	for position in positions:
+		var dest := position + delta
 		if target.has_method("is_voxel_position_valid"):
 			if not target.is_voxel_position_valid(dest):
 				continue
 		if seen.has(dest):
 			continue
 		seen[dest] = true
-		var voxel_id = voxel_ids.get(pos)
+		var voxel_id = voxel_ids.get(position)
 		if voxel_id != null:
 			dest_to_id[dest] = voxel_id
 	

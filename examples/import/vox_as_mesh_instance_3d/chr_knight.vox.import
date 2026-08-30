@@ -1,6 +1,6 @@
 [remap]
 
-importer="Voxly-Core.VoxelMeshInstance"
+importer="Voxly-Core.VoxelModel3D"
 type="PackedScene"
 uid="uid://bm05pd8qgncoa"
 path="res://.godot/imported/chr_knight.vox-f6e6c8a14e78f44be2d82fbf0a10565a.tscn"
@@ -12,10 +12,12 @@ dest_files=["res://.godot/imported/chr_knight.vox-f6e6c8a14e78f44be2d82fbf0a1056
 
 [params]
 
-snap_to_ground=false
+name=""
+import_mode=0
+bounds_mode=0
 palette_mode=0
 reference_voxel_set_path=""
 mesh_mode=1
 voxel_size=0.5
-voxels_colored=true
-voxels_textured=true
+include_vertex_colors=true
+include_textures=true

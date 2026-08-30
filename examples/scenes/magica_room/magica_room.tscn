@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://c10ew8cumsrcl"]
 
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_8g1dt"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="1_8g1dt"]
 [ext_resource type="PackedScene" uid="uid://dglavgogidpxw" path="res://examples/scenes/magica_room/magica_room.vox" id="2_yplhn"]
+
 
 [node name="MagicaRoom" type="Node3D" unique_id=2131558723]
 

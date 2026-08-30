@@ -1,17 +1,18 @@
+## MagicaVoxel (.vox) file reader.
 @tool
 class_name VoxReader
 extends RefCounted
-## MagicaVoxel (.vox) file reader.
 
-const DEBUG_CONTEXT := "VoxReader"
+const _debug_context := "VoxReader"
 
+## Scene graph node types.
 enum NodeType {
 	TRANSFORM,
 	GROUP,
 	SHAPE,
 }
 
-## Default MagicaVoxel palette (256 colors)
+## Default MagicaVoxel palette (256 colors).
 const MAGICA_VOXEL_PALETTE: Array[Color] = [
 	Color("00000000"), Color("ffffffff"), Color("ffccffff"), Color("ff99ffff"),
 	Color("ff66ffff"), Color("ff33ffff"), Color("ff00ffff"), Color("ffffccff"),
@@ -79,7 +80,6 @@ const MAGICA_VOXEL_PALETTE: Array[Color] = [
 	Color("ff555555"), Color("ff444444"), Color("ff222222"), Color("ff111111"),
 ]
 
-
 ## Parses the contents of an already-opened .vox file.
 static func read(file: FileAccess) -> Dictionary:
 	var result := {
@@ -90,24 +90,24 @@ static func read(file: FileAccess) -> Dictionary:
 		"materials": {},
 	}
 	
-	# Read header
+	# Read the header.
 	var header: String = file.get_buffer(4).get_string_from_ascii()
 	var version: int = file.get_32()
 	
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Reading VOX file - header='%s' version=%d" % [header, version])
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Reading VOX file - header='%s' version=%d" % [header, version])
 	
 	if header != "VOX " or (version != 150 and version != 200):
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Unrecognized VOX file: header='%s' version=%d (expected 150 or 200)" % [header, version])
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Unrecognized VOX file: header='%s' version=%d (expected 150 or 200)" % [header, version])
 		result["error"] = ERR_FILE_UNRECOGNIZED
 		return result
 	
 	if version == 200:
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "VOX version 200 detected")
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "VOX version 200 detected")
 	
-	# Raw models from XYZI chunks (size + voxels)
+	# Raw models from XYZI chunks (size + voxels).
 	var raw_models: Array[Dictionary] = []
 	
-	# Scene graph nodes indexed by node_id
+	# Scene graph nodes indexed by node_id.
 	var nodes: Dictionary = {}
 	
 	var pending_size: Vector3i = Vector3i.ZERO
@@ -117,34 +117,34 @@ static func read(file: FileAccess) -> Dictionary:
 		var chunk_size: int = file.get_32()
 		var chunk_child_size: int = file.get_32()
 		
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Chunk: id='%s' size=%d child_size=%d pos=%d" % [chunk_id, chunk_size, chunk_child_size, file.get_position()])
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Chunk: id='%s' size=%d child_size=%d pos=%d" % [chunk_id, chunk_size, chunk_child_size, file.get_position()])
 		
 		match chunk_id:
 			"MAIN":
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Found MAIN chunk with %d bytes of children" % chunk_child_size)
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Found MAIN chunk with %d bytes of children" % chunk_child_size)
 				pass
 			
 			"SIZE":
 				pending_size.x = file.get_32()
 				pending_size.z = file.get_32()
 				pending_size.y = file.get_32()
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "SIZE chunk: %s" % pending_size)
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "SIZE chunk: %s" % pending_size)
 			
 			"XYZI":
 				var model := { "size": pending_size, "voxels": {} }
 				var num_voxels: int = file.get_32()
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "XYZI chunk: num_voxels=%d size=%s" % [num_voxels, pending_size])
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "XYZI chunk: num_voxels=%d size=%s" % [num_voxels, pending_size])
 				for i in num_voxels:
 					var x: int = pending_size.x - file.get_8() - 1
 					var z: int = file.get_8()
 					var y: int = file.get_8()
-					var id: int = file.get_8() - 1
-					model["voxels"][Vector3i(x, y, z)] = id
+					var voxel_id: int = file.get_8() - 1
+					model["voxels"][Vector3i(x, y, z)] = voxel_id
 				raw_models.append(model)
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Parsed model %d with %d voxels" % [raw_models.size() - 1, model["voxels"].size()])
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Parsed model %d with %d voxels" % [raw_models.size() - 1, model["voxels"].size()])
 			
 			"RGBA":
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "RGBA chunk: reading 256-color palette")
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "RGBA chunk: reading 256-color palette")
 				for i in 256:
 					var color := Color8(file.get_8(), file.get_8(), file.get_8(), file.get_8())
 					var voxel := Voxel.new()
@@ -152,79 +152,85 @@ static func read(file: FileAccess) -> Dictionary:
 					result["palette"][i] = voxel
 			
 			"MATL":
-				var mat_id: int = file.get_32()
-				var mat_dict := _read_dict(file)
-				var mat_props: Dictionary = { "id": mat_id }
+				var material_id: int = file.get_32()
+				var material_dict := _read_dict(file)
+				var material_props: Dictionary = { "id": material_id }
 				
-				# Read material type (all MagicaVoxel materials store _type to identify their category)
-				if mat_dict.has("_type"):
-					mat_props["type"] = mat_dict["_type"].get_string_from_utf8()
+				# Read the material type (all MagicaVoxel materials store _type
+				# to identify their category).
+				if material_dict.has("_type"):
+					material_props["type"] = material_dict["_type"].get_string_from_utf8()
 				
-				# _diffuse: some files store an RGBA color override string "r g b a" (optional)
-				if mat_dict.has("_diffuse"):
-					var rgba := _parse_color_string(mat_dict["_diffuse"].get_string_from_utf8())
-					if rgba: mat_props["color"] = rgba
+				# _diffuse: some files store an RGBA color override string
+				# "r g b a" (optional).
+				if material_dict.has("_diffuse"):
+					var parsed_color := _parse_color_string(material_dict["_diffuse"].get_string_from_utf8())
+					if parsed_color: material_props["color"] = parsed_color
 				
-				# MagicaVoxel MATL specular key is _sp (float 0.0-1.0), not _specular
-				if mat_dict.has("_sp"):
-					var sp_str = mat_dict["_sp"].get_string_from_utf8()
-					if sp_str.is_valid_float():
-						mat_props["_sp"] = clampf(sp_str.to_float(), 0.0, 1.0)
+				# MagicaVoxel MATL specular key is _sp (float 0.0-1.0), not _specular.
+				if material_dict.has("_sp"):
+					var specular_string = material_dict["_sp"].get_string_from_utf8()
+					if specular_string.is_valid_float():
+						material_props["_sp"] = clampf(specular_string.to_float(), 0.0, 1.0)
 				
-				# MagicaVoxel MATL roughness key is _rough (float 0.0-1.0), not _roughness
-				if mat_dict.has("_rough"):
-					var rough_str = mat_dict["_rough"].get_string_from_utf8()
-					if rough_str.is_valid_float():
-						mat_props["_rough"] = clampf(rough_str.to_float(), 0.0, 1.0)
+				# MagicaVoxel MATL roughness key is _rough (float 0.0-1.0), not _roughness.
+				if material_dict.has("_rough"):
+					var roughness_string = material_dict["_rough"].get_string_from_utf8()
+					if roughness_string.is_valid_float():
+						material_props["_rough"] = clampf(roughness_string.to_float(), 0.0, 1.0)
 				
-				# MagicaVoxel MATL metallic key is _metal (float 0.0-1.0), not _metallic
-				if mat_dict.has("_metal"):
-					var metal_str = mat_dict["_metal"].get_string_from_utf8()
-					if metal_str.is_valid_float():
-						mat_props["_metal"] = clampf(metal_str.to_float(), 0.0, 1.0)
+				# MagicaVoxel MATL metallic key is _metal (float 0.0-1.0), not _metallic.
+				if material_dict.has("_metal"):
+					var metalness_string = material_dict["_metal"].get_string_from_utf8()
+					if metalness_string.is_valid_float():
+						material_props["_metal"] = clampf(metalness_string.to_float(), 0.0, 1.0)
 				
-				# Also parse _weight (used by _diffuse for blend strength, by _emit for emission blend)
-				if mat_dict.has("_weight"):
-					var weight_str = mat_dict["_weight"].get_string_from_utf8()
-					if weight_str.is_valid_float():
-						mat_props["_weight"] = clampf(weight_str.to_float(), 0.0, 1.0)
+				# Also parse _weight (used by _diffuse for blend strength, by
+				# _emit for emission blend).
+				if material_dict.has("_weight"):
+					var weight_string = material_dict["_weight"].get_string_from_utf8()
+					if weight_string.is_valid_float():
+						material_props["_weight"] = clampf(weight_string.to_float(), 0.0, 1.0)
 				
-				# Emission handling per MagicaVoxel spec
-				var mat_type: String = mat_props.get("type", "")
-				if mat_type == "_emit":
-					mat_props["emission"] = true
+				# Emission handling per the MagicaVoxel spec.
+				var material_type: String = material_props.get("type", "")
+				if material_type == "_emit":
+					material_props["emission"] = true
 					
-					# _flux is the preferred emission power value (modern format, stored as float string)
+					# _flux is the preferred emission power value (modern format,
+					# stored as a float string).
 					var emission_value := 1.0
-					if mat_dict.has("_flux"):
-						var flux_str = mat_dict["_flux"].get_string_from_utf8()
-						if flux_str.is_valid_float():
-							emission_value = flux_str.to_float()
+					if material_dict.has("_flux"):
+						var flux_string = material_dict["_flux"].get_string_from_utf8()
+						if flux_string.is_valid_float():
+							emission_value = flux_string.to_float()
 					
-					# Fall back to _emit if _flux is not present (legacy format, 0-65535 integer)
-					if not mat_dict.has("_flux") and mat_dict.has("_emit"):
-						var emit_str = mat_dict["_emit"].get_string_from_utf8()
-						if emit_str.is_valid_float():
+					# Fall back to _emit if _flux is not present (legacy format,
+					# 0-65535 integer).
+					if not material_dict.has("_flux") and material_dict.has("_emit"):
+						var emission_string = material_dict["_emit"].get_string_from_utf8()
+						if emission_string.is_valid_float():
 							# MagicaVoxel stores _emit as an integer 0-65535.
-							# Normalize to 0.0-1.0 range, but ensure minimum visible emission.
-							emission_value = maxf(emit_str.to_float() / 65535.0, 1.0)
+							# Normalize to 0.0-1.0 range, but ensure minimum
+							# visible emission.
+							emission_value = maxf(emission_string.to_float() / 65535.0, 1.0)
 					
-					var emit_weight: float = mat_props.get("_weight", 1.0)
-					mat_props["emission_flux"] = emission_value
-					mat_props["emission_weight"] = emit_weight
+					var emission_weight: float = material_props.get("_weight", 1.0)
+					material_props["emission_flux"] = emission_value
+					material_props["emission_weight"] = emission_weight
 				
-				# Legacy fallback: some files may set _emit without _type
-				elif mat_dict.has("_emit"):
-					mat_props["emission"] = true
-					var emit_str = mat_dict["_emit"].get_string_from_utf8()
-					if emit_str.is_valid_float():
-						mat_props["emission_flux"] = maxf(emit_str.to_float() / 65535.0, 1.0)
+				# Legacy fallback: some files may set _emit without _type.
+				elif material_dict.has("_emit"):
+					material_props["emission"] = true
+					var emission_string = material_dict["_emit"].get_string_from_utf8()
+					if emission_string.is_valid_float():
+						material_props["emission_flux"] = maxf(emission_string.to_float() / 65535.0, 1.0)
 					else:
-						mat_props["emission_flux"] = 1.0
-					mat_props["emission_weight"] = mat_props.get("_weight", 1.0)
+						material_props["emission_flux"] = 1.0
+					material_props["emission_weight"] = material_props.get("_weight", 1.0)
 				
-				result["materials"][mat_id] = mat_props
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "MATL chunk: material %d with type '%s'" % [mat_id, mat_props.get("type", "(unset)")])
+				result["materials"][material_id] = material_props
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "MATL chunk: material %d with type '%s'" % [material_id, material_props.get("type", "(unset)")])
 			
 			"nTRN":
 				var node_id: int = file.get_32()
@@ -254,7 +260,7 @@ static func read(file: FileAccess) -> Dictionary:
 					"child_id": child_id,
 					"transform": transform,
 				}
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "nTRN node %d: name='%s' child=%d" % [node_id, name, child_id])
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "nTRN node %d: name='%s' child=%d" % [node_id, name, child_id])
 			
 			"nGRP":
 				var node_id: int = file.get_32()
@@ -265,7 +271,7 @@ static func read(file: FileAccess) -> Dictionary:
 				for i in child_count:
 					child_ids[i] = file.get_32()
 				nodes[node_id] = { "type": NodeType.GROUP, "child_ids": child_ids }
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "nGRP node %d: %d children" % [node_id, child_count])
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "nGRP node %d: %d children" % [node_id, child_count])
 			
 			"nSHP":
 				var node_id: int = file.get_32()
@@ -274,10 +280,10 @@ static func read(file: FileAccess) -> Dictionary:
 				var model_id: int = file.get_32()
 				var _model_dict := _read_dict(file)
 				nodes[node_id] = { "type": NodeType.SHAPE, "model_id": model_id }
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "nSHP node %d: model_id=%d" % [node_id, model_id])
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "nSHP node %d: model_id=%d" % [node_id, model_id])
 			
 			"IMAP", "LAYR", "MATT", "rOBJ", "rCAM", "NOTE", "META":
-				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Skipping known chunk '%s' (%d bytes)" % [chunk_id, chunk_size])
+				VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Skipping known chunk '%s' (%d bytes)" % [chunk_id, chunk_size])
 				if chunk_size > 0:
 					file.get_buffer(chunk_size)
 			
@@ -285,30 +291,30 @@ static func read(file: FileAccess) -> Dictionary:
 				if chunk_size > 0:
 					file.get_buffer(chunk_size)
 	
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "End of file: %d raw models, %d nodes" % [raw_models.size(), nodes.size()])
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "End of file: %d raw models, %d nodes" % [raw_models.size(), nodes.size()])
 	
-	# Build palette from custom chunk or default
+	# Build the palette from the custom chunk or the default.
 	if result["palette"].is_empty():
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Using default MagicaVoxel palette")
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Using default MagicaVoxel palette")
 		for i in 256:
 			var voxel := Voxel.new()
 			voxel.base_color = MAGICA_VOXEL_PALETTE[i]
 			result["palette"][i] = voxel
 	else:
-		var fv: Voxel = result["palette"][0]
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Loaded palette: %d colors (index 0 alpha=%.2f)" % [result["palette"].size(), fv.base_color.a])
+		var first_voxel: Voxel = result["palette"][0]
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Loaded palette: %d colors (index 0 alpha=%.2f)" % [result["palette"].size(), first_voxel.base_color.a])
 	
-	# Apply materials to palette
+	# Apply materials to the palette.
 	# MATL material_ids are 1-indexed (1-256) but palette is 0-indexed (0-255).
 	# Material 1 corresponds to palette index 0, material 2 to palette index 1, etc.
 	if not result["materials"].is_empty():
-		for mat_id in result["materials"]:
-			var pal_idx := int(mat_id) - 1
-			if result["palette"].has(pal_idx):
-				var v: Voxel = result["palette"][pal_idx]
-				v.base_material_id = str(mat_id)
+		for material_id in result["materials"]:
+			var palette_index := int(material_id) - 1
+			if result["palette"].has(palette_index):
+				var voxel: Voxel = result["palette"][palette_index]
+				voxel.base_material_id = str(material_id)
 	
-	# Build scene tree
+	# Build the scene tree.
 	var tree: Dictionary = {}
 	if nodes.size() > 0:
 		var root_id = nodes.keys().front()
@@ -319,15 +325,15 @@ static func read(file: FileAccess) -> Dictionary:
 		result["error"] = ERR_FILE_EOF
 		return result
 	
-	# Collect individual scene models with transforms applied
+	# Collect individual scene models with transforms applied.
 	result["scene_models"] = _collect_scene_models(tree)
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Collected %d scene models" % result["scene_models"].size())
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Collected %d scene models" % result["scene_models"].size())
 	
-	# Build flat merged voxels
+	# Build the flat merged voxels.
 	var all_voxels: Dictionary = {}
-	for sm in result["scene_models"]:
-		for pos in sm["voxels"]:
-			all_voxels[pos] = sm["voxels"][pos]
+	for scene_model in result["scene_models"]:
+		for position in scene_model["voxels"]:
+			all_voxels[position] = scene_model["voxels"][position]
 	result["voxels"] = all_voxels
 	
 	return result
@@ -335,12 +341,12 @@ static func read(file: FileAccess) -> Dictionary:
 ## Reads a .vox file from disk.
 static func read_file(vox_path: String, options: Dictionary = {}) -> Dictionary:
 	var result := { "error": OK }
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Opening VOX file: '%s'" % vox_path)
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Opening VOX file: '%s'" % vox_path)
 	
 	var file := FileAccess.open(vox_path, FileAccess.READ)
 	if file == null:
 		var open_error: int = FileAccess.get_open_error()
-		VoxlyDebug.error(DEBUG_CONTEXT, "Failed to open file: error=%d" % [open_error])
+		VoxlyDebug.error(_debug_context, "Failed to open file: error=%d" % [open_error])
 		result["error"] = open_error
 		return result
 	
@@ -348,7 +354,7 @@ static func read_file(vox_path: String, options: Dictionary = {}) -> Dictionary:
 	file.close()
 	
 	if result["error"] == OK:
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Read OK: %d scene models, %d total voxels, %d palette colors" % [
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Read OK: %d scene models, %d total voxels, %d palette colors" % [
 			result.get("scene_models", []).size(),
 			result.get("voxels", {}).size(),
 			result.get("palette", {}).size()
@@ -356,6 +362,7 @@ static func read_file(vox_path: String, options: Dictionary = {}) -> Dictionary:
 	
 	return result
 
+## Reads a DICTIONARY chunk from the file (key-value pairs of byte buffers).
 static func _read_dict(file: FileAccess) -> Dictionary:
 	var dict := {}
 	var pairs: int = file.get_32()
@@ -390,7 +397,7 @@ static func _unpack_transform(rotation_raw, translation_raw) -> Transform3D:
 		# Each row carries its +/-1 in a distinct column (0, 1, or 2).
 		# Anything else is a corrupt rotation byte.
 		if row0_idx == row1_idx or row0_idx > 2 or row1_idx > 2:
-			VoxlyDebug.error(DEBUG_CONTEXT, "Invalid rotation byte %d: row indices (%d, %d)" % [rotation_bits, row0_idx, row1_idx])
+			VoxlyDebug.error(_debug_context, "Invalid rotation byte %d: row indices (%d, %d)" % [rotation_bits, row0_idx, row1_idx])
 			return Transform3D.IDENTITY
 		var row2_idx := 3 - row0_idx - row1_idx
 		
@@ -413,7 +420,7 @@ static func _unpack_transform(rotation_raw, translation_raw) -> Transform3D:
 		rot_y = godot_basis.y
 		rot_z = godot_basis.z
 		
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
 			"Rotation bits=%d rows=%s mv_basis=%s -> godot_basis x=%s y=%s z=%s" % [rotation_bits, rows, mv_basis, rot_x, rot_y, rot_z])
 	
 	if translation_raw != null:
@@ -422,10 +429,10 @@ static func _unpack_transform(rotation_raw, translation_raw) -> Transform3D:
 			# MV translation to Godot:
 			#   origin = C * t_mv = (-t.x, t.z, t.y)
 			origin = Vector3(-parts[0], parts[2], parts[1])
-			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
 				"Translation: (%d, %d, %d) -> origin=%s" % [parts[0], parts[1], parts[2], origin])
 	
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
 		"Unpacked transform: rotation=%s origin=%s" % [Basis(rot_x, rot_y, rot_z), origin])
 	
 	return Transform3D(rot_x, rot_y, rot_z, origin)
@@ -436,10 +443,10 @@ static func _unpack_transform(rotation_raw, translation_raw) -> Transform3D:
 ## `parent_transform` is the accumulated Transform3D of all ancestor nTRN
 ## nodes. Every nTRN transform is applied in its parent's space, so a chain
 ## A -> B -> shape yields T_A * T_B applied to the shape's voxels. Shape
-## nodes receive the fully accumulated transform (IDENTITY if none).
+## nodes receive the fully accumulated transform.
 static func _build_tree(node_id: int, nodes: Dictionary, models: Array, parent_transform: Transform3D = Transform3D.IDENTITY, inherited_name := "") -> Dictionary:
 	if not nodes.has(node_id):
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: node %d missing from node graph" % node_id)
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Tree: node %d missing from node graph" % node_id)
 		return { "type": "NONE" }
 	
 	var node = nodes[node_id]
@@ -452,14 +459,14 @@ static func _build_tree(node_id: int, nodes: Dictionary, models: Array, parent_t
 		var combined_name := inherited_name
 		if combined_name.is_empty():
 			combined_name = node.get("name", "")
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
 			"Tree: nTRN %d -> child %d: accumulated transform=%s name='%s'" % [node_id, node.child_id, combined, combined_name])
 		return _build_tree(node.child_id, nodes, models, combined, combined_name)
 	
 	if node.type == NodeType.GROUP:
 		tree_node["type"] = "GROUP"
 		tree_node["children"] = []
-		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: nGRP %d with %d children (chain=%s)" % [node_id, node.child_ids.size(), parent_transform])
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Tree: nGRP %d with %d children (chain=%s)" % [node_id, node.child_ids.size(), parent_transform])
 		for child_id in node.child_ids:
 			tree_node["children"].append(_build_tree(child_id, nodes, models, parent_transform, inherited_name))
 	
@@ -468,18 +475,21 @@ static func _build_tree(node_id: int, nodes: Dictionary, models: Array, parent_t
 		var model_id: int = node.model_id
 		if model_id >= 0 and model_id < models.size():
 			tree_node["model"] = models[model_id]
-			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: nSHP %d -> model %d (chain=%s name='%s')" % [node_id, model_id, parent_transform, inherited_name])
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Tree: nSHP %d -> model %d (chain=%s name='%s')" % [node_id, model_id, parent_transform, inherited_name])
 		else:
-			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT, "Tree: nSHP %d references missing model %d" % [node_id, model_id])
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Tree: nSHP %d references missing model %d" % [node_id, model_id])
 		tree_node["transform"] = parent_transform
 		tree_node["name"] = inherited_name
 	
 	return tree_node
 
-## Walks the scene tree and collects each shape node with its full transform applied.
-## Each entry: { voxels: {Vector3i: int}, transform: Transform3D, size: Vector3i, name: String }
-## The voxels are transformed from local model space to scene space.
-## Pivot is applied per model (floor(size / 2)), matching the reference importer.
+## Walks the scene tree and collects each shape node with its full transform
+## applied. Each entry:
+## [codeblock]
+## { voxels: {Vector3i: int}, transform: Transform3D, size: Vector3i, name: String }
+## [/codeblock]
+## The voxels are transformed from local model space to scene space. The pivot
+## is applied per model (floor(size / 2)), matching the reference importer.
 static func _collect_scene_models(tree: Dictionary) -> Array[Dictionary]:
 	var models: Array[Dictionary] = []
 	
@@ -488,35 +498,38 @@ static func _collect_scene_models(tree: Dictionary) -> Array[Dictionary]:
 		if entry["voxels"].size() > 0:
 			models.append(entry)
 			# Log the bounding box of each collected scene model for verification.
-			var min_pos := Vector3i.ZERO
-			var max_pos := Vector3i.ZERO
+			var min_position := Vector3i.ZERO
+			var max_position := Vector3i.ZERO
 			var first := true
-			for pos in entry["voxels"]:
-				var p: Vector3i = pos
+			for position in entry["voxels"]:
+				var typed_position: Vector3i = position
 				if first:
-					min_pos = p
-					max_pos = p
+					min_position = typed_position
+					max_position = typed_position
 					first = false
 				else:
-					min_pos = Vector3i(min(min_pos.x, p.x), min(min_pos.y, p.y), min(min_pos.z, p.z))
-					max_pos = Vector3i(max(max_pos.x, p.x), max(max_pos.y, p.y), max(max_pos.z, p.z))
-			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
-				"Scene model '%s': %d voxels, bounds min=%s max=%s" % [entry.get("name", ""), entry["voxels"].size(), min_pos, max_pos])
+					min_position = Vector3i(mini(min_position.x, typed_position.x), mini(min_position.y, typed_position.y), mini(min_position.z, typed_position.z))
+					max_position = Vector3i(maxi(max_position.x, typed_position.x), maxi(max_position.y, typed_position.y), maxi(max_position.z, typed_position.z))
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
+				"Scene model '%s': %d voxels, bounds min=%s max=%s" % [entry.get("name", ""), entry["voxels"].size(), min_position, max_position])
 	
 	if tree.has("children"):
 		for child in tree["children"]:
 			var child_models := _collect_scene_models(child)
-			for cm in child_models:
-				models.append(cm)
+			for child_model in child_models:
+				models.append(child_model)
 	
 	return models
 
-## Transforms a single shape node's voxels by its full accumulated transform chain.
+## Transforms a single shape node's voxels by its full accumulated transform
+## chain.
 ##
 ## MagicaVoxel rotates each model around its own center pivot, and the pivot
 ## convention depends on the parity of each axis in MagicaVoxel space:
-##   even s -> s/2 - 0.5   (half-voxel boundary between the two middle cells)
-##   odd  s -> s/2         (whole-voxel center, integer division)
+## [codeblock]
+##   even s = s/2 - 0.5   (half-voxel boundary between the two middle cells)
+##   odd  s = s/2         (whole-voxel center, integer division)
+## [/codeblock]
 static func _transform_model(tree: Dictionary) -> Dictionary:
 	var voxels: Dictionary = tree["model"]["voxels"].duplicate()
 	var size: Vector3i = tree["model"]["size"]
@@ -535,36 +548,36 @@ static func _transform_model(tree: Dictionary) -> Dictionary:
 	var cz: float = mz / 2.0 - 0.5 if int(mz) % 2 == 0 else floor(mz / 2.0)
 	
 	# Map the MV pivot through the XYZI affine flip:
-	# key = (mx-1-bx, bz, by).
+	#   key = (mx-1-bx, bz, by).
 	var center_local := Vector3(-cx + (mx - 1.0), cz, cy)
 	
 	var chain: Transform3D = tree.get("transform", Transform3D.IDENTITY)
-	var origin_eff: Vector3 = chain.origin - chain.basis * center_local
-	var eff := Transform3D(chain.basis, origin_eff)
+	var effective_origin: Vector3 = chain.origin - chain.basis * center_local
+	var effective_transform := Transform3D(chain.basis, effective_origin)
 	
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
 		"Transforming model '%s': size=%s center_local=%s chain=%s origin_eff=%s" % [
-			tree.get("name", ""), size, center_local, chain, origin_eff])
+			tree.get("name", ""), size, center_local, chain, effective_origin])
 	
 	var transformed: Dictionary = {}
 	for key in voxels:
-		var world_pos := eff * Vector3(key)
-		var grid_pos := Vector3i(floori(world_pos.x), floori(world_pos.y), floori(world_pos.z))
-		transformed[grid_pos] = voxels[key]
+		var world_pos := effective_transform * Vector3(key)
+		var grid_position := Vector3i(floori(world_pos.x), floori(world_pos.y), floori(world_pos.z))
+		transformed[grid_position] = voxels[key]
 	voxels = transformed
 	
 	# Log a few sample placements for verification.
 	var samples: Array = []
 	var sample_keys := voxels.keys()
-	for i in min(3, sample_keys.size()):
-		var p: Vector3i = sample_keys[i]
-		samples.append(p)
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, DEBUG_CONTEXT,
+	for i in mini(3, sample_keys.size()):
+		var typed_position: Vector3i = sample_keys[i]
+		samples.append(typed_position)
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context,
 		"Transformed model '%s': %d voxels, sample positions=%s" % [tree.get("name", ""), voxels.size(), samples])
 	
 	return {
 		"voxels": voxels,
-		"transform": eff,
+		"transform": effective_transform,
 		"size": size,
 		"name": tree.get("name", ""),
 	}
@@ -573,30 +586,30 @@ static func _transform_model(tree: Dictionary) -> Dictionary:
 ## Translates the MATL chunk dictionary values to Godot's PBR properties
 ## based on the material _type ("_diffuse", "_metal", "_glass", "_emit").
 static func apply_material_properties(
-	material: StandardMaterial3D, 
-	mat_data: Dictionary, 
-	palette_color: Color = Color.WHITE) -> void:
-	var mat_type: String = mat_data.get("type", "_diffuse")
+		material: StandardMaterial3D,
+		material_data: Dictionary,
+		palette_color: Color = Color.WHITE) -> void:
+	var material_type: String = material_data.get("type", "_diffuse")
 	
-	# Read MagicaVoxel raw values with defaults
-	var sp: float = mat_data.get("_sp", 0.0)       # specular 0.0-1.0
-	var rough: float = mat_data.get("_rough", 0.0)  # roughness 0.0-1.0
-	var metal: float = mat_data.get("_metal", 0.0)  # metallic 0.0-1.0
-	var weight: float = mat_data.get("_weight", 1.0) # blend/opacity 0.0-1.0
+	# Read MagicaVoxel raw values with defaults.
+	var specular: float = material_data.get("_sp", 0.0)       # specular 0.0-1.0
+	var roughness: float = material_data.get("_rough", 0.0)   # roughness 0.0-1.0
+	var metalness: float = material_data.get("_metal", 0.0)   # metallic 0.0-1.0
+	var weight: float = material_data.get("_weight", 1.0)     # blend/opacity 0.0-1.0
 	
-	# Use override color if provided, otherwise use palette color
-	var albedo: Color = mat_data.get("color", palette_color)
+	# Use the override color if provided, otherwise use the palette color.
+	var albedo: Color = material_data.get("color", palette_color)
 	
-	# Apply PBR mapping based on MagicaVoxel material type
-	match mat_type:
+	# Apply PBR mapping based on the MagicaVoxel material type.
+	match material_type:
 		"_diffuse":
-			# Pure diffuse/matte surface
+			# Pure diffuse/matte surface.
 			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 			material.metallic = 0.0
 			material.roughness = 1.0
 			material.metallic_specular = 0.5  # default
 			
-			# If weight < 1.0, enable transparency (opacity blend)
+			# If weight < 1.0, enable transparency (opacity blend).
 			if weight < 1.0:
 				material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 				material.albedo_color = Color(albedo.r, albedo.g, albedo.b, weight)
@@ -604,48 +617,48 @@ static func apply_material_properties(
 				material.albedo_color = albedo
 		
 		"_metal":
-			# Metallic surface
-			# In Godot PBR, metallic is the primary control; _sp is less relevant
+			# Metallic surface. In Godot PBR, metallic is the primary control;
+			# _sp is less relevant.
 			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-			if mat_data.has("_metal"):
-				material.metallic = metal
+			if material_data.has("_metal"):
+				material.metallic = metalness
 			else:
-				# Fallback: use _sp as metallic if _metal is missing
-				material.metallic = sp
-			material.roughness = rough if mat_data.has("_rough") else 0.1
+				# Fallback: use _sp as metallic if _metal is missing.
+				material.metallic = specular
+			material.roughness = roughness if material_data.has("_rough") else 0.1
 			material.metallic_specular = 0.5
 			material.albedo_color = albedo
 		
 		"_glass":
-			# Dielectric (non-metal) transparent surface
+			# Dielectric (non-metal) transparent surface.
 			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 			material.metallic = 0.0
-			if mat_data.has("_rough"):
-				material.roughness = rough
+			if material_data.has("_rough"):
+				material.roughness = roughness
 			else:
-				# Invert _sp for roughness (shiny = low roughness)
-				material.roughness = 1.0 - sp
-			material.metallic_specular = sp  # _sp controls reflection intensity for dielectrics
+				# Invert _sp for roughness (shiny = low roughness).
+				material.roughness = 1.0 - specular
+			material.metallic_specular = specular  # _sp controls reflection intensity for dielectrics.
 			material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 			material.albedo_color = Color(albedo.r, albedo.g, albedo.b, weight)
 		
 		"_emit":
-			# Emissive surface — handled separately below
+			# Emissive surface, handled separately below.
 			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 			material.metallic = 0.0
 			material.roughness = 1.0
 			material.albedo_color = albedo
 		
 		_:
-			# Unknown type or _type missing
+			# Unknown type or _type missing.
 			material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 			material.metallic = 0.0
 			material.roughness = 1.0
 			material.metallic_specular = 0.5
 			material.albedo_color = albedo
 	
-	# Emission handling
-	if mat_data.has("emission"):
+	# Emission handling.
+	if material_data.has("emission"):
 		material.set_feature(BaseMaterial3D.FEATURE_EMISSION, true)
 		material.emission = albedo
 		
@@ -654,12 +667,13 @@ static func apply_material_properties(
 		# - emission_flux: raw emission power (from _flux or _emit)
 		# - emission_weight: blend percentage from _weight (0.0-1.0)
 		# - GLOW_SCALE (2.5): adjusts MagicaVoxel's arbitrary intensity to
-		#   Godot's PBR-compatible range for realistic bloom/glow
+		#   Godot's PBR-compatible range for realistic bloom/glow.
 		const GLOW_SCALE := 2.5
-		var emission_flux: float = mat_data.get("emission_flux", 1.0)
-		var emission_weight: float = mat_data.get("emission_weight", 1.0)
+		var emission_flux: float = material_data.get("emission_flux", 1.0)
+		var emission_weight: float = material_data.get("emission_weight", 1.0)
 		material.emission_energy_multiplier = emission_flux * emission_weight * GLOW_SCALE
 
+## Parses a color from a space-separated "r g b a" string.
 static func _parse_color_string(color_str: String) -> Color:
 	var parts := color_str.split_floats(" ")
 	if parts.size() >= 3:

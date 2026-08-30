@@ -1,20 +1,20 @@
+## Registry for dynamically loading brushes, tools, and edit operations.
+## Stores class references and creates instances on demand.
+## Attached to a [VoxlyEditor] instance.
 @tool
 class_name VoxlyRegistry
 extends RefCounted
-## Registry for dynamically loading brushes, tools, and edit operations.
-## Stores class references and creates instances on demand.
-## Attached to a VoxlyEditor instance.
 
-## Registered brush classes
+## Registered brush classes, keyed by name.
 var _brush_classes: Dictionary[String, GDScript] = {}
 
-## Registered tool classes
+## Registered tool classes, keyed by name.
 var _tool_classes: Dictionary[String, GDScript] = {}
 
-## Registered edit operation classes
+## Registered edit operation classes, keyed by name.
 var _operation_classes: Dictionary[String, GDScript] = {}
 
-
+## Registers all built-in brushes, tools, and operations.
 func _init() -> void:
 	register_brush("point", preload("res://addons/voxly-core/voxly_editor/brushes/voxly_brush_point.gd"))
 	register_brush("box", preload("res://addons/voxly-core/voxly_editor/brushes/voxly_brush_box.gd"))
@@ -53,17 +53,17 @@ func _init() -> void:
 	register_operation("split_components", preload("res://addons/voxly-core/voxly_editor/operations/voxly_op_split_components.gd"))
 
 ## Registers a brush class by name. Overwrites existing entry.
-## The script must extend VoxlyBrush.
+## The script must extend [VoxlyBrush].
 func register_brush(name: String, script: GDScript) -> void:
 	_brush_classes[name.to_lower()] = script
 
 ## Registers a tool class by name. Overwrites existing entry.
-## The script must extend VoxlyTool.
+## The script must extend [VoxlyTool].
 func register_tool(name: String, script: GDScript) -> void:
 	_tool_classes[name.to_lower()] = script
 
 ## Registers an edit operation class by name. Overwrites existing entry.
-## The script must extend VoxlyEditOperation.
+## The script must extend [VoxlyEditOperation].
 func register_operation(name: String, script: GDScript) -> void:
 	_operation_classes[name.to_lower()] = script
 
@@ -100,18 +100,18 @@ func get_operation_names() -> PackedStringArray:
 		names.append(key)
 	return names
 
-## Returns operation ids grouped by category, in registration order.
+## Returns operation IDs grouped by category, in registration order.
 func get_operations_by_category() -> Dictionary:
 	var result: Dictionary = {}
-	for op_name in get_operation_names():
-		var op := create_operation(op_name)
-		if op == null:
+	for operation_name in get_operation_names():
+		var operation := create_operation(operation_name)
+		if operation == null:
 			continue
-		if not result.has(op.category):
-			result[op.category] = PackedStringArray()
-		var category_ops: PackedStringArray = result[op.category]
-		category_ops.append(op_name)
-		result[op.category] = category_ops
+		if not result.has(operation.category):
+			result[operation.category] = PackedStringArray()
+		var category_operations: PackedStringArray = result[operation.category]
+		category_operations.append(operation_name)
+		result[operation.category] = category_operations
 	return result
 
 ## Creates a brush instance by name, applying any saved option values from
@@ -168,10 +168,11 @@ func create_operation(name: String) -> VoxlyEditOperation:
 	var instance: VoxlyEditOperation = script.new()
 	if not instance:
 		push_error("VoxlyRegistry: Failed to instantiate operation '%s'" % name)
+		return null
 	return instance
 
-## Registers a list of brush scripts. Each script must have a static
-## or class-level `BRUSH_NAME` constant, or we derive from the filename.
+## Registers a list of brush scripts. Each script must have a static or
+## class-level `BRUSH_NAME` constant, or we derive from the filename.
 func register_brushes(scripts: Array[GDScript]) -> void:
 	for script in scripts:
 		var name := _derive_name(script)
@@ -192,7 +193,7 @@ func register_operations(scripts: Array[GDScript]) -> void:
 		if not name.is_empty():
 			register_operation(name, script)
 
-
+## Derives a registry name from a script file name.
 func _derive_name(script: GDScript) -> String:
 	if script.get("name"):
 		return script.get("name")

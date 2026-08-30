@@ -1,18 +1,21 @@
+## Requires a selection to create a new sibling VoxelModel3D containing the
+## current selection, then removes those voxels from the source model.
 @tool
 extends VoxlyEditOperation
-## Requires a selection to create a new sibling VoxelModel3D containing the
-## current selection, then removes those voxels  from the source model.
 
+## Registers the extract operation in the registry.
 func _init() -> void:
 	id = "extract_selection"
 	category = "new_model"
 	display_name = "Extract Selection to New Model"
 	modifies_voxels = true
 
-func is_available(editor) -> bool:
+## Returns whether a selection exists to extract.
+func is_available(editor: VoxlyEditor) -> bool:
 	return editor != null and editor.selection != null and editor.selection.count() > 0
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Extracts the selection to a new model.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	var source := _get_target(editor)
 	if source == null or editor.selection.count() == 0:
 		return
@@ -20,17 +23,16 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 	if positions.is_empty():
 		return
 	
-	# Widen selection across matching region not needed — extract as-is.
 	var min_corner := _min_corner(positions)
 	var max_corner := _max_corner(positions)
 	var new_shape := max_corner - min_corner + Vector3i.ONE
 	
 	# Build the new model's voxel map.
-	var voxel_map: Dictionary = {}
-	for pos in positions:
-		var voxel_id = source.get_voxel(pos)
+	var voxel_map: Dictionary[Vector3i, int] = {}
+	for position in positions:
+		var voxel_id = source.get_voxel(position)
 		if voxel_id != null:
-			voxel_map[pos - min_corner] = voxel_id
+			voxel_map[position - min_corner] = voxel_id
 	if voxel_map.is_empty():
 		return
 	
@@ -65,16 +67,18 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 	_record_selection_clear(undo_redo, editor)
 	undo_redo.commit_action()
 
+## Returns the minimum corner of the positions.
 func _min_corner(positions: Array[Vector3i]) -> Vector3i:
 	var result := Vector3i(1 << 30, 1 << 30, 1 << 30)
-	for pos in positions:
+	for position in positions:
 		for i in 3:
-			result[i] = mini(result[i], pos[i])
+			result[i] = mini(result[i], position[i])
 	return result
 
+## Returns the maximum corner of the positions.
 func _max_corner(positions: Array[Vector3i]) -> Vector3i:
 	var result := Vector3i(-(1 << 30), -(1 << 30), -(1 << 30))
-	for pos in positions:
+	for position in positions:
 		for i in 3:
-			result[i] = maxi(result[i], pos[i])
+			result[i] = maxi(result[i], position[i])
 	return result

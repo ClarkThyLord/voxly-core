@@ -1,21 +1,24 @@
+## Splits the model into connected regions and creates one sibling
+## VoxelModel3D per region, removing them from the source.
 @tool
 extends VoxlyEditOperation
-## Split regions of the model and creates one sibling VoxelModel3D per region, 
-## removing them from the source.
+
+const _debug_context := "VoxlyOpSplit"
 
 ## Only components with at least this many voxels are extracted.
 ## Smaller regions stay in the source.
 var min_size: int = 1
 
-## When true the original model is removed after extraction.
+## When true, the original model is removed after extraction.
 var delete_original: bool = true
 
-## When true each part's node is centered on its voxel content:
-## the node's world position becomes the content center
-## and `origin` is set to -shape/2 so the mesh draws centered on the node.
-## When false the part keeps corner alignment.
+## When true, each part's node is centered on its voxel content:
+## the node's world position becomes the content center and `origin` is set to
+## -shape/2 so the mesh draws centered on the node.
+## When false, the part keeps corner alignment.
 var center_origin: bool = true
 
+## Registers the split operation in the registry.
 func _init() -> void:
 	id = "split_components"
 	category = "new_model"
@@ -47,10 +50,12 @@ func get_options() -> Array[Dictionary]:
 		},
 	]
 
-func is_available(editor) -> bool:
+## Returns whether the selection can be split.
+func is_available(editor: VoxlyEditor) -> bool:
 	return _target_has_content(editor)
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Splits the selection into connected components.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	var source := _get_target(editor)
 	if source == null:
 		return
@@ -59,7 +64,7 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 	if positions.is_empty():
 		return
 	
-	# Split into components with BFS
+	# Split into components with BFS.
 	var components := _label_components(source, positions)
 	
 	undo_redo.create_action("Voxly Split into Components")
@@ -74,10 +79,10 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 			extracted_total += component.size()
 	
 	if extracted_total > 0:
-		# Clear selection
+		# Clear selection.
 		_record_selection_clear(undo_redo, editor)
 		if delete_original:
-			# Remove the now-empty source model
+			# Remove the now-empty source model.
 			var parent := source.get_parent()
 			if parent != null:
 				undo_redo.add_do_method(parent, "remove_child", source)
@@ -91,14 +96,14 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 		# part re-targets the editor to a live node.
 		_select_node(created_parts[0])
 	
-	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, "OpSplit",
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context,
 		"Split %d components (%d voxels)" % [components.size(), extracted_total])
 
-## BFS labels 6-connected voxel regions. Returns Array[Array[Vector3i]].
+## BFS-labels 6-connected voxel regions. Returns Array[Array[Vector3i]].
 func _label_components(source, positions: Array[Vector3i]) -> Array:
 	var occupied: Dictionary[Vector3i, bool] = {}
-	for pos in positions:
-		occupied[pos] = true
+	for position in positions:
+		occupied[position] = true
 	
 	var result: Array = []
 	var visited: Dictionary[Vector3i, bool] = {}
@@ -111,8 +116,8 @@ func _label_components(source, positions: Array[Vector3i]) -> Array:
 		while not queue.is_empty():
 			var current: Vector3i = queue.pop_front()
 			component.append(current)
-			for dir in _neighbors():
-				var neighbor := current + dir
+			for direction in _neighbors():
+				var neighbor := current + direction
 				if not occupied.has(neighbor) or visited.has(neighbor):
 					continue
 				visited[neighbor] = true
@@ -122,17 +127,17 @@ func _label_components(source, positions: Array[Vector3i]) -> Array:
 	return result
 
 ## Creates a sibling model for one component and removes it from the source.
-## Returns the created VoxelModel3D, or null if the source has no parent.
+## Returns the created [VoxelModel3D], or null if the source has no parent.
 func _extract_component(undo_redo: EditorUndoRedoManager, source, component: Array[Vector3i], part_index: int) -> VoxelModel3D:
 	var min_corner := _min_corner(component)
 	var max_corner := _max_corner(component)
 	var new_shape := max_corner - min_corner + Vector3i.ONE
 	
-	var voxel_map: Dictionary = {}
-	for pos in component:
-		var voxel_id = source.get_voxel(pos)
+	var voxel_map: Dictionary[Vector3i, int] = {}
+	for position in component:
+		var voxel_id = source.get_voxel(position)
 		if voxel_id != null:
-			voxel_map[pos - min_corner] = voxel_id
+			voxel_map[position - min_corner] = voxel_id
 	
 	var parent = source.get_parent()
 	if parent == null:
@@ -143,12 +148,12 @@ func _extract_component(undo_redo: EditorUndoRedoManager, source, component: Arr
 	new_model.voxel_set = source.voxel_set
 	new_model.voxel_size = source.voxel_size
 	new_model.shape = new_shape
-	new_model.voxels_colored = source.voxels_colored
-	new_model.voxels_textured = source.voxels_textured
+	new_model.include_vertex_colors = source.include_vertex_colors
+	new_model.include_textures = source.include_textures
 	
 	if center_origin:
 		# Node origin sits at the component's voxel-content center, such that:
-		# Transform position = the content center in world space, with the
+		# the transform position is the content center in world space, with the
 		# source's basis copied so rotation/scale render identically.
 		# origin = -shape/2 so the mesh is drawn centered on the node.
 		var center_local = (
@@ -157,9 +162,9 @@ func _extract_component(undo_redo: EditorUndoRedoManager, source, component: Arr
 		new_model.transform = Transform3D(source.transform.basis, source.transform * center_local)
 		new_model.origin = -Vector3(new_shape) * 0.5
 	else:
-		# Content spans shape in the +X+Y+Z octant and
-		# the part inherits the source transform wholesale. `origin` is in
-		# voxel units, so the min-corner offset is added directly.
+		# Content spans the shape in the +X+Y+Z octant and the part inherits
+		# the source transform wholesale. `origin` is in voxel units, so the
+		# min-corner offset is added directly.
 		new_model.transform = source.transform
 		new_model.origin = source.origin + Vector3(min_corner)
 	
@@ -169,7 +174,7 @@ func _extract_component(undo_redo: EditorUndoRedoManager, source, component: Arr
 		undo_redo.add_do_method(new_model, "set_voxel", voxel_position, voxel_map[voxel_position])
 	undo_redo.add_do_method(new_model, "update")
 	undo_redo.add_undo_method(parent, "remove_child", new_model)
-
+	
 	_record_remove_all(undo_redo, source, component)
 	return new_model
 
@@ -177,20 +182,22 @@ func _extract_component(undo_redo: EditorUndoRedoManager, source, component: Arr
 func _select_node(node: Node) -> void:
 	if not node:
 		return
-	var sel := EditorInterface.get_selection()
-	sel.clear()
+	var selection := EditorInterface.get_selection()
+	selection.clear()
 	EditorInterface.edit_node(node)
 
+## Returns the minimum corner of the positions.
 func _min_corner(positions: Array[Vector3i]) -> Vector3i:
 	var result := Vector3i(1 << 30, 1 << 30, 1 << 30)
-	for pos in positions:
+	for position in positions:
 		for i in 3:
-			result[i] = mini(result[i], pos[i])
+			result[i] = mini(result[i], position[i])
 	return result
 
+## Returns the maximum corner of the positions.
 func _max_corner(positions: Array[Vector3i]) -> Vector3i:
 	var result := Vector3i(-(1 << 30), -(1 << 30), -(1 << 30))
-	for pos in positions:
+	for position in positions:
 		for i in 3:
-			result[i] = maxi(result[i], pos[i])
+			result[i] = maxi(result[i], position[i])
 	return result

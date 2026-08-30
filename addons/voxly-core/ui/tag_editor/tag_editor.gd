@@ -1,3 +1,7 @@
+## Tag list editor.
+##
+## Shows tags as toggleable buttons with add, remove, rename, and selection
+## actions, optional single-select mode, and a right-click context menu.
 @tool
 extends VBoxContainer
 
@@ -8,90 +12,75 @@ signal changed
 signal tag_toggled(tag: String, selected: bool)
 
 ## Title shown in the toolbar.
-@export
-var title: String = "Tags":
+@export var title: String = "Tags":
 	set = _set_title
 
 ## Maximum number of tags allowed (-1 = unlimited).
-@export
-var tag_limit: int = -1
+@export var tag_limit: int = -1
 
 ## If false, disables all editing (toolbar buttons disabled, toggling blocked).
 ## The toolbar remains visible so users can still see the buttons.
-@export
-var disable_editing: bool = false:
+@export var disable_editing: bool = false:
 	set = _set_disable_editing
 
 ## Show or hide the toolbar (Add, Remove, Select buttons).
-@export
-var show_toolbar: bool = true:
+@export var show_toolbar: bool = true:
 	set = _set_show_toolbar
 
 ## Minimum tags that must remain selected.
-@export
-var selection_min: int = 0
+@export var selection_min: int = 0
 
 ## Maximum tags that can be selected (-1 = unlimited).
-@export
-var selection_max: int = -1
+@export var selection_max: int = -1
 
 ## Optional regex pattern for tag validation.
 ## The tag must match this pattern to be valid.
 ## Example: set to `^[a-zA-Z0-9_]{2,16}$` for 2-16 alphanumeric chars.
-@export
-var tag_validator: String = ""
+@export var tag_validator: String = ""
 
 ## The list of all available tags.
-@export
-var tags: Array[String] = []:
+@export var tags: Array[String] = []:
 	set = _set_tags,
 	get = _get_tags
 
 ## Currently selected tags.
-@export
-var selected_tags: Array[String] = []:
+@export var selected_tags: Array[String] = []:
 	set = _set_selected_tags,
 	get = _get_selected_tags
 
-@onready
-var _toolbar: VBoxContainer = %ToolBarContainer
+## Toolbar with add/remove/select actions.
+@onready var _toolbar: VBoxContainer = %ToolBarContainer
+## Title label.
+@onready var _title_label: Label = %TitleLabel
+## Menu button for adding tags.
+@onready var _add_button: MenuButton = %AddButton
+## Menu button for removing tags.
+@onready var _remove_button: MenuButton = %RemoveButton
+## Menu button for selection actions.
+@onready var _select_button: MenuButton = %SelectButton
+## Container holding the tag toggle buttons.
+@onready var _tags_container: HFlowContainer = %TagsContainer
+## Popup for entering a new tag name.
+@onready var _name_window: Window = %NameWindow
+## Tag name input field.
+@onready var _name_line_edit: LineEdit = %LineEdit
+## Confirms the new tag name.
+@onready var _name_ok: Button = %OkButton
+## Cancels the tag name window.
+@onready var _name_cancel: Button = %CancelButton
+## Right-click context menu for tags.
+@onready var _context_menu: PopupMenu = %ContextMenu
 
-@onready
-var _title_label: Label = %TitleLabel
-
-@onready
-var _add_button: MenuButton = %AddButton
-
-@onready
-var _remove_button: MenuButton = %RemoveButton
-
-@onready
-var _select_button: MenuButton = %SelectButton
-
-@onready
-var _tags_container: HFlowContainer = %TagsContainer
-
-@onready
-var _name_window: Window = %NameWindow
-
-@onready
-var _name_line_edit: LineEdit = %LineEdit
-
-@onready
-var _name_ok: Button = %OkButton
-
-@onready
-var _name_cancel: Button = %CancelButton
-
+## Toggle buttons keyed by tag name.
 var _tag_buttons: Dictionary[String, Button] = {}
 
-@onready
-var _context_menu: PopupMenu = %ContextMenu
-
+## True while a rebuild is queued for the ready state.
 var _pending_rebuild := false
 
+## Tag being renamed, or empty when adding a new tag.
 var _rename_old_tag: String = ""
 
+## Actions available in the tag context menu.
 enum ContextAction {
 	TOGGLE_SELECTION,
 	RENAME,
@@ -103,98 +92,108 @@ enum ContextAction {
 	ADD_TAG,
 }
 
+## Updates the tag list and rebuilds the buttons.
 func _set_tags(new_tags: Array[String]) -> void:
 	tags = new_tags.duplicate()
-	for t in selected_tags.duplicate():
-		if t not in tags:
-			selected_tags.erase(t)
+	for tag in selected_tags.duplicate():
+		if tag not in tags:
+			selected_tags.erase(tag)
 	if is_inside_tree():
 		_rebuild()
 	else:
 		_pending_rebuild = true
 
+## Returns the current tag list.
 func _get_tags() -> Array[String]:
 	return tags
 
+## Updates the selected tags, filtering invalid names.
 func _set_selected_tags(new_selected: Array[String]) -> void:
 	var valid: Array[String] = []
-	for t in new_selected:
-		if t in tags and t not in valid:
-			valid.append(t)
+	for tag in new_selected:
+		if tag in tags and tag not in valid:
+			valid.append(tag)
 	selected_tags = valid
 	_update_button_states()
 	changed.emit()
 
+## Returns the currently selected tags.
 func _get_selected_tags() -> Array[String]:
 	return selected_tags
 
+## Toggles whether tag editing is disabled.
 func _set_disable_editing(value: bool) -> void:
 	disable_editing = value
 	_update_toolbar_disabled_state()
 
+## Toggles toolbar visibility.
 func _set_show_toolbar(value: bool) -> void:
 	show_toolbar = value
 	if _toolbar:
 		_toolbar.visible = value
 
+## Returns whether only one tag can be selected.
 func _is_single_select() -> bool:
 	return selection_max == 1
 
+## Enables or disables toolbar buttons by state.
 func _update_toolbar_disabled_state() -> void:
 	if not _add_button:
 		return
 	_update_add_button()
 	
-	# Disabled if no tags and no selection, or editing is disabled
+	# Disabled if no tags and no selection, or editing is disabled.
 	var has_sel := not selected_tags.is_empty()
 	var has_tags := not tags.is_empty()
 	_remove_button.disabled = (not has_sel and not has_tags) or disable_editing
 	
-	# Hidden in single-select mode, otherwise disabled if no tags
+	# Hidden in single-select mode, otherwise disabled if no tags.
 	if _is_single_select():
 		_select_button.hide()
 	else:
 		_select_button.show()
 		_select_button.disabled = not has_tags
 
+## Updates the title label text.
 func _set_title(value: String) -> void:
 	title = value
 	if _title_label:
 		_title_label.text = value
 
+## Applies initial visibility and rebuilds the tags.
 func _ready() -> void:
 	_toolbar.visible = show_toolbar
 	_title_label.text = title
 	_update_toolbar_disabled_state()
 	
-	# Add button
+	# Add button.
 	_add_button.get_popup().id_pressed.connect(_on_toolbar_add_action)
 	_add_button.get_popup().clear(true)
 	_add_button.get_popup().add_item("Add New Tag", 0)
 	
-	# Remove buttob
+	# Remove button.
 	_remove_button.get_popup().about_to_popup.connect(_update_remove_menu)
 	_remove_button.get_popup().id_pressed.connect(_on_toolbar_remove_action)
 	
-	# Select button
+	# Select button.
 	_select_button.get_popup().about_to_popup.connect(_update_select_menu)
 	_select_button.get_popup().id_pressed.connect(_on_toolbar_select_action)
 	
-	# Name window
+	# Name window.
 	_name_ok.pressed.connect(_on_name_ok)
 	_name_cancel.pressed.connect(_on_name_cancel)
 	_name_line_edit.text_submitted.connect(_on_name_ok)
 	_name_window.close_requested.connect(_on_name_cancel)
 	
-	# Context menu
+	# Context menu.
 	_context_menu.id_pressed.connect(_on_context_action)
 	
-	# Right-click on the tags container for global context menu
+	# Right-click on the tags container for the global context menu.
 	_tags_container.gui_input.connect(_on_tags_container_gui_input)
 	
 	_name_window.hide()
 	
-	# Init toolbar select menu with default items
+	# Initialize the toolbar select menu with default items.
 	_select_button.get_popup().clear(true)
 	_select_button.get_popup().add_item("Select All", ContextAction.SELECT_ALL)
 	_select_button.get_popup().add_item("Unselect All", ContextAction.UNSELECT_ALL)
@@ -202,57 +201,62 @@ func _ready() -> void:
 	if _pending_rebuild:
 		_rebuild()
 
+## Returns the button for the given tag.
 func get_tag_button(tag: String) -> Button:
 	return _tag_buttons.get(tag)
 
+## Rebuilds the tag buttons.
 func refresh() -> void:
 	_rebuild()
 
+## Recreates all tag buttons from the tag list.
 func _rebuild() -> void:
 	if not _tags_container:
 		_pending_rebuild = true
 		return
 	_pending_rebuild = false
 	
-	for btn in _tag_buttons.values():
-		if is_instance_valid(btn):
-			_tags_container.remove_child(btn)
-			btn.queue_free()
+	for button in _tag_buttons.values():
+		if is_instance_valid(button):
+			_tags_container.remove_child(button)
+			button.queue_free()
 	_tag_buttons.clear()
 	
-	for t in tags:
-		var btn := Button.new()
-		btn.text = t
-		btn.toggle_mode = not disable_editing
-		btn.button_pressed = t in selected_tags
-		btn.pressed.connect(_on_tag_toggled.bind(t, btn))
-		btn.connect("gui_input", _on_tag_gui_input.bind(t, btn))
-		_tags_container.add_child(btn)
-		_tag_buttons[t] = btn
+	for tag in tags:
+		var button := Button.new()
+		button.text = tag
+		button.toggle_mode = not disable_editing
+		button.button_pressed = tag in selected_tags
+		button.pressed.connect(_on_tag_toggled.bind(tag, button))
+		button.connect("gui_input", _on_tag_gui_input.bind(tag, button))
+		_tags_container.add_child(button)
+		_tag_buttons[tag] = button
 	
 	_update_toolbar_disabled_state()
 
+## Syncs button toggle state with the selection.
 func _update_button_states() -> void:
-	for t in _tag_buttons:
-		var btn = _tag_buttons[t]
-		if is_instance_valid(btn):
-			btn.button_pressed = t in selected_tags
+	for tag in _tag_buttons:
+		var button = _tag_buttons[tag]
+		if is_instance_valid(button):
+			button.button_pressed = tag in selected_tags
 
-func _on_tag_toggled(tag: String, btn: Button) -> void:
+## Updates the selection when a tag button toggles.
+func _on_tag_toggled(tag: String, button: Button) -> void:
 	if disable_editing:
-		btn.button_pressed = false
+		button.button_pressed = false
 		return
 	
-	if btn.button_pressed:
+	if button.button_pressed:
 		if selection_max >= 0 and selected_tags.size() >= selection_max:
-			btn.button_pressed = false
+			button.button_pressed = false
 			return
 		if tag not in selected_tags:
 			selected_tags.append(tag)
 			tag_toggled.emit(tag, true)
 	else:
 		if selected_tags.size() <= selection_min:
-			btn.button_pressed = true
+			button.button_pressed = true
 			return
 		selected_tags.erase(tag)
 		tag_toggled.emit(tag, false)
@@ -260,16 +264,19 @@ func _on_tag_toggled(tag: String, btn: Button) -> void:
 	changed.emit()
 	_update_toolbar_disabled_state()
 
-func _on_tag_gui_input(event: InputEvent, tag: String, btn: Button) -> void:
+## Shows the context menu on tag right-click.
+func _on_tag_gui_input(event: InputEvent, tag: String, button: Button) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-		_show_tag_context_menu(tag, btn.get_screen_position() + event.position)
+		_show_tag_context_menu(tag, button.get_screen_position() + event.position)
 		accept_event()
 
+## Shows the global context menu on empty-area right-click.
 func _on_tags_container_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-		# Empty context in container (no specific tag) — show global actions
+		# Empty context in the container (no specific tag), show global actions.
 		_show_global_context_menu(_tags_container.get_screen_position() + event.position)
 
+## Builds the per-tag context menu.
 func _show_tag_context_menu(tag: String, at_position: Vector2) -> void:
 	_context_menu.clear()
 	
@@ -300,6 +307,7 @@ func _show_tag_context_menu(tag: String, at_position: Vector2) -> void:
 	_context_menu.reset_size()
 	_context_menu.popup(Rect2i(at_position, _context_menu.get_contents_minimum_size()))
 
+## Builds the empty-area context menu.
 func _show_global_context_menu(at_position: Vector2) -> void:
 	_context_menu.clear()
 	
@@ -318,6 +326,7 @@ func _show_global_context_menu(at_position: Vector2) -> void:
 	_context_menu.reset_size()
 	_context_menu.popup(Rect2i(at_position, _context_menu.get_contents_minimum_size()))
 
+## Handles context menu actions.
 func _on_context_action(action_id: int) -> void:
 	var tag: String = _context_menu.get_meta("context_tag", "")
 	
@@ -335,22 +344,23 @@ func _on_context_action(action_id: int) -> void:
 			_remove_tag(tag)
 		
 		ContextAction.SELECT_ALL:
-			for t in tags:
-				_select_tag(t)
+			for _tag in tags:
+				_select_tag(_tag)
 		
 		ContextAction.UNSELECT_ALL:
-			for t in selected_tags.duplicate():
-				_deselect_tag(t)
+			for _tag in selected_tags.duplicate():
+				_deselect_tag(_tag)
 		
 		ContextAction.REMOVE_SELECTED:
-			for t in selected_tags.duplicate():
-				_remove_tag(t)
+			for _tag in selected_tags.duplicate():
+				_remove_tag(_tag)
 		
 		ContextAction.ADD_TAG:
 			_on_add_pressed()
 	
 	changed.emit()
 
+## Selects a tag, enforcing the single-select rule.
 func _select_tag(tag: String) -> void:
 	if tag in selected_tags:
 		return
@@ -358,12 +368,13 @@ func _select_tag(tag: String) -> void:
 		return
 	
 	selected_tags.append(tag)
-	var btn = _tag_buttons.get(tag)
-	if btn:
-		btn.button_pressed = true
+	var button = _tag_buttons.get(tag)
+	if button:
+		button.button_pressed = true
 	
 	tag_toggled.emit(tag, true)
 
+## Deselects a tag.
 func _deselect_tag(tag: String) -> void:
 	if tag not in selected_tags:
 		return
@@ -371,28 +382,31 @@ func _deselect_tag(tag: String) -> void:
 		return
 	
 	selected_tags.erase(tag)
-	var btn = _tag_buttons.get(tag)
-	if btn:
-		btn.button_pressed = false
+	var button = _tag_buttons.get(tag)
+	if button:
+		button.button_pressed = false
 	tag_toggled.emit(tag, false)
 
+## Removes a tag from the list.
 func _remove_tag(tag: String) -> void:
 	tags.erase(tag)
 	selected_tags.erase(tag)
-	var btn = _tag_buttons.get(tag)
+	var button = _tag_buttons.get(tag)
 	
-	if btn:
-		_tags_container.remove_child(btn)
-		btn.queue_free()
+	if button:
+		_tags_container.remove_child(button)
+		button.queue_free()
 		_tag_buttons.erase(tag)
 	
 	_update_toolbar_disabled_state()
 	changed.emit()
 
+## Opens the name window for a new tag.
 func _on_toolbar_add_action(id: int) -> void:
 	if id == 0:
 		_on_add_pressed()
 
+## Opens the add-tag name window.
 func _on_add_pressed() -> void:
 	_rename_old_tag = ""
 	_name_window.title = "Add Tag"
@@ -402,6 +416,7 @@ func _on_add_pressed() -> void:
 	_name_window.popup_centered_clamped()
 	_name_line_edit.grab_focus()
 
+## Builds the remove-tag menu.
 func _update_remove_menu() -> void:
 	var popup := _remove_button.get_popup()
 	popup.clear()
@@ -414,15 +429,17 @@ func _update_remove_menu() -> void:
 	else:
 		popup.add_item("Remove All (%d)" % count, ContextAction.REMOVE_ALL)
 
+## Removes the selected tag.
 func _on_toolbar_remove_action(id: int) -> void:
 	match id:
 		ContextAction.REMOVE_SELECTED:
-			for t in selected_tags.duplicate():
-				_remove_tag(t)
+			for tag in selected_tags.duplicate():
+				_remove_tag(tag)
 		ContextAction.REMOVE_ALL:
-			for t in tags.duplicate():
-				_remove_tag(t)
+			for tag in tags.duplicate():
+				_remove_tag(tag)
 
+## Builds the select-tag menu.
 func _update_select_menu() -> void:
 	var popup := _select_button.get_popup()
 	popup.clear()
@@ -432,17 +449,19 @@ func _update_select_menu() -> void:
 	if not selected_tags.is_empty():
 		popup.add_item("Unselect All (%d)" % selected_tags.size(), ContextAction.UNSELECT_ALL)
 
+## Applies a select-menu action.
 func _on_toolbar_select_action(id: int) -> void:
 	match id:
 		ContextAction.SELECT_ALL:
-			for t in tags:
-				_select_tag(t)
+			for tag in tags:
+				_select_tag(tag)
 			changed.emit()
 		ContextAction.UNSELECT_ALL:
-			for t in selected_tags.duplicate():
-				_deselect_tag(t)
+			for tag in selected_tags.duplicate():
+				_deselect_tag(tag)
 			changed.emit()
 
+## Opens the rename window for a tag.
 func _open_rename_window(old_tag: String) -> void:
 	_rename_old_tag = old_tag
 	_name_window.title = "Rename Tag"
@@ -453,6 +472,7 @@ func _open_rename_window(old_tag: String) -> void:
 	_name_line_edit.grab_focus()
 	_name_line_edit.select_all()
 
+## Hides the add button when editing is disabled.
 func _update_add_button() -> void:
 	if not _add_button:
 		return
@@ -464,12 +484,13 @@ func _update_add_button() -> void:
 		_add_button.disabled = disable_editing
 		_add_button.tooltip_text = ""
 
+## Adds or renames a tag from the name window.
 func _on_name_ok(_new_text := "") -> void:
 	var tag_name := _name_line_edit.text.strip_edges()
 	if tag_name.is_empty():
 		return
 	
-	# Run regex validator if set.
+	# Run the regex validator if set.
 	if tag_validator:
 		var regex := RegEx.new()
 		regex.compile(tag_validator)
@@ -480,7 +501,7 @@ func _on_name_ok(_new_text := "") -> void:
 			return
 	
 	if _rename_old_tag != "":
-		# Renaming existing tag.
+		# Renaming an existing tag.
 		if tag_name == _rename_old_tag:
 			_name_window.hide()
 			_rename_old_tag = ""
@@ -490,9 +511,9 @@ func _on_name_ok(_new_text := "") -> void:
 			_name_line_edit.text = ""
 			_name_line_edit.grab_focus()
 			return
-		var idx := tags.find(_rename_old_tag)
-		if idx >= 0:
-			tags[idx] = tag_name
+		var index := tags.find(_rename_old_tag)
+		if index >= 0:
+			tags[index] = tag_name
 		if _rename_old_tag in selected_tags:
 			selected_tags.erase(_rename_old_tag)
 			selected_tags.append(tag_name)
@@ -501,13 +522,13 @@ func _on_name_ok(_new_text := "") -> void:
 		_name_window.hide()
 		changed.emit()
 	else:
-		# Adding new tag.
+		# Adding a new tag.
 		if tag_limit >= 0 and tags.size() >= tag_limit:
 			_name_line_edit.placeholder_text = "Maximum %d tags reached" % tag_limit
 			_name_line_edit.text = ""
 			_name_line_edit.grab_focus()
 			return
-	
+		
 		if tag_name in tags:
 			_name_line_edit.placeholder_text = "Already exists"
 			_name_line_edit.text = ""
@@ -520,6 +541,7 @@ func _on_name_ok(_new_text := "") -> void:
 		_name_window.hide()
 		changed.emit()
 
+## Cancels the name window.
 func _on_name_cancel() -> void:
 	_rename_old_tag = ""
 	_name_window.hide()

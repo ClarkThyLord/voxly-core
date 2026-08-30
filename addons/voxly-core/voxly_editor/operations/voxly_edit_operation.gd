@@ -1,9 +1,9 @@
+## Base class for model edit operations, which are registered in VoxlyRegistry,
+## and the dock builds its menus from them data-driven.
 @tool
 @abstract
 class_name VoxlyEditOperation
 extends RefCounted
-## Base class for model edit operations, which are registered in VoxlyRegistry, 
-## and the dock builds its menus from them data-driven.
 
 ## Unique identifier, e.g. "erase_voxels".
 var id: String = ""
@@ -24,8 +24,8 @@ var uses_selection_fallback: bool = false
 ## Used to decide whether a mesh rebuild is needed.
 var modifies_voxels: bool = false
 
-## When true, the operation's `get_options()`
-## are collected through the ContextWindow prompt before executing.
+## When true, the operation's [method get_options] are collected through the
+## ContextWindow prompt before executing.
 var prompts_for_options: bool = false
 
 ## Optional keyboard shortcut rendered right-aligned in the menu (e.g.
@@ -34,8 +34,9 @@ var prompts_for_options: bool = false
 var shortcut: Shortcut = null
 
 ## Returns the option schema used to render operation prompts in the editor's
-## ContextWindow (same contract as VoxlyBrush/VoxlyTool `get_options()`).
-## Override + return rows to prompt the user for parameters before executing.
+## ContextWindow (same contract as [method VoxlyBrush.get_options] /
+## [method VoxlyTool.get_options]). Override + return rows to prompt the user
+## for parameters before executing.
 func get_options() -> Array[Dictionary]:
 	return []
 
@@ -47,13 +48,13 @@ func get_param_entries() -> Array[Dictionary]:
 	return []
 
 ## Returns fixed count-submenu entries for operations that present a 1..N
-## count list; where each entry is {"label": String, "count": int}.
+## count list, where each entry is {"label": String, "count": int}.
 ## Empty by default (no count submenu).
 func get_count_entries() -> Array[Dictionary]:
 	return []
 
-## Builds a keyboard Shortcut from a keycode + modifiers, for use as
-## `shortcut` (e.g. copy: KEY_C, ctrl=true, shift=true).
+## Builds a keyboard [Shortcut] from a keycode + modifiers, for use as
+## [member shortcut] (e.g. copy: KEY_C, ctrl=true, shift=true).
 func make_shortcut(keycode: int, ctrl := false, alt := false, shift := false) -> Shortcut:
 	var shortcut := Shortcut.new()
 	var event := InputEventKey.new()
@@ -71,16 +72,16 @@ func get_display_label(has_selection: bool) -> String:
 	return display_name
 
 ## Returns true if this operation can run right now (disables menu items).
-func is_available(editor) -> bool:
+func is_available(editor: VoxlyEditor) -> bool:
 	return true
 
 ## Executes the operation with undo/redo support.
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	pass
 
 ## Returns the target voxel node during editing. Sourced through the editor's
 ## adapter so the operation layer never holds a stale/corrupt node reference.
-func _get_target(editor) -> Node:
+func _get_target(editor: VoxlyEditor) -> Node:
 	if editor == null:
 		return null
 	if editor.adapter:
@@ -89,7 +90,7 @@ func _get_target(editor) -> Node:
 
 ## Resolves the positions this operation applies to: the selection when one
 ## exists (only if uses_selection_fallback), otherwise all filled voxels.
-func _resolve_positions(editor) -> Array[Vector3i]:
+func _resolve_positions(editor: VoxlyEditor) -> Array[Vector3i]:
 	var positions: Array[Vector3i] = []
 	if uses_selection_fallback and editor.selection and editor.selection.count() > 0:
 		return editor.selection.to_array()
@@ -99,28 +100,29 @@ func _resolve_positions(editor) -> Array[Vector3i]:
 	return positions
 
 ## True if the target has any filled voxels.
-func _target_has_content(editor) -> bool:
+func _target_has_content(editor: VoxlyEditor) -> bool:
 	var target := _get_target(editor)
 	return target != null and target.has_method("get_voxel_count") and target.get_voxel_count() > 0
 
-## Records removal of every occupied position, restoring the original ID on undo.
+## Records removal of every occupied position, restoring the original ID on
+## undo.
 func _record_remove_all(undo_redo: EditorUndoRedoManager, target, positions: Array[Vector3i]) -> void:
-	for pos in positions:
-		var old_id = target.get_voxel(pos)
+	for position in positions:
+		var old_id = target.get_voxel(position)
 		if old_id != null:
-			undo_redo.add_do_method(target, "remove_voxel", pos)
-			undo_redo.add_undo_method(target, "set_voxel", pos, old_id)
+			undo_redo.add_do_method(target, "remove_voxel", position)
+			undo_redo.add_undo_method(target, "set_voxel", position, old_id)
 
-## Records setting voxels from a Dictionary[Vector3i, int], restoring each
-## destination's previous voxel on undo.
+## Records setting voxels from a [code]Dictionary[Vector3i, int][/code],
+## restoring each destination's previous voxel on undo.
 func _record_set_all(undo_redo: EditorUndoRedoManager, target, voxels: Dictionary) -> void:
-	for pos in voxels:
-		var old_id = target.get_voxel(pos)
-		undo_redo.add_do_method(target, "set_voxel", pos, voxels[pos])
+	for position in voxels:
+		var old_id = target.get_voxel(position)
+		undo_redo.add_do_method(target, "set_voxel", position, voxels[position])
 		if old_id != null:
-			undo_redo.add_undo_method(target, "set_voxel", pos, old_id)
+			undo_redo.add_undo_method(target, "set_voxel", position, old_id)
 		else:
-			undo_redo.add_undo_method(target, "remove_voxel", pos)
+			undo_redo.add_undo_method(target, "remove_voxel", position)
 
 ## Records a high-level refresh (mesh rebuild + optional collision) on both
 ## do and undo.
@@ -130,22 +132,22 @@ func _record_rebuild(undo_redo: EditorUndoRedoManager, target) -> void:
 
 ## Registers undoable selection changes that follow moved voxels.
 ## No-op when there is no active selection (the operation targeted all voxels).
-## `dest_positions` is the post-transform selection (the moved voxels).
-func _record_selection_transform(undo_redo: EditorUndoRedoManager, editor, dest_positions: Array) -> void:
+## [param dest_positions] is the post-transform selection (the moved voxels).
+func _record_selection_transform(undo_redo: EditorUndoRedoManager, editor: VoxlyEditor, dest_positions: Array) -> void:
 	if editor == null or editor.selection == null or editor.selection.count() == 0:
 		return
 	var source_positions = editor.selection.to_array()
 	# Convert to a typed array so UndoRedo re-invocation matches the
 	# Array[Vector3i] signature of VoxlySelection.set_positions().
 	var typed_dest: Array[Vector3i] = []
-	for pos in dest_positions:
-		typed_dest.append(pos)
+	for position in dest_positions:
+		typed_dest.append(position)
 	undo_redo.add_do_method(editor.selection, "set_positions", typed_dest)
 	undo_redo.add_undo_method(editor.selection, "set_positions", source_positions)
 
 ## Registers an undoable selection clear (restoring it on undo).
 ## No-op when there is no active selection.
-func _record_selection_clear(undo_redo: EditorUndoRedoManager, editor) -> void:
+func _record_selection_clear(undo_redo: EditorUndoRedoManager, editor: VoxlyEditor) -> void:
 	if editor == null or editor.selection == null or editor.selection.count() == 0:
 		return
 	var old_selection = editor.selection.to_array()

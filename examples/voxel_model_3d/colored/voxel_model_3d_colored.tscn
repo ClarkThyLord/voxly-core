@@ -1,10 +1,11 @@
 [gd_scene format=4 uid="uid://b12rfi6i4qfnd"]
 
 [ext_resource type="Script" uid="uid://custkh5kruq5b" path="res://examples/voxel_model_3d/colored/voxel_model_3d_colored.gd" id="1_f5lo6"]
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="2_8op8x"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="2_8op8x"]
 [ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="2_fbyfd"]
 [ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="3_8op8x"]
 [ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="4_ivnsl"]
+
 
 [sub_resource type="Resource" id="Resource_8op8x"]
 script = ExtResource("3_8op8x")

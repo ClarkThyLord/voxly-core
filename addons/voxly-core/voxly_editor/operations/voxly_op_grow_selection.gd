@@ -1,20 +1,22 @@
+## Grow selection: expands the current selection outward by N voxels.
+## Only filled neighbors are added, so the selection stays aligned to content.
 @tool
 extends VoxlyEditOperation
-## Grow selection, expands the current selection outward by N voxels.
-## Only filled neighbors are added, so the selection stays aligned to content.
 
 const MAX_STEPS := 64
 
 ## Steps to grow. Set by the menu before executing.
 var steps: int = 1
 
+## Registers the grow operation in the registry.
 func _init() -> void:
 	id = "grow_selection"
 	category = "selection"
 	display_name = "Grow"
 	prompts_for_options = true
 
-func is_available(editor) -> bool:
+## Returns whether the selection can grow.
+func is_available(editor: VoxlyEditor) -> bool:
 	return editor != null and editor.selection != null and editor.selection.count() > 0
 
 ## Count submenu entries 1..5 for the quick-count menu.
@@ -38,7 +40,8 @@ func get_options() -> Array[Dictionary]:
 		},
 	]
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Grows the selection by the given amount.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	var target := _get_target(editor)
 	if target == null or editor.selection.count() == 0:
 		return
@@ -49,13 +52,13 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 	
 	for _step in range(step_count):
 		var seen: Dictionary[Vector3i, bool] = {}
-		for pos in current:
-			seen[pos] = true
-	
+		for position in current:
+			seen[position] = true
+		
 		var next = current.duplicate()
-		for pos in current:
-			for dir in _neighbors():
-				var neighbor = pos + dir
+		for position in current:
+			for direction in _neighbors():
+				var neighbor = position + direction
 				if seen.has(neighbor):
 					continue
 				if target.has_method("is_voxel_position_valid"):

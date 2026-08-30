@@ -1,20 +1,22 @@
+## Shrink selection: strips the selection boundary inward by 1..N voxels.
+## Only voxels whose every ortho neighbor is still in the selection survive.
 @tool
 extends VoxlyEditOperation
-## Shrink selection, strips the selection boundary inward by 1..N voxels.
-## Only voxels whose every ortho neighbor is still in the selection survive.
 
 const MAX_STEPS := 64
 
 ## Steps to shrink. Set by the menu before executing.
 var steps: int = 1
 
+## Registers the shrink operation in the registry.
 func _init() -> void:
 	id = "shrink_selection"
 	category = "selection"
 	display_name = "Shrink"
 	prompts_for_options = true
 
-func is_available(editor) -> bool:
+## Returns whether the selection can shrink.
+func is_available(editor: VoxlyEditor) -> bool:
 	return editor != null and editor.selection != null and editor.selection.count() > 0
 
 ## Count submenu entries 1..5 for the quick-count menu.
@@ -38,7 +40,8 @@ func get_options() -> Array[Dictionary]:
 		},
 	]
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Shrinks the selection by the given amount.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	if editor.selection.count() == 0:
 		return
 	
@@ -48,18 +51,18 @@ func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
 	
 	for _step in range(step_count):
 		var in_set: Dictionary[Vector3i, bool] = {}
-		for pos in current:
-			in_set[pos] = true
+		for position in current:
+			in_set[position] = true
 		
 		var next: Array[Vector3i] = []
-		for pos in current:
+		for position in current:
 			var keep := true
-			for dir in _neighbors():
-				if not in_set.has(pos + dir):
+			for direction in _neighbors():
+				if not in_set.has(position + direction):
 					keep = false
 					break
 			if keep:
-				next.append(pos)
+				next.append(position)
 		current = next
 		if current.is_empty():
 			break

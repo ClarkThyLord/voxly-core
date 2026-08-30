@@ -1,3 +1,7 @@
+## Editor toolbar and settings panel for a VoxelNode3D.
+##
+## Provides the editing toggle, brush/tool selection, mirror controls, node
+## property spinboxes, grid/preview settings, and import actions.
 @tool
 extends BoxContainer
 
@@ -17,192 +21,204 @@ signal add_voxel_set_requested
 signal voxel_set_editor_requested
 
 ## Title text shown in the toolbar. If empty, the title container is hidden.
-@export
-var title: String = "":
+@export var title: String = "":
 	set = _set_title
 
-@onready
-var _title_container: HBoxContainer = %TitleHBoxContainer
+## Container holding the title label.
+@onready var _title_container: HBoxContainer = %TitleHBoxContainer
 
-@onready
-var _title_label: Label = %TitleLabel
+## Title label.
+@onready var _title_label: Label = %TitleLabel
 
 # Toolbar
-@onready
-var _toolbar_container: HBoxContainer = %ToolbarContainer
+## Toolbar container.
+@onready var _toolbar_container: HBoxContainer = %ToolbarContainer
 
-@onready
-var _editing_check_box: CheckBox = %EditingCheckBox
+## Toggles editing mode.
+@onready var _editing_check_box: CheckBox = %EditingCheckBox
 
-@onready
-var _select_menu_button: MenuButton = %SelectMenuButton
+## Select operations menu.
+@onready var _select_menu_button: MenuButton = %SelectMenuButton
 
-@onready
-var _edit_menu_button: MenuButton = %EditMenuButton
+## Edit operations menu.
+@onready var _edit_menu_button: MenuButton = %EditMenuButton
 
-@onready
-var _import_menu_button: MenuButton = %ImportMenuButton
+## Import actions menu.
+@onready var _import_menu_button: MenuButton = %ImportMenuButton
 
-@onready
-var _settings_menu_button: MenuButton = %SettingsMenuButton
+## Settings menu.
+@onready var _settings_menu_button: MenuButton = %SettingsMenuButton
 
 # Mirroring
-@onready
-var _mirroring_container: HBoxContainer = %MirroringContainer
+## Mirror axis checkbox container.
+@onready var _mirroring_container: HBoxContainer = %MirroringContainer
 
-@onready
-var _x_mirror_check_box: CheckBox = %XMirrorCheckBox
+## Mirror across X.
+@onready var _x_mirror_check_box: CheckBox = %XMirrorCheckBox
 
-@onready
-var _y_mirror_check_box: CheckBox = %YMirrorCheckBox
+## Mirror across Y.
+@onready var _y_mirror_check_box: CheckBox = %YMirrorCheckBox
 
-@onready
-var _z_mirror_check_box: CheckBox = %ZMirrorCheckBox
+## Mirror across Z.
+@onready var _z_mirror_check_box: CheckBox = %ZMirrorCheckBox
 
 # Brush & Tools
-@onready
-var _brush_container: HFlowContainer = %BrushContainer
+## Container holding the brush buttons.
+@onready var _brush_container: HFlowContainer = %BrushContainer
 
-@onready
-var _tools_container: HFlowContainer = %ToolsContainer
+## Container holding the tool buttons.
+@onready var _tools_container: HFlowContainer = %ToolsContainer
 
 # Notice area, shown when no VoxelSet attached
-@onready
-var _notice_hbox_container: HBoxContainer = %NoticeHBoxContainer
+## Container holding the notice area.
+@onready var _notice_hbox_container: HBoxContainer = %NoticeHBoxContainer
 
-@onready
-var _notice_label: Label = %NoticeLabel
+## Notice text label.
+@onready var _notice_label: Label = %NoticeLabel
 
-@onready
-var _new_voxel_set_button: Button = %NewVoxelSetButton
+## Creates a new VoxelSet for the target node.
+@onready var _new_voxel_set_button: Button = %NewVoxelSetButton
 
-@onready
-var _voxel_set_editor_button: Button = %VoxelSetEditorButton
+## Opens the VoxelSet Editor dock.
+@onready var _voxel_set_editor_button: Button = %VoxelSetEditorButton
 
 # Context panel
-@onready
-var _brush_options_foldable: FoldableContainer = %BrushOptionsFoldableContainer
+## Collapsible brush options section.
+@onready var _brush_options_foldable: FoldableContainer = %BrushOptionsFoldableContainer
 
-@onready
-var _brush_options_container: GridContainer = %BrushOptionsGridContainer
+## Grid holding the brush option rows.
+@onready var _brush_options_container: GridContainer = %BrushOptionsGridContainer
 
-@onready
-var _tool_options_foldable: FoldableContainer = %ToolOptionsFoldableContainer
+## Collapsible tool options section.
+@onready var _tool_options_foldable: FoldableContainer = %ToolOptionsFoldableContainer
 
-@onready
-var _tool_options_container: GridContainer = %ToolOptionsGridContainer
+## Grid holding the tool option rows.
+@onready var _tool_options_container: GridContainer = %ToolOptionsGridContainer
 
-var _option_builder = VoxlyOptionBuilder.new()
+## Shared builder for brush and tool option rows.
+var _option_builder: VoxlyOptionBuilder = VoxlyOptionBuilder.new()
 
 # Info label
-@onready
-var _info_label: Label = %InfoLabel
+## Label showing live editor info.
+@onready var _info_label: Label = %InfoLabel
 
 # Node context panel
-@onready
-var _node_context_container: PanelContainer = %NodeContextContainer
+## Panel with node property spinboxes.
+@onready var _node_context_container: PanelContainer = %NodeContextContainer
 
-@onready
-var _voxel_node_3d_foldable: FoldableContainer = %VoxelNode3DContainer
+## Foldable for shared VoxelNode3D properties.
+@onready var _voxel_node_3d_foldable: FoldableContainer = %VoxelNode3DContainer
 
-@onready
-var _voxel_model_3d_foldable: FoldableContainer = %VoxelModel3DContextContainer
+## Foldable for VoxelModel3D-specific properties.
+@onready var _voxel_model_3d_foldable: FoldableContainer = %VoxelModel3DContextContainer
 
-@onready
-var _voxel_size_x_spin_box: SpinBox = %VoxelSizeXSpinBox
+## Voxel size X spinbox.
+@onready var _voxel_size_x_spin_box: SpinBox = %VoxelSizeXSpinBox
 
-@onready
-var _voxel_size_y_spin_box: SpinBox = %VoxelSizeYSpinBox
+## Voxel size Y spinbox.
+@onready var _voxel_size_y_spin_box: SpinBox = %VoxelSizeYSpinBox
 
-@onready
-var _voxel_size_z_spin_box: SpinBox = %VoxelSizeZSpinBox
+## Voxel size Z spinbox.
+@onready var _voxel_size_z_spin_box: SpinBox = %VoxelSizeZSpinBox
 
-@onready
-var _origin_x_spin_box: SpinBox = %OriginXSpinBox
+## Origin X spinbox.
+@onready var _origin_x_spin_box: SpinBox = %OriginXSpinBox
 
-@onready
-var _origin_y_spin_box: SpinBox = %OriginYSpinBox
+## Origin Y spinbox.
+@onready var _origin_y_spin_box: SpinBox = %OriginYSpinBox
 
-@onready
-var _origin_z_spin_box: SpinBox = %OriginZSpinBox
+## Origin Z spinbox.
+@onready var _origin_z_spin_box: SpinBox = %OriginZSpinBox
 
-@onready
-var _shape_x_spin_box: SpinBox = %ShapeXSpinBox
+## Shape X spinbox.
+@onready var _shape_x_spin_box: SpinBox = %ShapeXSpinBox
 
-@onready
-var _shape_y_spin_box: SpinBox = %ShapeYSpinBox
+## Shape Y spinbox.
+@onready var _shape_y_spin_box: SpinBox = %ShapeYSpinBox
 
-@onready
-var _shape_z_spin_box: SpinBox = %ShapeZSpinBox
+## Shape Z spinbox.
+@onready var _shape_z_spin_box: SpinBox = %ShapeZSpinBox
 
 # Settings window
-@onready
-var _settings_window: Window = %SettingsWindow
+## Settings popup window.
+@onready var _settings_window: Window = %SettingsWindow
 
-@onready
-var _settings_tab_container: TabContainer = %SettingsTabContainer
+## Tab container for the settings sections.
+@onready var _settings_tab_container: TabContainer = %SettingsTabContainer
 
 # Context window
-@onready
-var _context_window: Window = %ContextWindow
+## Prompt window for operations needing input.
+@onready var _context_window: Window = %ContextWindow
 
-@onready
-var _context_window_grid: GridContainer = %ContextWindowGridContainer
+## Grid holding the prompt rows.
+@onready var _context_window_grid: GridContainer = %ContextWindowGridContainer
 
-@onready
-var _context_window_ok_button: Button = %ContextWindowOkButton
+## Confirms the pending operation.
+@onready var _context_window_ok_button: Button = %ContextWindowOkButton
 
-@onready
-var _context_window_cancel_button: Button = %ContextWindowCancelButton
+## Cancels the pending operation.
+@onready var _context_window_cancel_button: Button = %ContextWindowCancelButton
+
+## Confirmation dialog shown when editing is attempted without a VoxelSet.
+@onready var _missing_voxel_set_dialog: ConfirmationDialog = %MissingVoxelSetDialog
+
+## Dialog prompting the user to select a palette voxel before painting.
+@onready var _palette_required_dialog: AcceptDialog = %PaletteRequiredDialog
 
 # Import progress window
-@onready
-var _progress_window: Window = %ProgressWindow
+## Import progress window.
+@onready var _progress_window: Window = %ProgressWindow
 
-@onready
-var _import_progress_bar: ProgressBar = %ImportProgressBar
+## Import progress bar.
+@onready var _import_progress_bar: ProgressBar = %ImportProgressBar
 
-@onready
-var _import_label: Label = %ImportLabel
+## Import status label.
+@onready var _import_label: Label = %ImportLabel
 
 # Grid settings
-@onready
-var _grid_settings_container: MarginContainer = %GridSettingsContainer
+## Grid settings section.
+@onready var _grid_settings_container: MarginContainer = %GridSettingsContainer
 
-@onready
-var _grid_visible_check_box: CheckBox = %GridVisibleCheckBox
+## Toggles grid visibility.
+@onready var _grid_visible_check_box: CheckBox = %GridVisibleCheckBox
 
-@onready
-var _grid_colored_option_button: OptionButton = %GridColoredOptionButton
+## Selects the grid color mode.
+@onready var _grid_colored_option_button: OptionButton = %GridColoredOptionButton
 
-@onready
-var _grid_color_picker_button: ColorPickerButton = %GridColorPickerButton
+## Picks a custom grid color.
+@onready var _grid_color_picker_button: ColorPickerButton = %GridColorPickerButton
 
-@onready
-var _grid_mode_option_button: OptionButton = %GridModeOptionButton
+## Selects the grid mode.
+@onready var _grid_mode_option_button: OptionButton = %GridModeOptionButton
 
-@onready
-var _reset_grid_settings_button: Button = %ResetGridSettingsButton
+## Restores the default grid settings.
+@onready var _reset_grid_settings_button: Button = %ResetGridSettingsButton
 
 # Preview settings
-@onready
-var _preview_settings_container: MarginContainer = %PreviewSettingsContainer
+## Preview settings section.
+@onready var _preview_settings_container: MarginContainer = %PreviewSettingsContainer
 
-@onready
-var _preview_visible_check_box: CheckBox = %PreviewVisibleCheckBox
+## Toggles preview visibility.
+@onready var _preview_visible_check_box: CheckBox = %PreviewVisibleCheckBox
 
-@onready
-var _preview_mirrored_check_box: CheckBox = %PreviewMirroredCheckBox
+## Toggles the mirrored preview.
+@onready var _preview_mirrored_check_box: CheckBox = %PreviewMirroredCheckBox
 
-@onready
-var _reset_preview_settings_button: Button = %ResetPreviewSettingsButton
+## Restores the default preview settings.
+@onready var _reset_preview_settings_button: Button = %ResetPreviewSettingsButton
 
 # Cached data
+## Current mirror axes (1 = mirrored).
 var mirrors: Vector3i = Vector3i.ZERO
+## True while a UI update is queued.
 var _pending_update: bool = false
+## Accumulated time between info label refreshes.
 var _update_timer: float = 0.0
+## Last palette voxel ID seen.
 var _last_palette_id: int = -1
+## Cached last hit info string.
 var _last_hit_info: String = ""
+## Cached last voxel set name.
 var _last_voxel_set_name: String = ""
 
 ## The controller driving this editor.
@@ -217,9 +233,11 @@ var _palette_mismatch: bool = false
 
 ## Shared selection/tool sources.
 var _brush_buttons: Array[Button] = []
+## Tool buttons in display order.
 var _tool_buttons: Array[Button] = []
 
-func _set(property, value):
+## Accepts the vertical property for layout compatibility.
+func _set(property: StringName, value: Variant) -> bool:
 	if property == "vertical":
 		pass
 	return false
@@ -229,6 +247,7 @@ func _set_title(new_title: String) -> void:
 	title = new_title
 	_update_title_visibility()
 
+## Shows or hides the title based on its text.
 func _update_title_visibility() -> void:
 	if not _title_container or not _title_label:
 		return
@@ -237,6 +256,7 @@ func _update_title_visibility() -> void:
 	if has_title:
 		_title_label.text = title
 
+## Connects all widget signals and populates menus.
 func _ready() -> void:
 	# Apply title visibility
 	_update_title_visibility()
@@ -246,6 +266,9 @@ func _ready() -> void:
 	
 	# Selection is only allowed while editing mode is active.
 	_update_editing_state(false)
+
+	# Missing VoxelSet dialog "Add VoxelSet" action.
+	_missing_voxel_set_dialog.confirmed.connect(_on_missing_set_add_pressed)
 	
 	# Mirror checkboxes
 	_x_mirror_check_box.toggled.connect(_on_mirror_toggled.bind(2))
@@ -342,7 +365,7 @@ var _menu_item_serial: int = 0
 var _op_menu_meta: Dictionary = {}
 
 ## Operation awaiting confirmation via the ContextWindow prompt.
-var _pending_prompt_op = null
+var _pending_prompt_op: VoxlyEditOperation = null
 
 ## Resets menu item id generation + metadata at the start of a rebuild.
 func _reset_menu_item_ids() -> void:
@@ -380,8 +403,8 @@ func _update_menus() -> void:
 func _build_select_menu() -> void:
 	var select_popup := _select_menu_button.get_popup()
 	select_popup.clear()
-	for sub in select_popup.get_children():
-		sub.queue_free()
+	for submenu in select_popup.get_children():
+		submenu.queue_free()
 	_connect_popup_id(select_popup, _on_operation_pressed)
 	_connect_popup_about(select_popup, _refresh_operation_menus)
 	
@@ -391,26 +414,26 @@ func _build_select_menu() -> void:
 	var names_by_category := registry.get_operations_by_category()
 	var selection_ops: PackedStringArray = names_by_category.get("selection", PackedStringArray())
 	
-	for op_id in selection_ops:
-		var op = registry.create_operation(op_id)
-		if op == null:
+	for operation_id in selection_ops:
+		var operation = registry.create_operation(operation_id)
+		if operation == null:
 			continue
-		var count_entries := op.get_count_entries()
+		var count_entries := operation.get_count_entries()
 		if not count_entries.is_empty():
-			var sub := _create_count_submenu(op, count_entries)
-			select_popup.add_child(sub)
-			select_popup.add_submenu_item(op.display_name, sub.name)
-			sub.add_separator()
-			_add_operation_item(sub, op, {"prompt": true, "label": "Other..."})
+			var submenu := _create_count_submenu(operation, count_entries)
+			select_popup.add_child(submenu)
+			select_popup.add_submenu_item(operation.display_name, submenu.name)
+			submenu.add_separator()
+			_add_operation_item(submenu, operation, {"prompt": true, "label": "Other..."})
 		else:
-			_add_operation_item(select_popup, op)
+			_add_operation_item(select_popup, operation)
 
 ## Builds the Edit menu from registered edit operations, grouped into submenus.
 func _build_edit_menu() -> void:
 	var edit_popup := _edit_menu_button.get_popup()
 	edit_popup.clear()
-	for sub in edit_popup.get_children():
-		sub.queue_free()
+	for submenu in edit_popup.get_children():
+		submenu.queue_free()
 	_connect_popup_id(edit_popup, _on_operation_pressed)
 	_connect_popup_about(edit_popup, _refresh_operation_menus)
 	
@@ -426,10 +449,10 @@ func _build_edit_menu() -> void:
 	_add_operation_groups(edit_popup, registry, names_by_category, ["model", "new_model"])
 	
 	var edit_ops: PackedStringArray = names_by_category.get("edit", PackedStringArray())
-	for op_id in edit_ops:
-		var op = registry.create_operation(op_id)
-		if op:
-			_add_operation_item(edit_popup, op)
+	for operation_id in edit_ops:
+		var operation = registry.create_operation(operation_id)
+		if operation:
+			_add_operation_item(edit_popup, operation)
 	if not edit_ops.is_empty():
 		edit_popup.add_separator()
 	
@@ -449,45 +472,45 @@ func _add_operation_groups(parent: PopupMenu, registry, names_by_category: Dicti
 		var ops: PackedStringArray = names_by_category.get(category, PackedStringArray())
 		if ops.is_empty():
 			continue
-		var sub := PopupMenu.new()
-		sub.name = category
-		_connect_popup_id(sub, _on_operation_pressed)
-		parent.add_child(sub)
-		parent.add_submenu_item(group_titles.get(category, category.capitalize()), sub.name)
-		for op_id in ops:
-			var op = registry.create_operation(op_id)
-			if op == null:
+		var submenu := PopupMenu.new()
+		submenu.name = category
+		_connect_popup_id(submenu, _on_operation_pressed)
+		parent.add_child(submenu)
+		parent.add_submenu_item(group_titles.get(category, category.capitalize()), submenu.name)
+		for operation_id in ops:
+			var operation = registry.create_operation(operation_id)
+			if operation == null:
 				continue
-			_add_operation_item(sub, op)
+			_add_operation_item(submenu, operation)
 
 
 ## Builds one submenu per operation that declares parameterized entries
-## (e.g. Align / Mirror / Rotate / Flip), driven by op.get_param_entries().
+## (e.g. Align / Mirror / Rotate / Flip), driven by operation.get_param_entries().
 func _build_param_submenus(parent: PopupMenu, registry) -> void:
 	var names_by_category: Dictionary = registry.get_operations_by_category()
 	var seen: Dictionary[String, bool] = {}
 	for category in names_by_category:
-		for op_id in names_by_category[category]:
-			var op = registry.create_operation(op_id)
-			if op == null:
+		for operation_id in names_by_category[category]:
+			var operation = registry.create_operation(operation_id)
+			if operation == null:
 				continue
-			var entries: Array[Dictionary] = op.get_param_entries()
-			if entries.is_empty() or seen.has(op.id):
+			var entries: Array[Dictionary] = operation.get_param_entries()
+			if entries.is_empty() or seen.has(operation.id):
 				continue
-			seen[op.id] = true
-			var sub := PopupMenu.new()
-			sub.name = op.id
-			_connect_popup_id(sub, _on_operation_pressed)
+			seen[operation.id] = true
+			var submenu := PopupMenu.new()
+			submenu.name = operation.id
+			_connect_popup_id(submenu, _on_operation_pressed)
 			for entry in entries:
 				if entry.get("separator", false):
-					sub.add_separator()
+					submenu.add_separator()
 					continue
-				_add_operation_item(sub, op, {
+				_add_operation_item(submenu, operation, {
 					"param": entry.get("param", ""),
 					"param_label": entry.get("label", ""),
 				})
-			parent.add_child(sub)
-			parent.add_submenu_item(op.display_name, sub.name)
+			parent.add_child(submenu)
+			parent.add_submenu_item(operation.display_name, submenu.name)
 
 ## Adds a context window operation that declare prompts_for_options
 ## in the given categories.
@@ -496,57 +519,59 @@ func _build_prompt_ops(parent: PopupMenu, registry, categories: Array) -> void:
 	var seen: Dictionary[String, bool] = {}
 	for category in categories:
 		var ops: PackedStringArray = names_by_category.get(category, PackedStringArray())
-		for op_id in ops:
-			var op = registry.create_operation(op_id)
-			if op == null or seen.has(op.id):
+		for operation_id in ops:
+			var operation = registry.create_operation(operation_id)
+			if operation == null or seen.has(operation.id):
 				continue
-			seen[op.id] = true
+			seen[operation.id] = true
 			
-			if not op.get_param_entries().is_empty():
+			if not operation.get_param_entries().is_empty():
 				continue
 			
-			if op.prompts_for_options:
-				_add_operation_item(parent, op, {"prompt": true})
+			if operation.prompts_for_options:
+				_add_operation_item(parent, operation, {"prompt": true})
 			else:
-				_add_operation_item(parent, op)
+				_add_operation_item(parent, operation)
 
 ## Creates a Grow/Shrink submenu with items 1..5.
-func _create_count_submenu(op, count_entries: Array[Dictionary]) -> PopupMenu:
-	var sub := PopupMenu.new()
-	sub.name = op.id + "_counts"
-	sub.id_pressed.connect(_on_count_operation_pressed)
+func _create_count_submenu(operation: VoxlyEditOperation, count_entries: Array[Dictionary]) -> PopupMenu:
+	var submenu := PopupMenu.new()
+	submenu.name = operation.id + "_counts"
+	submenu.id_pressed.connect(_on_count_operation_pressed)
 	for entry in count_entries:
 		var serial := _next_menu_item_id()
-		sub.add_item(entry.get("label", str(entry.get("count", 1))), serial)
-		sub.set_item_metadata(sub.item_count - 1, serial)
-		_op_menu_meta[serial] = {"op": op.id, "kind": "count", "count": entry.get("count", 1)}
-	return sub
+		submenu.add_item(entry.get("label", str(entry.get("count", 1))), serial)
+		submenu.set_item_metadata(submenu.item_count - 1, serial)
+		_op_menu_meta[serial] = {"op": operation.id, "kind": "count", "count": entry.get("count", 1)}
+	return submenu
 
 ## Adds one operation item to a popup with a serial int id and registers metadata.
-func _add_operation_item(popup: PopupMenu, op, extra: Dictionary = {}) -> void:
+func _add_operation_item(popup: PopupMenu, operation: VoxlyEditOperation, extra: Dictionary = {}) -> void:
 	var serial := _next_menu_item_id()
-	var label: String = op.get_display_label(false)
+	var label: String = operation.get_display_label(false)
 	if extra.has("label"):
 		label = extra["label"]
 	elif extra.has("param"):
-		label = "%s %s" % [op.display_name, extra["param_label"]]
-	elif extra.get("prompt", false) or op.prompts_for_options:
-		label = "%s..." % op.display_name
+		label = "%s %s" % [operation.display_name, extra["param_label"]]
+	elif extra.get("prompt", false) or operation.prompts_for_options:
+		label = "%s..." % operation.display_name
 	popup.add_item(label, serial)
-	if op.shortcut:
-		popup.set_item_shortcut(popup.item_count - 1, op.shortcut)
+	if operation.shortcut:
+		popup.set_item_shortcut(popup.item_count - 1, operation.shortcut)
 	popup.set_item_metadata(popup.item_count - 1, serial)
-	var meta := {"op": op.id}
+	var meta := {"op": operation.id}
 	meta.merge(extra)
-	if op.prompts_for_options and not meta.has("prompt"):
+	if operation.prompts_for_options and not meta.has("prompt"):
 		meta["prompt"] = true
 	_op_menu_meta[serial] = meta
 
+## Connects a popup id_pressed signal, avoiding duplicates.
 func _connect_popup_id(popup: PopupMenu, callable: Callable) -> void:
 	if popup.id_pressed.is_connected(callable):
 		popup.id_pressed.disconnect(callable)
 	popup.id_pressed.connect(callable)
 
+## Connects a popup about_to_popup signal, avoiding duplicates.
 func _connect_popup_about(popup: PopupMenu, callable: Callable) -> void:
 	if popup.about_to_popup.is_connected(callable):
 		popup.about_to_popup.disconnect(callable)
@@ -562,7 +587,7 @@ func _refresh_operation_menus() -> void:
 	_refresh_popup(_edit_menu_button.get_popup(), editor, has_selection)
 
 ## Recursively refreshes item labels and enabled flags for a popup tree.
-func _refresh_popup(popup: PopupMenu, editor, has_selection: bool) -> void:
+func _refresh_popup(popup: PopupMenu, editor: VoxlyEditor, has_selection: bool) -> void:
 	for child in popup.get_children():
 		if child is PopupMenu:
 			_refresh_popup(child, editor, has_selection)
@@ -571,22 +596,22 @@ func _refresh_popup(popup: PopupMenu, editor, has_selection: bool) -> void:
 		if not serial is int or not _op_menu_meta.has(serial):
 			continue
 		var metadata: Dictionary = _op_menu_meta[serial]
-		var op = editor.registry.create_operation(metadata["op"])
-		if op == null:
+		var operation = editor.registry.create_operation(metadata["op"])
+		if operation == null:
 			continue
 		if metadata.has("kind") and metadata["kind"] == "count":
-			popup.set_item_disabled(i, not op.is_available(editor))
+			popup.set_item_disabled(i, not operation.is_available(editor))
 			continue
 		if metadata.has("label"):
 			popup.set_item_text(i, metadata["label"])
 		elif metadata.has("param"):
 			var target := "Selection" if has_selection else "All Voxels"
-			popup.set_item_text(i, "%s %s %s" % [op.display_name, metadata["param_label"], target])
+			popup.set_item_text(i, "%s %s %s" % [operation.display_name, metadata["param_label"], target])
 		elif metadata.get("prompt", false):
-			popup.set_item_text(i, "%s..." % op.display_name)
+			popup.set_item_text(i, "%s..." % operation.display_name)
 		else:
-			popup.set_item_text(i, op.get_display_label(has_selection))
-		popup.set_item_disabled(i, not op.is_available(editor))
+			popup.set_item_text(i, operation.get_display_label(has_selection))
+		popup.set_item_disabled(i, not operation.is_available(editor))
 
 ## Generic handler for all operation menu items.
 func _on_operation_pressed(item_id: int) -> void:
@@ -594,18 +619,18 @@ func _on_operation_pressed(item_id: int) -> void:
 		return
 	var metadata: Dictionary = _op_menu_meta[item_id]
 	var editor := controller.editor
-	var op = editor.registry.create_operation(metadata["op"])
-	if op == null or not op.is_available(editor):
+	var operation = editor.registry.create_operation(metadata["op"])
+	if operation == null or not operation.is_available(editor):
 		return
 	
-	_apply_param(op, metadata.get("param", ""))
+	_apply_param(operation, metadata.get("param", ""))
 	# Operations flagged with "prompt" collect their parameters via the
 	# ContextWindow before executing (e.g. Translate).
 	if metadata.get("prompt", false):
-		_open_context_prompt(op)
+		_open_context_prompt(operation)
 		return
 	
-	op.execute(editor, controller.undo_redo)
+	operation.execute(editor, controller.undo_redo)
 	
 	# Refresh the menus after Copy/Cut/Paste so shortcuts stay in sync.
 	if metadata.get("op", "") in ["copy_voxels", "cut_voxels", "paste_voxels"]:
@@ -618,67 +643,67 @@ func _on_count_operation_pressed(item_id: int) -> void:
 	
 	var metadata: Dictionary = _op_menu_meta[item_id]
 	var editor := controller.editor
-	var op = editor.registry.create_operation(metadata["op"])
-	if op == null or not op.is_available(editor):
+	var operation = editor.registry.create_operation(metadata["op"])
+	if operation == null or not operation.is_available(editor):
 		return
 	
 	if metadata.get("prompt", false):
-		_open_context_prompt(op)
+		_open_context_prompt(operation)
 		return
 	
-	op.steps = metadata.get("count", 1)
-	op.execute(editor, controller.undo_redo)
+	operation.steps = metadata.get("count", 1)
+	operation.execute(editor, controller.undo_redo)
 
 ## Sets axis/direction parameters on parameterized transform operations.
-func _apply_param(op, param: String) -> void:
+func _apply_param(operation: VoxlyEditOperation, param: String) -> void:
 	if param.is_empty():
 		return
 	var axis_map := {"x": 0, "y": 1, "z": 2}
 	match param:
 		"x", "y", "z":
-			if "axis" in op:
-				op.axis = axis_map[param]
+			if "axis" in operation:
+				operation.axis = axis_map[param]
 		"right", "left":
-			if "clockwise" in op:
-				op.clockwise = (param == "right")
+			if "clockwise" in operation:
+				operation.clockwise = (param == "right")
 		"xyz_center":
-			if "axis" in op and "align_mode" in op and "align_all_axes" in op:
-				op.axis = 0
-				op.align_mode = 1 # center
-				op.align_all_axes = true
+			if "axis" in operation and "align_mode" in operation and "align_all_axes" in operation:
+				operation.axis = 0
+				operation.align_mode = 1 # center
+				operation.align_all_axes = true
 		"x_min", "x_center", "x_max", "y_min", "y_center", "y_max", "z_min", "z_center", "z_max":
-			if "axis" in op and "align_mode" in op:
+			if "axis" in operation and "align_mode" in operation:
 				var parts := param.split("_")
-				op.axis = axis_map[parts[0]]
-				op.align_mode = ["min", "center", "max"].find(parts[1])
-				if "align_all_axes" in op:
-					op.align_all_axes = false
+				operation.axis = axis_map[parts[0]]
+				operation.align_mode = ["min", "center", "max"].find(parts[1])
+				if "align_all_axes" in operation:
+					operation.align_all_axes = false
 
 ## Opens the ContextWindow prompt for an operation that requires user input.
 ## Rows are built from the operation's `get_options()` schema via the shared
-## VoxlyOptionBuilder; edits write straight back to the op's properties.
-func _open_context_prompt(op) -> void:
-	_pending_prompt_op = op
+## VoxlyOptionBuilder; edits write straight back to the operation's properties.
+func _open_context_prompt(operation: VoxlyEditOperation) -> void:
+	_pending_prompt_op = operation
 	if not _context_window or not _context_window_grid:
 		return
-	_option_builder.build_into(_context_window_grid, op.get_options(), op)
-	_context_window.title = op.display_name
+	_option_builder.build_into(_context_window_grid, operation.get_options(), operation)
+	_context_window.title = operation.display_name
 	_context_window.popup_centered()
 
 
 ## Executes the pending operation after the ContextWindow prompt confirms.
-## Values were already written to the op's properties by the option builder
+## Values were already written to the operation's properties by the option builder
 ## as the user edited them, so no collection pass is needed here.
 func _on_context_window_ok() -> void:
-	var op = _pending_prompt_op
+	var operation = _pending_prompt_op
 	_pending_prompt_op = null
 	if _context_window:
 		_context_window.hide()
-	if op == null or not controller or not controller.editor:
+	if operation == null or not controller or not controller.editor:
 		return
 	var editor := controller.editor
-	if op.is_available(editor):
-		op.execute(editor, controller.undo_redo)
+	if operation.is_available(editor):
+		operation.execute(editor, controller.undo_redo)
 
 
 ## Closes the ContextWindow without executing the pending operation.
@@ -689,12 +714,12 @@ func _on_context_window_cancel() -> void:
 
 ## Called when a VoxelSet is assigned to or removed from the target node.
 ## Toggles the notice area visibility accordingly.
-func set_voxel_set(vs: VoxelSet) -> void:
+func set_voxel_set(voxel_set: VoxelSet) -> void:
 	_update_notice_visibility()
 
 
 ## Called when the palette selection changes (or is cleared to -1).
-## Only updates the notice — never affects editing state.
+## Only updates the notice, never affects editing state.
 func set_palette(voxel_id: int) -> void:
 	palette_voxel_id = voxel_id
 	_update_notice_visibility()
@@ -707,6 +732,7 @@ func set_palette_mismatch(mismatched: bool) -> void:
 	_update_notice_visibility()
 
 
+## Updates the notice area based on set and palette state.
 func _update_notice_visibility() -> void:
 	if not _notice_hbox_container:
 		return
@@ -736,7 +762,12 @@ func _update_notice_visibility() -> void:
 			else:
 				_notice_label.text = "Select a voxel in the VoxelSet Editor"
 
+	# If a VoxelSet became available while the missing-set dialog is open, close it.
+	if has_set and _missing_voxel_set_dialog and _missing_voxel_set_dialog.visible:
+		_missing_voxel_set_dialog.hide()
 
+
+## Attaches a controller and syncs the UI to it.
 func set_controller(new_controller: VoxelNode3DController) -> void:
 	controller = new_controller
 	if not controller:
@@ -750,6 +781,10 @@ func set_controller(new_controller: VoxelNode3DController) -> void:
 	if controller.editor.tool_changed.is_connected(_on_tool_changed_from_editor):
 		controller.editor.tool_changed.disconnect(_on_tool_changed_from_editor)
 	controller.editor.tool_changed.connect(_on_tool_changed_from_editor)
+
+	if controller.editor.palette_voxel_required.is_connected(_on_palette_voxel_required):
+		controller.editor.palette_voxel_required.disconnect(_on_palette_voxel_required)
+	controller.editor.palette_voxel_required.connect(_on_palette_voxel_required)
 	
 	# Rebuild the Select/Edit menus against this controller's registry,
 	# then build initial context options.
@@ -798,6 +833,7 @@ func set_controller(new_controller: VoxelNode3DController) -> void:
 	_sync_node_context_ui()
 
 
+## Re-syncs the node context panel when the target changes.
 func _on_target_transform_changed() -> void:
 	_sync_node_context_ui()
 
@@ -867,38 +903,47 @@ func _apply_shape_edit() -> void:
 	))
 
 
+## Applies the voxel size X edit.
 func _on_voxel_size_x_changed(_value: float) -> void:
 	_apply_voxel_size_edit()
 
 
+## Applies the voxel size Y edit.
 func _on_voxel_size_y_changed(_value: float) -> void:
 	_apply_voxel_size_edit()
 
 
+## Applies the voxel size Z edit.
 func _on_voxel_size_z_changed(_value: float) -> void:
 	_apply_voxel_size_edit()
 
 
+## Applies the origin X edit.
 func _on_origin_x_changed(_value: float) -> void:
 	_apply_origin_edit()
 
 
+## Applies the origin Y edit.
 func _on_origin_y_changed(_value: float) -> void:
 	_apply_origin_edit()
 
 
+## Applies the origin Z edit.
 func _on_origin_z_changed(_value: float) -> void:
 	_apply_origin_edit()
 
 
+## Applies the shape X edit.
 func _on_shape_x_changed(_value: float) -> void:
 	_apply_shape_edit()
 
 
+## Applies the shape Y edit.
 func _on_shape_y_changed(_value: float) -> void:
 	_apply_shape_edit()
 
 
+## Applies the shape Z edit.
 func _on_shape_z_changed(_value: float) -> void:
 	_apply_shape_edit()
 
@@ -912,9 +957,9 @@ func _persist_settings() -> void:
 
 
 ## Handles VoxlyOptionBuilder.option_changed, instantly persists brush/tool
-## option edits. Operation prompt rows (ContextWindow) use a transient op as
+## option edits. Operation prompt rows (ContextWindow) use a transient operation as
 ## source, so those are ignored.
-func _on_option_changed(source, _property: String, _value) -> void:
+func _on_option_changed(source: Object, _property: String, _value) -> void:
 	if not controller or not controller.editor:
 		return
 	var editor := controller.editor
@@ -922,11 +967,13 @@ func _on_option_changed(source, _property: String, _value) -> void:
 		_persist_settings()
 
 
+## Populates the brush buttons from the controller.
 func populate_brushes() -> void:
 	if controller:
 		controller.populate_brush_ui(_brush_container)
 
 
+## Populates the tool buttons from the controller.
 func populate_tools() -> void:
 	if controller:
 		controller.populate_tool_ui(_tools_container)
@@ -947,7 +994,7 @@ func _update_context_options() -> void:
 	if controller.editor.active_tool:
 		tool_options = controller.editor.active_tool.get_options()
 	
-	# Brush section — hide the foldable when the brush exposes no options.
+	# Brush section, hide the foldable when the brush exposes no options.
 	_brush_options_foldable.visible = not brush_options.is_empty()
 	if not brush_options.is_empty():
 		_option_builder.build_into(
@@ -958,7 +1005,7 @@ func _update_context_options() -> void:
 			Callable(self, "_on_brush_action_toggled"),
 		)
 	
-	# Tool section — hide the foldable when the tool exposes no options.
+	# Tool section, hide the foldable when the tool exposes no options.
 	_tool_options_foldable.visible = not tool_options.is_empty()
 	if not tool_options.is_empty():
 		_option_builder.build_into(
@@ -990,6 +1037,7 @@ func _on_brush_action_toggled(enabled: bool, action: String) -> void:
 		_update_context_options()
 
 
+## Syncs brush button states when the active brush changes.
 func _on_brush_changed_from_editor(name: String) -> void:
 	# Update button states
 	for child in _brush_container.get_children():
@@ -998,6 +1046,7 @@ func _on_brush_changed_from_editor(name: String) -> void:
 	_update_context_options()
 
 
+## Syncs tool button states when the active tool changes.
 func _on_tool_changed_from_editor(name: String) -> void:
 	for child in _tools_container.get_children():
 		if child is Button:
@@ -1010,19 +1059,29 @@ func _update_editing_state(enabled: bool) -> void:
 	_select_menu_button.disabled = not enabled
 
 
+## Applies the editing state and emits the editing_toggled signal.
 func _on_editing_toggled(enabled: bool) -> void:
+	if enabled and not _has_voxel_set():
+		# Editing requires an attached VoxelSet; revert the toggle and explain.
+		_editing_check_box.set_pressed_no_signal(false)
+		_missing_voxel_set_dialog.popup_centered()
+		return
+	if enabled and not _has_palette_voxel() and _active_tool_requires_palette():
+		# The active tool writes the palette voxel; ask the user to select one.
+		_palette_required_dialog.popup_centered()
 	_update_editing_state(enabled)
 	editing_toggled.emit(enabled)
 
+## Updates the mirror state from a checkbox toggle.
 func _on_mirror_toggled(pressed: bool, axis: int) -> void:
 	var value := pressed
-
+	
 	var new_mirrors := mirrors
 	match axis:
 		0: new_mirrors.x = 1 if value else 0
 		1: new_mirrors.y = 1 if value else 0
 		2: new_mirrors.z = 1 if value else 0
-
+	
 	if new_mirrors != mirrors:
 		mirrors = new_mirrors
 		mirror_changed.emit(mirrors)
@@ -1031,11 +1090,13 @@ func _on_mirror_toggled(pressed: bool, axis: int) -> void:
 			_persist_settings()
 
 
+## Syncs the mirror checkboxes from the controller.
 func _on_mirror_changed_from_controller(new_mirrors: Vector3i) -> void:
 	mirrors = new_mirrors
 	_sync_mirror_ui()
 
 
+## Syncs the mirror checkboxes with the mirrors value.
 func _sync_mirror_ui() -> void:
 	if not is_instance_valid(_x_mirror_check_box):
 		return
@@ -1048,7 +1109,7 @@ func _sync_mirror_ui() -> void:
 func _sync_settings_ui() -> void:
 	if not controller:
 		return
-
+	
 	# Grid settings
 	if controller.grid:
 		_grid_visible_check_box.button_pressed = controller.grid.grid_visible
@@ -1056,40 +1117,46 @@ func _sync_settings_ui() -> void:
 		_grid_colored_option_button.selected = controller.grid.grid_colored
 		_grid_color_picker_button.color = controller.grid.grid_color
 		_update_grid_color_picker_state()
-
+	
 	# Preview settings
 	if controller.preview:
 		_preview_visible_check_box.button_pressed = controller.preview.preview_visible
 		if _preview_mirrored_check_box:
 			_preview_mirrored_check_box.button_pressed = controller.preview.preview_mirrored
 
+## Applies the selected grid mode.
 func _on_grid_mode_selected(index: int) -> void:
 	if controller and controller.grid:
 		controller.grid.grid_mode = index as VoxlyEditorGrid.GridMode
 		_persist_settings()
 
+## Applies the grid visibility toggle.
 func _on_grid_visible_toggled(visible: bool) -> void:
 	if controller and controller.grid:
 		controller.grid.grid_visible = visible
 		_persist_settings()
 
+## Applies the grid color mode and updates the picker state.
 func _on_grid_colored_selected(index: int) -> void:
 	if controller and controller.grid:
 		controller.grid.grid_colored = index as VoxlyEditorGrid.GridColorMode
 		_update_grid_color_picker_state()
 		_persist_settings()
 
+## Enables or disables the grid color picker by mode.
 func _update_grid_color_picker_state() -> void:
 	if not controller or not controller.grid:
 		return
 	var is_by_axis := controller.grid.grid_colored == VoxlyEditorGrid.GridColorMode.BY_AXIS
 	_grid_color_picker_button.disabled = is_by_axis
 
+## Applies the custom grid color.
 func _on_grid_color_changed(color: Color) -> void:
 	if controller and controller.grid:
 		controller.grid.grid_color = color
 		_persist_settings()
 
+## Restores the default grid settings.
 func _on_reset_grid_settings() -> void:
 	if controller and controller.grid:
 		controller.grid.grid_mode = VoxlyEditorGrid.GridMode.BOUNDING_WIRED
@@ -1099,16 +1166,19 @@ func _on_reset_grid_settings() -> void:
 		_sync_settings_ui()
 		_persist_settings()
 
+## Applies the preview visibility toggle.
 func _on_preview_visible_toggled(visible: bool) -> void:
 	if controller and controller.preview:
 		controller.preview.preview_visible = visible
 		_persist_settings()
 
+## Applies the preview mirror toggle.
 func _on_preview_mirrored_toggled(mirrored: bool) -> void:
 	if controller and controller.preview:
 		controller.preview.preview_mirrored = mirrored
 		_persist_settings()
 
+## Restores the default preview settings.
 func _on_reset_preview_settings() -> void:
 	if controller and controller.preview:
 		controller.preview.preview_visible = true
@@ -1120,14 +1190,43 @@ func _on_reset_preview_settings() -> void:
 func _on_new_voxel_set_pressed() -> void:
 	add_voxel_set_requested.emit()
 
+## Returns whether a VoxelSet is attached to the edited node.
+func _has_voxel_set() -> bool:
+	return controller != null and controller.editor.voxel_set != null
+
+## Handles the "Add VoxelSet" button of the missing-set dialog: creates a new
+## VoxelSet like the toolbar button, then enters editing mode once it attaches.
+func _on_missing_set_add_pressed() -> void:
+	_on_new_voxel_set_pressed()
+	# The add request handler creates and attaches the set synchronously, so a
+	# fresh check passes and the toggle starts editing through the normal path.
+	if _has_voxel_set():
+		_editing_check_box.button_pressed = true
+
+## Returns whether a palette voxel is currently selected.
+func _has_palette_voxel() -> bool:
+	return controller != null and controller.editor.palette_id >= 0
+
+## Returns whether the active tool needs a palette voxel to perform edits.
+func _active_tool_requires_palette() -> bool:
+	return controller != null and controller.editor.active_tool and controller.editor.active_tool.requires_palette_voxel()
+
+## Shows the palette-required prompt when an edit action needs a palette voxel.
+func _on_palette_voxel_required() -> void:
+	if _palette_required_dialog and not _palette_required_dialog.visible:
+		_palette_required_dialog.popup_centered()
+
 
 ## Requests to open the VoxelSet Editor dock.
 func _on_voxel_set_editor_button_pressed() -> void:
 	voxel_set_editor_requested.emit()
 
+## File dialog for imports.
 var _import_file_dialog: FileDialog = null
+## Whether the next import appends or replaces.
 var _import_append: bool = true
 
+## Opens the import file dialog.
 func _on_import_action(id: int) -> void:
 	_import_append = id == 0
 	if not _import_file_dialog:
@@ -1143,6 +1242,7 @@ func _on_import_action(id: int) -> void:
 	_import_file_dialog.popup_centered()
 
 
+## Routes the selected file to the controller import.
 func _on_import_file_selected(path: String) -> void:
 	# Notify any external listeners (e.g. dock/UIManager coordination).
 	import_requested.emit(_import_append)
@@ -1179,6 +1279,7 @@ func _on_import_finished(_success: bool) -> void:
 		_progress_window.hide()
 
 
+## Opens the settings window on the selected tab.
 func _on_settings_action(id: int) -> void:
 	match id:
 		0:
@@ -1190,6 +1291,7 @@ func _on_settings_action(id: int) -> void:
 	_settings_window.popup_centered()
 
 
+## Throttles the info label refresh.
 func _process(delta: float) -> void:
 	## Throttled info label update (~5 fps) to avoid unnecessary overhead.
 	_update_timer += delta
@@ -1199,6 +1301,7 @@ func _process(delta: float) -> void:
 	_update_info_label()
 
 
+## Rebuilds the live info label text.
 func _update_info_label() -> void:
 	if not _info_label or not controller:
 		return

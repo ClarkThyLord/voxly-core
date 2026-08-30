@@ -1,12 +1,19 @@
+## Utilities for generating a 3D mesh preview of a single voxel type.
 @tool
 class_name VoxelPreview
 extends RefCounted
-## Utility to generate a 3D mesh preview of a single voxel type.
 
-## Generates an ArrayMesh preview of the voxel with the given ID from the set.
-## The returned mesh has one surface per material, with appropriate vertex colors/UVs.
+## Generates an [ArrayMesh] preview of the voxel with the given ID from the set.
 ##
-## By default the mesh is centered on its origin, directly at voxel's center.
+## The returned mesh has one surface per material, with vertex colors and/or UVs
+## depending on what the set supports. By default the mesh is centered on its
+## origin, i.e. positioned at the voxel's center.
+##
+## [param voxel_id]: Voxel type ID in [param voxel_set].
+## [param voxel_set]: Palette that provides the voxel definition.
+## [param voxel_size]: World-space size of the preview voxel.
+## [param mesh_offset]: Optional translation applied to the generated mesh.
+##   Pass [constant Vector3.INF] to auto-center the voxel (the default).
 static func generate(
 		voxel_id: int,
 		voxel_set: VoxelSet,
@@ -16,7 +23,9 @@ static func generate(
 	if not voxel_set or not voxel_set.voxel_id_exists(voxel_id):
 		return null
 	
-	# Resolve the auto-center sentinel to a voxel-size-aware offset.
+	# Resolve the auto-center sentinel to a voxel-size-aware offset. The mesh is
+	# built spanning [0, voxel_size], so shifting it by -0.5 * voxel_size centers
+	# the voxel on its origin.
 	if mesh_offset == Vector3.INF:
 		mesh_offset = Vector3(-0.5, -0.5, -0.5) * voxel_size
 	
@@ -30,14 +39,14 @@ static func generate(
 	return mesh
 
 
-## Translates every surface's vertices of the given ArrayMesh by `offset`,
-## preserving surface names, materials, and primitive types.
+## Translates every surface's vertices of the given [param mesh] by
+## [param mesh_offset], preserving surface names, materials, and primitive types.
 static func translate_mesh(mesh: ArrayMesh, mesh_offset: Vector3) -> void:
 	if not mesh or mesh_offset == Vector3.ZERO:
 		return
 	
-	# Collect all surfaces first, then rebuild, so removing surfaces
-	# doesn't shift indices mid-iteration.
+	# Collect all surfaces first, then rebuild them afterwards. Removing surfaces
+	# while iterating would shift the remaining surface indices mid-loop.
 	var surface_data: Array[Dictionary] = []
 	for i in mesh.get_surface_count():
 		var arrays := mesh.surface_get_arrays(i)
@@ -46,12 +55,8 @@ static func translate_mesh(mesh: ArrayMesh, mesh_offset: Vector3) -> void:
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		if vertices.is_empty():
 			continue
-		var has_offset := false
-		for v in vertices.size():
-			vertices[v] += mesh_offset
-			has_offset = true
-		if not has_offset:
-			continue
+		for vertex_index in vertices.size():
+			vertices[vertex_index] += mesh_offset
 		arrays[Mesh.ARRAY_VERTEX] = vertices
 		surface_data.append({
 			"primitive": mesh.surface_get_primitive_type(i),

@@ -1,4 +1,3 @@
-extends Node3D
 ## Interactive tower example controller.
 ##
 ## A top-down "world overview" where the user clicks to stack random tower
@@ -7,8 +6,9 @@ extends Node3D
 ##
 ##   - Left click  : stack a random block on top of the tower
 ##   - Right click : pop the top block back off (down to the foundation)
+extends Node3D
 
-## The tower column sits in the center of the Towers model
+## The tower column sits in the center of the Towers model.
 const CENTER_X := 1
 const CENTER_Z := 1
 
@@ -18,7 +18,9 @@ const CENTER_Z := 1
 ## Voxel ID used for the foundation block.
 @export var foundation_voxel_id := 0
 
+## The tower voxel model being stacked on.
 @onready var towers: VoxelModel3D = %Towers
+## The camera pivot that follows the tower height.
 @onready var camera_pivot: Node3D = %CameraPivot
 
 ## Buildable voxel IDs, drawn from randomly when stacking.
@@ -28,10 +30,9 @@ var _voxel_ids: Array[int] = []
 var _height := 1
 
 ## HUD label showing the controls and current tower height.
-@onready
-var _hud: Label = %HUD
+@onready var _hud: Label = %HUD
 
-
+## Seeds the buildable blocks and resets the tower to its foundation.
 func _ready() -> void:
 	# Seed the buildable block list from the tower voxel set.
 	_voxel_ids.assign(towers.voxel_set.get_voxel_ids())
@@ -44,12 +45,12 @@ func _ready() -> void:
 	towers.set_voxel(Vector3i(CENTER_X, 0, CENTER_Z), foundation_voxel_id)
 	towers.update()
 	_height = 1
-
+	
 	# Start the camera level with the foundation top.
 	camera_pivot.position.y = _get_tower_top_world_y()
 	_update_hud()
 
-
+## Eases the camera toward the current tower top.
 func _process(delta: float) -> void:
 	if not towers or not camera_pivot:
 		return
@@ -62,7 +63,7 @@ func _process(delta: float) -> void:
 		1.0 - exp(-delta * camera_follow_speed)
 	)
 
-
+## Handles click-to-stack and click-to-pop input.
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -72,7 +73,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_add_block()
 			MOUSE_BUTTON_RIGHT:
 				_remove_block()
-
 
 ## Stacks a random block from the voxel set onto the tower's top.
 func _add_block() -> void:
@@ -87,7 +87,6 @@ func _add_block() -> void:
 	_height += 1
 	_update_hud()
 
-
 ## Pops the top block off, leaving the foundation in place.
 func _remove_block() -> void:
 	if _height <= 1:
@@ -96,7 +95,6 @@ func _remove_block() -> void:
 	towers.remove_voxel(Vector3i(CENTER_X, _height, CENTER_Z))
 	towers.update()
 	_update_hud()
-
 
 ## World-space Y of the center of the currently highest block, used as the
 ## camera follow target so the tower top stays framed in the overview.
@@ -110,7 +108,7 @@ func _get_tower_top_world_y() -> float:
 	var top_world: Vector3 = towers.to_global(top_local)
 	return top_world.y + towers.voxel_size.y * 0.5
 
-
+## Updates the HUD label with the current controls and tower height.
 func _update_hud() -> void:
 	if _hud:
 		_hud.text = "   Left Click: Stack Block   |   Right Click: Pop Block   |   Height: %d" % _height

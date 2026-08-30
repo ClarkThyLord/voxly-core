@@ -19,5 +19,5 @@ palette_mode=2
 reference_voxel_set_path="uid://c8aji4yrgflr3"
 mesh_mode=1
 voxel_size=0.5
-voxels_colored=true
-voxels_textured=true
+include_vertex_colors=true
+include_textures=true

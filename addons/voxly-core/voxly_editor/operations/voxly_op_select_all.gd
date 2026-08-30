@@ -1,11 +1,13 @@
+## Selects every filled voxel.
 @tool
 extends VoxlyEditOperation
-## Selects every filled voxel.
 
+## Registers the select-all operation in the registry.
 func _init() -> void:
 	id = "select_all"
 	category = "selection"
 	display_name = "Select All Voxels"
 
-func execute(editor, undo_redo: EditorUndoRedoManager) -> void:
+## Selects all voxels.
+func execute(editor: VoxlyEditor, undo_redo: EditorUndoRedoManager) -> void:
 	editor.select_all_positions(undo_redo)

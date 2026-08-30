@@ -8,287 +8,287 @@
 script = ExtResource("1_b25wl")
 name = "red wood plank"
 tags = Array[String](["wood", "plank"])
-base_texture_xy = Vector2i(0, 0)
+base_texture_cell = Vector2i(0, 0)
 
 [sub_resource type="Resource" id="Resource_oo0u0"]
 script = ExtResource("1_b25wl")
 name = "oak wood plank"
 tags = Array[String](["wood", "plank"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(0, 1)
+base_texture_cell = Vector2i(0, 1)
 
 [sub_resource type="Resource" id="Resource_61vpp"]
 script = ExtResource("1_b25wl")
 name = "stone"
 tags = Array[String](["stone"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 4)
+base_texture_cell = Vector2i(3, 4)
 
 [sub_resource type="Resource" id="Resource_dcee3"]
 script = ExtResource("1_b25wl")
 name = "sand stone"
 tags = Array[String](["stone", "sand"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 4)
-top_face_texture_xy = Vector2i(3, 6)
-front_face_texture_xy = Vector2i(2, 1)
-back_face_texture_xy = Vector2i(2, 1)
-right_face_texture_xy = Vector2i(2, 1)
-left_face_texture_xy = Vector2i(2, 1)
+base_texture_cell = Vector2i(3, 4)
+top_face_texture_cell = Vector2i(3, 6)
+front_face_texture_cell = Vector2i(2, 1)
+back_face_texture_cell = Vector2i(2, 1)
+right_face_texture_cell = Vector2i(2, 1)
+left_face_texture_cell = Vector2i(2, 1)
 
 [sub_resource type="Resource" id="Resource_23puc"]
 script = ExtResource("1_b25wl")
 name = "snow stone"
 tags = Array[String](["stone", "snow"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 4)
-top_face_texture_xy = Vector2i(3, 5)
-front_face_texture_xy = Vector2i(1, 8)
-back_face_texture_xy = Vector2i(1, 8)
-right_face_texture_xy = Vector2i(1, 8)
-left_face_texture_xy = Vector2i(1, 8)
+base_texture_cell = Vector2i(3, 4)
+top_face_texture_cell = Vector2i(3, 5)
+front_face_texture_cell = Vector2i(1, 8)
+back_face_texture_cell = Vector2i(1, 8)
+right_face_texture_cell = Vector2i(1, 8)
+left_face_texture_cell = Vector2i(1, 8)
 
 [sub_resource type="Resource" id="Resource_s5v0x"]
 script = ExtResource("1_b25wl")
 name = "coal stone 1"
 tags = Array[String](["stone", "coal"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 1)
+base_texture_cell = Vector2i(3, 1)
 
 [sub_resource type="Resource" id="Resource_ae2c6"]
 script = ExtResource("1_b25wl")
 name = "coal stone 2"
 tags = Array[String](["stone", "coal"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 0)
+base_texture_cell = Vector2i(3, 0)
 
 [sub_resource type="Resource" id="Resource_xeyu8"]
 script = ExtResource("1_b25wl")
 name = "iron stone"
 tags = Array[String](["stone", "iron"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 0)
+base_texture_cell = Vector2i(2, 0)
 
 [sub_resource type="Resource" id="Resource_xphg4"]
 script = ExtResource("1_b25wl")
 name = "iron stone 2"
 tags = Array[String](["stone", "iron"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(1, 9)
+base_texture_cell = Vector2i(1, 9)
 
 [sub_resource type="Resource" id="Resource_m5hx3"]
 script = ExtResource("1_b25wl")
 name = "emerald stone 1"
 tags = Array[String](["stone", "emerald"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 3)
+base_texture_cell = Vector2i(2, 3)
 
 [sub_resource type="Resource" id="Resource_lrqcr"]
 script = ExtResource("1_b25wl")
 name = "emerald stone 2"
 tags = Array[String](["stone", "emerald"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 2)
+base_texture_cell = Vector2i(2, 2)
 
 [sub_resource type="Resource" id="Resource_4r778"]
 script = ExtResource("1_b25wl")
 name = "copper stone 1"
 tags = Array[String](["stone", "copper"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 3)
+base_texture_cell = Vector2i(3, 3)
 
 [sub_resource type="Resource" id="Resource_l3g8n"]
 script = ExtResource("1_b25wl")
 name = "copper stone 2"
 tags = Array[String](["stone", "copper"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 2)
+base_texture_cell = Vector2i(3, 2)
 
 [sub_resource type="Resource" id="Resource_n7cj8"]
 script = ExtResource("1_b25wl")
 name = "gold stone 1"
 tags = Array[String](["stone", "gold"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 6)
+base_texture_cell = Vector2i(2, 6)
 
 [sub_resource type="Resource" id="Resource_4syu5"]
 script = ExtResource("1_b25wl")
 name = "gold stone 2"
 tags = Array[String](["stone", "gold"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 5)
+base_texture_cell = Vector2i(2, 5)
 
 [sub_resource type="Resource" id="Resource_lytvf"]
 script = ExtResource("1_b25wl")
 name = "diamond stone 1"
 tags = Array[String](["stone", "diamond"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 9)
+base_texture_cell = Vector2i(2, 9)
 
 [sub_resource type="Resource" id="Resource_6rr3b"]
 script = ExtResource("1_b25wl")
 name = "diamond stone 2"
 tags = Array[String](["stone", "diamond"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(2, 8)
+base_texture_cell = Vector2i(2, 8)
 
 [sub_resource type="Resource" id="Resource_8hpsn"]
 script = ExtResource("1_b25wl")
 name = "ruby darkstone 1"
 tags = Array[String](["darkstone", "ruby"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(5, 6)
+base_texture_cell = Vector2i(5, 6)
 
 [sub_resource type="Resource" id="Resource_7155d"]
 script = ExtResource("1_b25wl")
 name = "ruby darkstone 2"
 tags = Array[String](["darkstone", "ruby"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(5, 5)
+base_texture_cell = Vector2i(5, 5)
 
 [sub_resource type="Resource" id="Resource_8ca6w"]
 script = ExtResource("1_b25wl")
 name = "darkstone"
 tags = Array[String](["darkstone"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(5, 7)
+base_texture_cell = Vector2i(5, 7)
 
 [sub_resource type="Resource" id="Resource_peark"]
 script = ExtResource("1_b25wl")
 name = "gravel darkstone"
 tags = Array[String](["darkstone", "gravel"])
-base_texture_xy = Vector2i(5, 7)
-top_face_texture_xy = Vector2i(5, 8)
-front_face_texture_xy = Vector2i(5, 4)
-back_face_texture_xy = Vector2i(5, 4)
-right_face_texture_xy = Vector2i(5, 4)
-left_face_texture_xy = Vector2i(5, 4)
+base_texture_cell = Vector2i(5, 7)
+top_face_texture_cell = Vector2i(5, 8)
+front_face_texture_cell = Vector2i(5, 4)
+back_face_texture_cell = Vector2i(5, 4)
+right_face_texture_cell = Vector2i(5, 4)
+left_face_texture_cell = Vector2i(5, 4)
 
 [sub_resource type="Resource" id="Resource_3kpqs"]
 script = ExtResource("1_b25wl")
 name = "oak wood"
 tags = Array[String](["wood"])
-base_texture_xy = Vector2i(1, 0)
-top_face_texture_xy = Vector2i(0, 9)
-bottom_face_texture_xy = Vector2i(0, 9)
+base_texture_cell = Vector2i(1, 0)
+top_face_texture_cell = Vector2i(0, 9)
+bottom_face_texture_cell = Vector2i(0, 9)
 
 [sub_resource type="Resource" id="Resource_orxp2"]
 script = ExtResource("1_b25wl")
 name = "grass stone"
 tags = Array[String](["stone", "grass"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 4)
-top_face_texture_xy = Vector2i(6, 1)
-front_face_texture_xy = Vector2i(2, 4)
-back_face_texture_xy = Vector2i(2, 4)
-right_face_texture_xy = Vector2i(2, 4)
-left_face_texture_xy = Vector2i(2, 4)
+base_texture_cell = Vector2i(3, 4)
+top_face_texture_cell = Vector2i(6, 1)
+front_face_texture_cell = Vector2i(2, 4)
+back_face_texture_cell = Vector2i(2, 4)
+right_face_texture_cell = Vector2i(2, 4)
+left_face_texture_cell = Vector2i(2, 4)
 
 [sub_resource type="Resource" id="Resource_n0s0s"]
 script = ExtResource("1_b25wl")
 name = "red wood"
 tags = Array[String](["wood"])
-base_texture_xy = Vector2i(1, 0)
-top_face_texture_xy = Vector2i(0, 7)
-bottom_face_texture_xy = Vector2i(0, 7)
-front_face_texture_xy = Vector2i(0, 8)
-back_face_texture_xy = Vector2i(0, 8)
-right_face_texture_xy = Vector2i(0, 8)
-left_face_texture_xy = Vector2i(0, 8)
+base_texture_cell = Vector2i(1, 0)
+top_face_texture_cell = Vector2i(0, 7)
+bottom_face_texture_cell = Vector2i(0, 7)
+front_face_texture_cell = Vector2i(0, 8)
+back_face_texture_cell = Vector2i(0, 8)
+right_face_texture_cell = Vector2i(0, 8)
+left_face_texture_cell = Vector2i(0, 8)
 
 [sub_resource type="Resource" id="Resource_fgy2k"]
 script = ExtResource("1_b25wl")
 name = "dirt"
 tags = Array[String](["dirt"])
-base_texture_xy = Vector2i(7, 5)
+base_texture_cell = Vector2i(7, 5)
 
 [sub_resource type="Resource" id="Resource_cljvh"]
 script = ExtResource("1_b25wl")
 name = "grass dirt"
 tags = Array[String](["dirt", "grass"])
-base_texture_xy = Vector2i(7, 5)
-top_face_texture_xy = Vector2i(6, 1)
-front_face_texture_xy = Vector2i(7, 4)
-back_face_texture_xy = Vector2i(7, 4)
-right_face_texture_xy = Vector2i(7, 4)
-left_face_texture_xy = Vector2i(7, 4)
+base_texture_cell = Vector2i(7, 5)
+top_face_texture_cell = Vector2i(6, 1)
+front_face_texture_cell = Vector2i(7, 4)
+back_face_texture_cell = Vector2i(7, 4)
+right_face_texture_cell = Vector2i(7, 4)
+left_face_texture_cell = Vector2i(7, 4)
 
 [sub_resource type="Resource" id="Resource_bikgc"]
 script = ExtResource("1_b25wl")
 name = "snow dirt"
 tags = Array[String](["dirt", "snow"])
-base_texture_xy = Vector2i(7, 5)
-top_face_texture_xy = Vector2i(3, 5)
-front_face_texture_xy = Vector2i(7, 2)
-back_face_texture_xy = Vector2i(7, 2)
-right_face_texture_xy = Vector2i(7, 2)
-left_face_texture_xy = Vector2i(7, 2)
+base_texture_cell = Vector2i(7, 5)
+top_face_texture_cell = Vector2i(3, 5)
+front_face_texture_cell = Vector2i(7, 2)
+back_face_texture_cell = Vector2i(7, 2)
+right_face_texture_cell = Vector2i(7, 2)
+left_face_texture_cell = Vector2i(7, 2)
 
 [sub_resource type="Resource" id="Resource_f3g83"]
 script = ExtResource("1_b25wl")
 name = "mud dirt"
 tags = Array[String](["dirt", "mud"])
-base_texture_xy = Vector2i(7, 5)
-top_face_texture_xy = Vector2i(3, 6)
-front_face_texture_xy = Vector2i(7, 3)
-back_face_texture_xy = Vector2i(7, 3)
-right_face_texture_xy = Vector2i(7, 3)
-left_face_texture_xy = Vector2i(7, 3)
+base_texture_cell = Vector2i(7, 5)
+top_face_texture_cell = Vector2i(3, 6)
+front_face_texture_cell = Vector2i(7, 3)
+back_face_texture_cell = Vector2i(7, 3)
+right_face_texture_cell = Vector2i(7, 3)
+left_face_texture_cell = Vector2i(7, 3)
 
 [sub_resource type="Resource" id="Resource_siy3u"]
 script = ExtResource("1_b25wl")
 name = "sand"
 tags = Array[String](["sand"])
-base_texture_xy = Vector2i(3, 6)
+base_texture_cell = Vector2i(3, 6)
 
 [sub_resource type="Resource" id="Resource_marop"]
 script = ExtResource("1_b25wl")
 name = "dirt stone"
 tags = Array[String](["stone", "dirt"])
 base_color = Color(1, 1, 1, 0)
-base_texture_xy = Vector2i(3, 4)
-top_face_texture_xy = Vector2i(7, 5)
-front_face_texture_xy = Vector2i(2, 7)
-back_face_texture_xy = Vector2i(2, 7)
-right_face_texture_xy = Vector2i(2, 7)
-left_face_texture_xy = Vector2i(2, 7)
+base_texture_cell = Vector2i(3, 4)
+top_face_texture_cell = Vector2i(7, 5)
+front_face_texture_cell = Vector2i(2, 7)
+back_face_texture_cell = Vector2i(2, 7)
+right_face_texture_cell = Vector2i(2, 7)
+left_face_texture_cell = Vector2i(2, 7)
 
 [sub_resource type="Resource" id="Resource_533ku"]
 script = ExtResource("1_b25wl")
 name = "stone brick"
 tags = Array[String](["stone", "brick"])
-base_texture_xy = Vector2i(4, 2)
+base_texture_cell = Vector2i(4, 2)
 
 [sub_resource type="Resource" id="Resource_hvss3"]
 script = ExtResource("1_b25wl")
 name = "red brick"
 tags = Array[String](["brick"])
-base_texture_xy = Vector2i(8, 3)
+base_texture_cell = Vector2i(8, 3)
 
 [sub_resource type="Resource" id="Resource_wgl0s"]
 script = ExtResource("1_b25wl")
 name = "craftable"
-base_texture_xy = Vector2i(0, 1)
-top_face_texture_xy = Vector2i(1, 7)
-bottom_face_texture_xy = Vector2i(1, 7)
+base_texture_cell = Vector2i(0, 1)
+top_face_texture_cell = Vector2i(1, 7)
+bottom_face_texture_cell = Vector2i(1, 7)
 
 [sub_resource type="Resource" id="Resource_iu7bv"]
 script = ExtResource("1_b25wl")
 name = "furnace"
-base_texture_xy = Vector2i(3, 4)
-front_face_texture_xy = Vector2i(4, 4)
+base_texture_cell = Vector2i(3, 4)
+front_face_texture_cell = Vector2i(4, 4)
 
 [sub_resource type="Resource" id="Resource_1btmh"]
 script = ExtResource("1_b25wl")
 name = "ice"
 tags = Array[String](["ice"])
-base_texture_xy = Vector2i(0, 6)
+base_texture_cell = Vector2i(0, 6)
 
 [sub_resource type="Resource" id="Resource_hkvdi"]
 script = ExtResource("1_b25wl")
 name = "leafs"
 tags = Array[String](["plant"])
-base_texture_xy = Vector2i(6, 1)
+base_texture_cell = Vector2i(6, 1)
 
 [sub_resource type="Resource" id="Resource_qo8qp"]
 script = ExtResource("1_b25wl")

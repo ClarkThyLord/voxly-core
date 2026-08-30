@@ -1,12 +1,19 @@
+## Box brush: defines a cuboid region by dragging from one corner to another.
 @tool
 extends VoxlyBrush
 
 const ICON := preload("res://addons/voxly-core/assets/icons/box.svg")
 
+## Voxel position where the drag started.
 var _drag_origin: Vector3i = Vector3i.ZERO
+## True while a drag is in progress.
 var _dragging: bool = false
+## Cached positions computed during the drag.
 var _cached_drag_positions: Array[Vector3i] = []
+## Current drag corner position.
+var _drag_current: Vector3i = Vector3i.ZERO
 
+## Registers the box brush in the registry.
 func _init() -> void:
 	name = "box"
 	display_name = "Box"
@@ -17,79 +24,83 @@ func _init() -> void:
 func supports_continuous() -> bool:
 	return false
 
-# Returns the voxel position at the given hit, with tool placement offset applied.
-# Only offsets on DDA hits (existing voxels), not cage wall hits.
-func _compute_offset_pos(editor, hit: Dictionary) -> Vector3i:
-	var pos := hit.get("position", Vector3i.ZERO)
+## Returns the voxel position at the given hit, with tool placement offset
+## applied. Only offsets on DDA hits (existing voxels), not cage wall hits.
+func _compute_offset_position(editor: VoxlyEditor, hit: Dictionary) -> Vector3i:
+	var position := hit.get("position", Vector3i.ZERO)
 	var normal := hit.get("normal", Vector3i.ZERO)
-	return offset_for_tool(editor, pos, normal, hit.get("dda_hit", false))
+	return offset_for_tool(editor, position, normal, hit.get("dda_hit", false))
 
-func get_positions(editor, hit: Dictionary) -> Array[Vector3i]:
-	# While actively dragging, return the cached preview positions.
-	# When not dragging, compute single position from hit.
+## Returns the box voxel positions, or the drag positions while dragging.
+func get_positions(editor: VoxlyEditor, hit: Dictionary) -> Array[Vector3i]:
+	# While actively dragging, return the cached preview positions. When not
+	# dragging, compute a single position from the hit.
 	if _dragging:
 		return _cached_drag_positions.duplicate()
 	if hit.is_empty():
 		return []
-	var pos := _compute_offset_pos(editor, hit)
-	return [pos]
+	var position := _compute_offset_position(editor, hit)
+	return [position]
 
-func on_drag_start(editor, hit: Dictionary) -> void:
+## Records the drag origin.
+func on_drag_start(editor: VoxlyEditor, hit: Dictionary) -> void:
 	_dragging = true
 	_cached_drag_positions.clear()
 	# Compute the offset origin (with tool placement) for the first voxel.
-	_drag_origin = _compute_offset_pos(editor, hit)
-	# Cache the single origin position so click-without-drag still works
+	_drag_origin = _compute_offset_position(editor, hit)
+	# Cache the single origin position so click-without-drag still works.
 	_cached_drag_positions = [_drag_origin]
 
-var _drag_current: Vector3i = Vector3i.ZERO
-
-func on_drag_move(editor, hit: Dictionary) -> Array[Vector3i]:
+## Computes the box between the origin and the current hit.
+func on_drag_move(editor: VoxlyEditor, hit: Dictionary) -> Array[Vector3i]:
 	if not _dragging:
 		return []
 	# Compute the offset end position using the current hit's normal.
-	var current := _compute_offset_pos(editor, hit)
-	_drag_current = current
+	var current_position := _compute_offset_position(editor, hit)
+	_drag_current = current_position
 	
-	# Calculate box from (offset) origin to (offset) current
-	var min_pos := Vector3i(
-		mini(_drag_origin.x, current.x),
-		mini(_drag_origin.y, current.y),
-		mini(_drag_origin.z, current.z)
+	# Calculate the box from the (offset) origin to the (offset) current position.
+	var min_position := Vector3i(
+		mini(_drag_origin.x, current_position.x),
+		mini(_drag_origin.y, current_position.y),
+		mini(_drag_origin.z, current_position.z)
 	)
-	var max_pos := Vector3i(
-		maxi(_drag_origin.x, current.x),
-		maxi(_drag_origin.y, current.y),
-		maxi(_drag_origin.z, current.z)
+	var max_position := Vector3i(
+		maxi(_drag_origin.x, current_position.x),
+		maxi(_drag_origin.y, current_position.y),
+		maxi(_drag_origin.z, current_position.z)
 	)
 	
 	var positions: Array[Vector3i] = []
-	for x in range(min_pos.x, max_pos.x + 1):
-		for y in range(min_pos.y, max_pos.y + 1):
-			for z in range(min_pos.z, max_pos.z + 1):
+	for x in range(min_position.x, max_position.x + 1):
+		for y in range(min_position.y, max_position.y + 1):
+			for z in range(min_position.z, max_position.z + 1):
 				positions.append(Vector3i(x, y, z))
 	
 	_cached_drag_positions = positions
 	return positions
 
+## Returns a size summary for the drag status.
 func get_drag_info() -> String:
 	if not _dragging:
 		return ""
-	var min_pos := Vector3i(
+	
+	var min_position := Vector3i(
 		mini(_drag_origin.x, _drag_current.x),
 		mini(_drag_origin.y, _drag_current.y),
 		mini(_drag_origin.z, _drag_current.z)
 	)
-	var max_pos := Vector3i(
+	var max_position := Vector3i(
 		maxi(_drag_origin.x, _drag_current.x),
 		maxi(_drag_origin.y, _drag_current.y),
 		maxi(_drag_origin.z, _drag_current.z)
 	)
-	var dx := max_pos.x - min_pos.x + 1
-	var dy := max_pos.y - min_pos.y + 1
-	var dz := max_pos.z - min_pos.z + 1
-	return "Box: %dx%dx%d" % [dx, dy, dz]
+	var size_x := max_position.x - min_position.x + 1
+	var size_y := max_position.y - min_position.y + 1
+	var size_z := max_position.z - min_position.z + 1
+	return "Box: %dx%dx%d" % [size_x, size_y, size_z]
 
+## Clears the drag state.
 func on_drag_end() -> void:
 	_dragging = false
 	_cached_drag_positions.clear()

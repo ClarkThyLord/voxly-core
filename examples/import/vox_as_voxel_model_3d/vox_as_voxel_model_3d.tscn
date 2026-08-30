@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bfsr0qb400x5a"]
 
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_mji7s"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="1_mji7s"]
 [ext_resource type="PackedScene" uid="uid://dusb1cqif2ox6" path="res://examples/import/vox_as_voxel_model_3d/chr_knight.vox" id="2_li1y6"]
 
 [node name="VoxAsVoxelModel3D" type="Node3D" unique_id=53352345]

@@ -728,3 +728,17 @@ text = "Ok"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Cancel"
+
+[node name="MissingVoxelSetDialog" type="ConfirmationDialog" parent="." unique_id=463623001]
+unique_name_in_owner = true
+title = "VoxelSet Required"
+initial_position = 1
+ok_button_text = "Add VoxelSet"
+dialog_text = "No VoxelSet is attached to this node. Add a VoxelSet to begin editing."
+cancel_button_text = "Ok"
+
+[node name="PaletteRequiredDialog" type="AcceptDialog" parent="." unique_id=1789345123]
+unique_name_in_owner = true
+title = "Palette Voxel Required"
+initial_position = 1
+dialog_text = "No palette voxel is selected. Select a voxel in the VoxelSet Editor to use for editing."

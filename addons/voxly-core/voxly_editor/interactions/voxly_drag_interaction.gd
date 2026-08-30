@@ -1,13 +1,14 @@
+## Drag-to-define interaction for brushes with [code]requires_drag = true[/code]
+## (box, line, extrude). The shape is defined between the press position and
+## the current drag position; the tool commits once on release.
 @tool
 class_name VoxlyDragInteraction
 extends VoxlyInteraction
-## Drag-to-define interaction for brushes with requires_drag = true
-## (box, line, extrude). The shape is defined between the press position and
-## the current drag position; the tool commits once on release.
 
-var _active_brush = null
+## The brush being dragged.
+var _active_brush: VoxlyBrush = null
 
-
+## Starts the brush drag.
 func begin(_event: InputEventMouse, hit: Dictionary) -> void:
 	_active_brush = editor.active_brush
 	if _active_brush:
@@ -16,18 +17,18 @@ func begin(_event: InputEventMouse, hit: Dictionary) -> void:
 		# single voxel.
 		refresh_preview(hit)
 
-
+## Forwards drag movement to the brush.
 func update(_event: InputEventMouse, hit: Dictionary) -> void:
 	if not _active_brush:
 		return
 	
-	var positions = _active_brush.on_drag_move(editor, hit)
+	var positions: Array[Vector3i] = _active_brush.on_drag_move(editor, hit)
 	# Preview intentionally shows every brush position (even empty cells);
-	# however, tools filter at commit time in work(). Positions outside the model
-	# shape are clipped so no ghost shows outside.
+	# however, tools filter at commit time in work(). Positions outside the
+	# model shape are clipped so no ghost shows outside.
 	show_positions(editor.filter_preview_positions(positions), editor.get_preview_color())
 
-
+## Ends the brush drag.
 func finish(_event: InputEventMouse, _hit: Dictionary) -> void:
 	if not _active_brush:
 		return
@@ -37,17 +38,17 @@ func finish(_event: InputEventMouse, _hit: Dictionary) -> void:
 	_active_brush = null
 	clear_preview()
 
-
+## Cancels the drag.
 func cancel() -> void:
 	if _active_brush:
 		_active_brush.on_drag_end()
 	_active_brush = null
 	clear_preview()
 
-
+## Refreshes the drag preview.
 func refresh_preview(hit: Dictionary) -> void:
 	if not _active_brush:
-		# No drag in progress, show the "ghost" of a single voxel at the
+		# No drag in progress: show the "ghost" of a single voxel at the
 		# hovered position.
 		if not editor.adapter or not editor.adapter.is_valid():
 			clear_preview()

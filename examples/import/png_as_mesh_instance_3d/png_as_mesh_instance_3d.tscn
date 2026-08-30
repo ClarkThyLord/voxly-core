@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d3p4h5s4p42aj"]
 
-[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/example_setup.tscn" id="1_4d372"]
+[ext_resource type="PackedScene" uid="uid://bgutlnnvuuioh" path="res://examples/utils/example_setup/example_setup.tscn" id="1_4d372"]
 [ext_resource type="PackedScene" uid="uid://cvw4jmhtikuns" path="res://examples/import/png_as_mesh_instance_3d/sword_diamond.png" id="2_rg0dc"]
 
 [node name="PngAsMeshInstance3D" type="Node3D" unique_id=1348704182]

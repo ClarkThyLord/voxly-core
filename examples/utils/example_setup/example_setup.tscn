@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bgutlnnvuuioh"]
 
 [ext_resource type="Environment" uid="uid://dldev0lfvlry4" path="res://assets/environments/default.tres" id="1_21gwg"]
-[ext_resource type="Script" uid="uid://dbvr0hi3gunvp" path="res://examples/example_setup.gd" id="1_yv5gi"]
+[ext_resource type="Script" uid="uid://dbvr0hi3gunvp" path="res://examples/utils/example_setup/example_setup.gd" id="1_yv5gi"]
 
 [node name="ExampleSetup" type="Node3D" unique_id=1698688896]
 script = ExtResource("1_yv5gi")

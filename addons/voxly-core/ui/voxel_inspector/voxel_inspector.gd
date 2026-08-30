@@ -1,95 +1,101 @@
+## Inspector for a single voxel entry in a VoxelSet.
+##
+## Edits the voxel's ID, name, and tags with per-field visibility modes
+## (editable/read-only/hidden) and a raw info panel, emitting change signals
+## for the owning VoxelSet editor.
 @tool
 extends VBoxContainer
 
+## Emitted when any voxel data changes.
 signal changed
 
+## Emitted when the voxel ID changes.
 signal changed_id(old_id, new_id)
 
+## Emitted when the voxel name changes.
 signal changed_name(old_name, new_name)
 
+## Emitted when the voxel tags change.
 signal changed_tags(old_tags, new_tags)
 
 ## Controls how each field is displayed.
 enum FieldMode {
-	EDITABLE,   # Fully editable
-	READ_ONLY,  # Visible but not editable
-	HIDDEN,     # Not visible
+	EDITABLE,   # Fully editable.
+	READ_ONLY,  # Visible but not editable.
+	HIDDEN,     # Not visible.
 }
 
+## The voxel ID being inspected.
 @export_range(-1, 100, 1, "or_greater")
 var voxel_id: int = 0:
 	set = _set_voxel_id
 
-@export
-var voxel_set: VoxelSet = null:
+## The VoxelSet the inspected voxel belongs to.
+@export var voxel_set: VoxelSet = null:
 	set = _set_voxel_set
 
 ## ID field visibility and editability.
-@export
-var id_mode: FieldMode = FieldMode.EDITABLE:
+@export var id_mode: FieldMode = FieldMode.EDITABLE:
 	set = _set_id_mode
 
 ## Name field visibility and editability.
-@export
-var name_mode: FieldMode = FieldMode.EDITABLE:
+@export var name_mode: FieldMode = FieldMode.EDITABLE:
 	set = _set_name_mode
 
 ## Tags editor visibility and editability.
-@export
-var tags_mode: FieldMode = FieldMode.EDITABLE:
+@export var tags_mode: FieldMode = FieldMode.EDITABLE:
 	set = _set_tags_mode
 
 ## Show/hide the raw info panel.
-@export
-var show_info: bool = true:
+@export var show_info: bool = true:
 	set = _set_show_info
 
-@onready
-var _id_container: HBoxContainer = %IDContainer
+## Container for the ID editing row.
+@onready var _id_container: HBoxContainer = %IDContainer
+## ID text input.
+@onready var _id_line_edit: LineEdit = %IDLineEdit
+## Confirms an ID change.
+@onready var _id_save_button: Button = %IDSaveButton
+## Cancels an ID change.
+@onready var _id_cancel_button: Button = %IDCancelButton
+## Container for the name editing row.
+@onready var _name_container: HBoxContainer = %NameContainer
+## Name text input.
+@onready var _name_line_edit: LineEdit = %NameLineEdit
+## Confirms a name change.
+@onready var _name_save_button: Button = %NameSaveButton
+## Cancels a name change.
+@onready var _name_cancel_button: Button = %NameCancelButton
+## Embedded tag editor.
+@onready var _tag_editor := %TagEditor
+## Scroll container for the raw info panel.
+@onready var _info_container: ScrollContainer = %InfoContainer
+## Label showing the voxel raw data.
+@onready var _info_label: Label = %InfoLabel
 
-@onready
-var _id_line_edit: LineEdit = %IDLineEdit
-
-@onready
-var _id_save_button: Button = %IDSaveButton
-
-@onready
-var _id_cancel_button: Button = %IDCancelButton
-
-@onready
-var _name_container: HBoxContainer = %NameContainer
-
-@onready
-var _name_line_edit: LineEdit = %NameLineEdit
-
-@onready
-var _name_save_button: Button = %NameSaveButton
-
-@onready
-var _name_cancel_button: Button = %NameCancelButton
-
-@onready
-var _tag_editor := %TagEditor
-
-@onready
-var _info_container: ScrollContainer = %InfoContainer
-
-@onready
-var _info_label: Label = %InfoLabel
-
+## The voxel resource currently inspected.
 var _voxel: Voxel = null
+## True while an update is queued for the ready state.
 var _pending_update := false
-var _accept_dialog : AcceptDialog = null
-# Which field to re-focus after "Ok"
+## Dialog shown when an ID or name is taken.
+var _accept_dialog: AcceptDialog = null
+# Which field to re-focus after "Ok".
+## Field to re-focus after the accept dialog closes.
 var _pending_field: LineEdit = null
-# Track whether we're in the middle of a confirm dialog to ignore focus_exited
+# Whether we're in the middle of a confirm dialog (ignores focus_exited).
+## True while an ID change is awaiting confirmation.
 var _confirming_id := false
+## True while a name change is awaiting confirmation.
 var _confirming_name := false
+## True while tag changes are being applied, to avoid echo.
 var _syncing_tags := false
 
+## Plain UndoRedo stack used when not in the editor.
 var _undo_redo: UndoRedo = null
+## Editor undo/redo manager used inside the editor.
 var _undo_redo_manager: EditorUndoRedoManager = null
 
+## Subscribes to undo/redo version changes for refresh.
 func _connect_undo_version_changed() -> void:
 	if _undo_redo_manager and not _undo_redo_manager.version_changed.is_connected(_update):
 		_undo_redo_manager.version_changed.connect(_update)
@@ -106,6 +112,7 @@ func set_undo_redo_manager(manager: EditorUndoRedoManager) -> void:
 	_undo_redo_manager = manager
 	_connect_undo_version_changed()
 
+## Updates the inspected voxel ID.
 func _set_voxel_id(new_voxel_id: int) -> void:
 	if new_voxel_id == voxel_id:
 		return
@@ -124,6 +131,7 @@ func _set_voxel_id(new_voxel_id: int) -> void:
 	else:
 		_update()
 
+## Updates the voxel set and refreshes.
 func _set_voxel_set(new_voxel_set: VoxelSet) -> void:
 	if new_voxel_set == voxel_set:
 		return
@@ -142,27 +150,28 @@ func _set_voxel_set(new_voxel_set: VoxelSet) -> void:
 	else:
 		_update()
 
+## Applies the ID field mode.
 func _set_id_mode(value: FieldMode) -> void:
 	if value == id_mode:
 		return
 	id_mode = value
 	_apply_field_modes()
 
-
+## Applies the name field mode.
 func _set_name_mode(value: FieldMode) -> void:
 	if value == name_mode:
 		return
 	name_mode = value
 	_apply_field_modes()
 
-
+## Applies the tags field mode.
 func _set_tags_mode(value: FieldMode) -> void:
 	if value == tags_mode:
 		return
 	tags_mode = value
 	_apply_field_modes()
 
-
+## Toggles the raw info panel.
 func _set_show_info(value: bool) -> void:
 	if value == show_info:
 		return
@@ -170,20 +179,21 @@ func _set_show_info(value: bool) -> void:
 	if _info_container:
 		_info_container.visible = show_info
 
+## Connects the field signals and applies modes.
 func _ready() -> void:
-	# ID field
+	# ID field.
 	_id_line_edit.text_submitted.connect(_on_id_submitted)
 	_id_line_edit.text_changed.connect(_on_id_text_changed)
 	_id_save_button.pressed.connect(_on_id_save_pressed)
 	_id_cancel_button.pressed.connect(_on_id_cancel_pressed)
 	
-	# Name field
+	# Name field.
 	_name_line_edit.text_submitted.connect(_on_name_submitted)
 	_name_line_edit.text_changed.connect(_on_name_text_changed)
 	_name_save_button.pressed.connect(_on_name_save_pressed)
 	_name_cancel_button.pressed.connect(_on_name_cancel_pressed)
 	
-	# Tag editor
+	# Tag editor.
 	_tag_editor.changed.connect(_on_tag_editor_changed)
 	
 	if _pending_update:
@@ -191,14 +201,17 @@ func _ready() -> void:
 	else:
 		_apply_field_modes()
 
+## Hides the ID save/cancel buttons.
 func _hide_id_buttons() -> void:
 	_id_save_button.hide()
 	_id_cancel_button.hide()
 
+## Hides the name save/cancel buttons.
 func _hide_name_buttons() -> void:
 	_name_save_button.hide()
 	_name_cancel_button.hide()
 
+## Shows the ID save/cancel buttons on edit.
 func _on_id_text_changed(new_text: String) -> void:
 	if not _voxel or not new_text.is_valid_int():
 		_id_save_button.hide()
@@ -212,6 +225,7 @@ func _on_id_text_changed(new_text: String) -> void:
 		_id_save_button.show()
 		_id_cancel_button.show()
 
+## Shows the name save/cancel buttons on edit.
 func _on_name_text_changed(new_text: String) -> void:
 	if not _voxel or new_text == _voxel.name:
 		_name_save_button.hide()
@@ -220,29 +234,36 @@ func _on_name_text_changed(new_text: String) -> void:
 		_name_save_button.show()
 		_name_cancel_button.show()
 
+## Commits the edited ID.
 func _on_id_save_pressed() -> void:
 	_hide_id_buttons()
 	_try_change_id(_id_line_edit.text)
 
+## Reverts the edited ID.
 func _on_id_cancel_pressed() -> void:
 	_hide_id_buttons()
 	_revert_id()
 
+## Commits the edited name.
 func _on_name_save_pressed() -> void:
 	_hide_name_buttons()
 	_try_change_name(_name_line_edit.text)
 
+## Reverts the edited name.
 func _on_name_cancel_pressed() -> void:
 	_hide_name_buttons()
 	_revert_name()
 
+## Points the inspector at a voxel in the given set.
 func set_voxel(voxel_set: VoxelSet, voxel_id: int) -> void:
 	self.voxel_set = voxel_set
 	self.voxel_id = voxel_id
 
+## Refreshes the displayed voxel data.
 func refresh() -> void:
 	_update()
 
+## Applies the field visibility and editability modes.
 func _apply_field_modes() -> void:
 	if not _id_line_edit:
 		_pending_update = true
@@ -255,8 +276,7 @@ func _apply_field_modes() -> void:
 	if _info_container:
 		_info_container.visible = show_info
 
-
-## Toggles field visiblity
+## Toggles a field's visibility and editability.
 func _apply_field_mode(line_edit: LineEdit, mode: FieldMode) -> void:
 	if not line_edit:
 		return
@@ -266,19 +286,21 @@ func _apply_field_mode(line_edit: LineEdit, mode: FieldMode) -> void:
 	if parent:
 		parent.visible = visible
 
+## Refreshes when the voxel data changes.
 func _on_voxel_changed() -> void:
 	_update()
 
+## Repopulates all fields from the current voxel.
 func _update() -> void:
 	if not _id_line_edit:
 		_pending_update = true
 		return
 	_pending_update = false
 	
-	# Apply field modes first
+	# Apply field modes first.
 	_apply_field_modes()
 	
-	# Prevent tag_editor.changed from re-triggering _update
+	# Prevent tag_editor.changed from re-triggering _update.
 	_syncing_tags = true
 	
 	if not voxel_set or not _voxel:
@@ -292,11 +314,11 @@ func _update() -> void:
 	_id_line_edit.text = str(voxel_id)
 	_name_line_edit.text = _voxel.name
 	
-	# Hide save/cancel buttons on any inspector update
+	# Hide save/cancel buttons on any inspector update.
 	_hide_id_buttons()
 	_hide_name_buttons()
 	
-	# Sync tags to tag_editor
+	# Sync tags to the tag editor.
 	_tag_editor.selected_tags = _voxel.tags.duplicate()
 	_tag_editor.tags = _voxel.tags.duplicate()
 	
@@ -304,6 +326,7 @@ func _update() -> void:
 	
 	_syncing_tags = false
 
+## Formats the voxel raw data as readable text.
 func _format_raw_data() -> String:
 	if not _voxel:
 		return ""
@@ -313,41 +336,43 @@ func _format_raw_data() -> String:
 	var base_material := "unset"
 	if _voxel.has_base_color():
 		base_color = _voxel.base_color.to_html()
-	if _voxel.has_base_texture_xy():
-		base_texture = str(_voxel.base_texture_xy)
+	if _voxel.has_base_texture_cell():
+		base_texture = str(_voxel.base_texture_cell)
 	if _voxel.has_base_material_id():
 		base_material = _voxel.base_material_id
 	parts.append("Color: %s" % base_color)
 	parts.append("Texture XY: %s" % base_texture)
 	parts.append("Material ID: %s" % base_material)
 	for face in Voxel.FACES:
-		var fcolor := _voxel.get_face_color(face, false)
-		var ftex := _voxel.get_face_texture_xy(face, false)
-		var fmat := _voxel.get_face_material_id(face, false)
+		var face_color := _voxel.get_face_color(face, false)
+		var face_texture := _voxel.get_face_texture_cell(face, false)
+		var face_material := _voxel.get_face_material_id(face, false)
 		var face_name := Voxel.FACE_NAMES[face]
 		parts.append("%s: Color=%s Tex=%s Mat=%s" % [
 			face_name,
-			fcolor.to_html() if fcolor.a > 0 else "unset",
-			str(ftex) if ftex != -Vector2i.ONE else "unset",
-			fmat if not fmat.is_empty() else "unset",
+			face_color.to_html() if face_color.a > 0 else "unset",
+			str(face_texture) if face_texture != -Vector2i.ONE else "unset",
+			face_material if not face_material.is_empty() else "unset",
 		])
 	return "\n".join(parts)
 
+## Attempts to change the voxel ID from the input.
 func _on_id_submitted(new_text: String) -> void:
 	_try_change_id(new_text)
 
-func _try_change_id(new_id_str: String) -> void:
-	if not _voxel or not new_id_str.is_valid_int():
+## Validates and applies an ID change.
+func _try_change_id(new_id_string: String) -> void:
+	if not _voxel or not new_id_string.is_valid_int():
 		_id_line_edit.text = str(voxel_id)
 		return
 	
-	var new_id := new_id_str.to_int()
+	var new_id := new_id_string.to_int()
 	if new_id == voxel_id:
 		_id_line_edit.text = str(voxel_id)
 		return
 	
 	if voxel_set and voxel_set.voxel_id_exists(new_id):
-		# Show dialog: already taken, offer Ok or Cancel
+		# Show a dialog: the ID is already taken, offer Ok or Cancel.
 		_confirming_id = true
 		_pending_field = _id_line_edit
 		_show_taken_dialog(
@@ -357,6 +382,7 @@ func _try_change_id(new_id_str: String) -> void:
 	else:
 		_do_change_id(new_id)
 
+## Changes the voxel ID through undo/redo.
 func _do_change_id(new_id: int) -> void:
 	if not voxel_set or not _voxel:
 		return
@@ -364,7 +390,7 @@ func _do_change_id(new_id: int) -> void:
 	var old_voxel = _voxel
 	var old_id = voxel_id
 	
-	# Create undo/redo action
+	# Create the undo/redo action.
 	var has_undo := false
 	if _undo_redo_manager:
 		_undo_redo_manager.create_action("Change Voxel ID", UndoRedo.MERGE_DISABLE, voxel_set)
@@ -397,15 +423,18 @@ func _do_change_id(new_id: int) -> void:
 	changed_id.emit(old_id, new_id)
 	changed.emit()
 
+## Restores the previous ID after a rejected change.
 func _revert_id() -> void:
 	_confirming_id = false
 	_pending_field = null
 	_id_line_edit.text = str(voxel_id)
 	_hide_id_buttons()
 
+## Attempts to change the voxel name from the input.
 func _on_name_submitted(new_text: String) -> void:
 	_try_change_name(new_text)
 
+## Validates and applies a name change.
 func _try_change_name(new_name: String) -> void:
 	if not _voxel or new_name == _voxel.name:
 		_revert_name()
@@ -429,6 +458,7 @@ func _try_change_name(new_name: String) -> void:
 	
 	_do_change_name(trimmed)
 
+## Changes the voxel name through undo/redo.
 func _do_change_name(new_name: String) -> void:
 	if not _voxel:
 		return
@@ -451,6 +481,7 @@ func _do_change_name(new_name: String) -> void:
 	changed_name.emit(old_name, new_name)
 	changed.emit()
 
+## Restores the previous name after a rejected change.
 func _revert_name() -> void:
 	_confirming_name = false
 	_pending_field = null
@@ -458,10 +489,10 @@ func _revert_name() -> void:
 		_name_line_edit.text = _voxel.name
 	_hide_name_buttons()
 
-# Forces the dialog to have just "Ok" and "Cancel" buttons.
-func _show_taken_dialog(message: String, on_close : Callable) -> void:
+## Shows the taken-ID/name dialog with a close callback.
+func _show_taken_dialog(message: String, on_close: Callable) -> void:
 	if not _accept_dialog:
-		# Create reusable confirmation dialog
+		# Create a reusable confirmation dialog.
 		_accept_dialog = AcceptDialog.new()
 		_accept_dialog.gui_embed_subwindows = true
 		_accept_dialog.title = "Invalid"
@@ -476,8 +507,10 @@ func _show_taken_dialog(message: String, on_close : Callable) -> void:
 	
 	_accept_dialog.popup_centered_clamped()
 
-var _on_dialog_close_callback : Callable
+## Callback invoked when the accept dialog closes.
+var _on_dialog_close_callback: Callable
 
+## Hides the dialog and invokes the close callback.
 func _on_dialog_close() -> void:
 	_accept_dialog.hide()
 	
@@ -487,11 +520,12 @@ func _on_dialog_close() -> void:
 	_confirming_name = false
 	_pending_field = null
 
+## Applies tag changes back to the voxel.
 func _on_tag_editor_changed() -> void:
 	if _syncing_tags or not _voxel:
 		return
 	
-	# Sync tag_editor's tags back to the voxel
+	# Sync the tag_editor's tags back to the voxel.
 	var old_tags = _voxel.tags
 	var new_tags = _tag_editor.tags.duplicate()
 	

@@ -1,26 +1,29 @@
+## Read-only label showing details of the currently selected material.
+##
+## Refreshes its text whenever the voxel set or material selection changes.
 @tool
 extends Label
 
-## The VoxelSet whose voxels to scan for material usage.
-@export
-var voxel_set: VoxelSet = null:
+## The voxel set whose materials are shown.
+@export var voxel_set: VoxelSet = null:
 	set = _set_voxel_set
 
 ## Currently selected material id. Empty string means nothing selected.
-@export
-var material_id: String = "":
+@export var material_id: String = "":
 	set = _set_material_id
 
+## True while a refresh is queued for the ready state.
 var _pending_refresh := false
 
-func _set_voxel_set(new_set: VoxelSet) -> void:
-	if voxel_set == new_set:
+## Updates the voxel set and schedules a refresh.
+func _set_voxel_set(new_voxel_set: VoxelSet) -> void:
+	if voxel_set == new_voxel_set:
 		return
 	if voxel_set and voxel_set.voxels_changed.is_connected(_refresh):
 		voxel_set.voxels_changed.disconnect(_refresh)
 	if voxel_set and voxel_set.materials_changed.is_connected(_refresh):
 		voxel_set.materials_changed.disconnect(_refresh)
-	voxel_set = new_set
+	voxel_set = new_voxel_set
 	if voxel_set and not voxel_set.voxels_changed.is_connected(_refresh):
 		voxel_set.voxels_changed.connect(_refresh)
 	if voxel_set and not voxel_set.materials_changed.is_connected(_refresh):
@@ -30,12 +33,14 @@ func _set_voxel_set(new_set: VoxelSet) -> void:
 	else:
 		_pending_refresh = true
 
-func _set_material_id(new_id: String) -> void:
-	if new_id == material_id:
+## Updates the displayed material and schedules a refresh.
+func _set_material_id(new_material_id: String) -> void:
+	if new_material_id == material_id:
 		return
-	material_id = new_id
+	material_id = new_material_id
 	_refresh()
 
+## Applies any pending refresh on entering the tree.
 func _ready() -> void:
 	if _pending_refresh:
 		_refresh()
@@ -44,6 +49,7 @@ func _ready() -> void:
 func refresh() -> void:
 	_refresh()
 
+## Rebuilds the displayed material information.
 func _refresh() -> void:
 	_pending_refresh = false
 	
@@ -55,8 +61,8 @@ func _refresh() -> void:
 		var default_base_count := 0
 		var default_face_refs := 0
 		var default_voxels := 0
-		for vid in voxel_set.get_voxel_ids():
-			var voxel := voxel_set.get_voxel(vid)
+		for voxel_id in voxel_set.get_voxel_ids():
+			var voxel := voxel_set.get_voxel(voxel_id)
 			var uses := false
 			var base_unset := voxel.get_base_material_id() == Voxel.UNSET_MATERIAL_ID
 			if base_unset:
@@ -85,8 +91,8 @@ func _refresh() -> void:
 	var face_refs := 0
 	var voxels_used := 0
 	
-	for vid in voxel_set.get_voxel_ids():
-		var voxel := voxel_set.get_voxel(vid)
+	for voxel_id in voxel_set.get_voxel_ids():
+		var voxel := voxel_set.get_voxel(voxel_id)
 		var uses := false
 		if voxel.get_base_material_id() == material_id:
 			base_count += 1

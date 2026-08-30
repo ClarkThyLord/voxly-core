@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://ce1mn6ngtf0qh"]
 
-[ext_resource type="PackedScene" uid="uid://bko6ob20icape" path="res://tools/capture/capture.tscn" id="1_3vnbg"]
+[ext_resource type="PackedScene" uid="uid://bko6ob20icape" path="res://examples/utils/capture/capture.tscn" id="1_3vnbg"]
 [ext_resource type="Script" uid="uid://ptbwa2u0mxpf" path="res://addons/voxly-core/classes/voxel_model_3d.gd" id="1_cx3au"]
 [ext_resource type="Script" uid="uid://bv6v5vgdo00ty" path="res://addons/voxly-core/classes/voxel.gd" id="2_3vnbg"]
 [ext_resource type="Script" uid="uid://2t0bbu20nih5" path="res://addons/voxly-core/classes/voxel_set.gd" id="3_fcepx"]

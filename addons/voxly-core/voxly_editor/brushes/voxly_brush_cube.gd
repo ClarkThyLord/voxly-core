@@ -1,12 +1,17 @@
+## Cube brush: stamps a solid cube of voxels around the hovered cell.
 @tool
 extends VoxlyBrush
 
 const ICON := preload("res://addons/voxly-core/assets/icons/cube.svg")
 
+## Cube size along X.
 var _size_x: int = 2
+## Cube size along Y.
 var _size_y: int = 2
+## Cube size along Z.
 var _size_z: int = 2
 
+## Registers the cube brush in the registry.
 func _init() -> void:
 	name = "cube"
 	display_name = "Cube"
@@ -31,15 +36,17 @@ var size_z: int:
 	set(v):
 		_size_z = maxi(v, 0)
 
+## Returns the cube size options.
 func get_options() -> Array[Dictionary]:
 	return [
 		{"label": "Continuous", "property": "continuous", "type": TYPE_BOOL, "default": false},
 		{"label": "Size X", "property": "size_x", "type": TYPE_INT, "default": 2, "min": 0, "max": 32, "step": 1},
 		{"label": "Size Y", "property": "size_y", "type": TYPE_INT, "default": 2, "min": 0, "max": 32, "step": 1},
-		{"label": "Size Z", "property": "size_z", "type": TYPE_INT, "default": 2, "min": 0, "max": 32, "step": 1}
+		{"label": "Size Z", "property": "size_z", "type": TYPE_INT, "default": 2, "min": 0, "max": 32, "step": 1},
 	]
 
-func get_positions(editor, hit: Dictionary) -> Array[Vector3i]:
+## Returns a cube of voxels centered on the hit.
+func get_positions(editor: VoxlyEditor, hit: Dictionary) -> Array[Vector3i]:
 	if hit.is_empty():
 		return []
 	var center := hit.get("position", Vector3i.ZERO)
