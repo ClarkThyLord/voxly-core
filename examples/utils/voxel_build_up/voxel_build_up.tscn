@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ccedjck2jwffh"]
+
+[ext_resource type="Script" uid="uid://cnejohkgkbumo" path="res://examples/utils/voxel_build_up/voxel_build_up.gd" id="1_vxbu"]
+
+[node name="VoxelBuildUp" type="Node" unique_id=363921270]
+script = ExtResource("1_vxbu")
