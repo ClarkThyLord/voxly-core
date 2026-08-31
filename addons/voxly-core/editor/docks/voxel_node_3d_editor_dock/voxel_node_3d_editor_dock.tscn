@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://cnxsyhkl4gaf1" path="res://addons/voxly-core/editor/docks/voxel_node_3d_editor_dock/voxel_node_3d_editor_dock.gd" id="1_yiely"]
 
 [node name="VoxelNode3DEditorDock" type="EditorDock" unique_id=1359225043]
-custom_minimum_size = Vector2(0, 400)
+custom_minimum_size = Vector2(0, 150)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
