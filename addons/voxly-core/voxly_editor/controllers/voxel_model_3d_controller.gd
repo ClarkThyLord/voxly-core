@@ -91,27 +91,45 @@ func set_shape(new_value: Vector3i) -> void:
 	if not is_instance_valid(model):
 		return
 	
+	var clamped_shape := new_value.max(Vector3i(1, 1, 1))
 	var old_value := model.shape
-	if new_value != old_value:
-		if undo_redo:
-			undo_redo.create_action("Set Shape", UndoRedo.MERGE_ENDS, model)
-			undo_redo.add_do_property(model, "shape", new_value)
-			undo_redo.add_undo_property(model, "shape", old_value)
-			# Prune any selected positions that fall outside the new bounds.
-			if editor and editor.selection and editor.selection.count() > 0:
-				var old_selection := editor.selection.to_array()
-				var pruned: Array[Vector3i] = []
-				for position in old_selection:
-					if position.x >= 0 and position.x < new_value.x \
-							and position.y >= 0 and position.y < new_value.y \
-							and position.z >= 0 and position.z < new_value.z:
-						pruned.append(position)
-				if pruned.size() != old_selection.size():
-					undo_redo.add_do_method(editor.selection, "set_positions", pruned)
-					undo_redo.add_undo_method(editor.selection, "set_positions", old_selection)
-			undo_redo.commit_action()
-		else:
-			model.shape = new_value
+	if clamped_shape == old_value:
+		return
+	
+	if not undo_redo:
+		model.shape = clamped_shape
+		return
+	
+	var before_voxels: Dictionary[Vector3i, int] = {}
+	var after_voxels: Dictionary[Vector3i, int] = {}
+	for position in model.get_voxel_positions_used():
+		var voxel_id = model.get_voxel(position)
+		before_voxels[position] = voxel_id
+		if _is_position_in_shape(position, clamped_shape):
+			after_voxels[position] = voxel_id
+	
+	undo_redo.create_action("Set Shape", UndoRedo.MERGE_ENDS, model)
+	# Do: apply the new shape, then the voxels that remain inside it.
+	undo_redo.add_do_property(model, "shape", clamped_shape)
+	undo_redo.add_do_method(model, "clear_voxels")
+	undo_redo.add_do_method(model, "add_voxels", after_voxels)
+	undo_redo.add_do_method(model, "update")
+	# Undo: restore the previous shape, then the full previous voxel state.
+	undo_redo.add_undo_property(model, "shape", old_value)
+	undo_redo.add_undo_method(model, "clear_voxels")
+	undo_redo.add_undo_method(model, "add_voxels", before_voxels)
+	undo_redo.add_undo_method(model, "update")
+	# Prune any selected positions that fall outside the new bounds.
+	if editor and editor.selection and editor.selection.count() > 0:
+		var old_selection := editor.selection.to_array()
+		var pruned: Array[Vector3i] = []
+		for position in old_selection:
+			if _is_position_in_shape(position, clamped_shape):
+				pruned.append(position)
+		if pruned.size() != old_selection.size():
+			undo_redo.add_do_method(editor.selection, "set_positions", pruned)
+			undo_redo.add_undo_method(editor.selection, "set_positions", old_selection)
+	undo_redo.commit_action()
 
 ## Returns the target node voxel set.
 func _get_voxel_set() -> VoxelSet:
@@ -164,6 +182,12 @@ func _clamp_to_shape(position: Vector3i, normal: Vector3i) -> Vector3i:
 	position.y = clampi(position.y, -1 if normal.y == -1 else 0, shape.y - (1 if normal.y == 1 else 0))
 	position.z = clampi(position.z, -1 if normal.z == -1 else 0, shape.z - (1 if normal.z == 1 else 0))
 	return position
+
+## Returns true when the given voxel position lies inside the given shape box.
+func _is_position_in_shape(position: Vector3i, shape: Vector3i) -> bool:
+	return (position.x >= 0 and position.x < shape.x
+		and position.y >= 0 and position.y < shape.y
+		and position.z >= 0 and position.z < shape.z)
 
 ## Populates the brush container with buttons.
 ## Called by the UI panel when the controller is connected.
