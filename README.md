@@ -99,6 +99,8 @@ Once the files are in your project folder, you must tell Godot to run it:
 3. Click on the **Plugins** tab.
 4. Locate **Voxly-Core** and check the **Enable** box.
 
+> **Note:** Copying the plugin folder into a project or activating plugin for first time can show import and script errors. To resolve these issues, please reload the project (**Project** > **Reload Current Project**) or restart the editor, continue to reload the project until every script is parsed correctly and then activate plugin.
+
 # 🐛 Reporting Bugs
 
 Before opening a new issue, please search the existing issues to see if someone else has already reported it!

@@ -7,10 +7,28 @@
 @tool
 extends EditorPlugin
 
-## Plugin information.
+## Plugin name, shown in lifecycle banners.
 const NAME = "Voxly-Core"
+## Plugin version, shown in lifecycle banners.
 const VERSION = "1.0.0"
 
+## Node name of the debug logging singleton registered by this plugin.
+const AUTOLOAD_DEBUG := "VoxlyDebug"
+## Node name of the configuration singleton registered by this plugin.
+const AUTOLOAD_CONFIG := "VoxlyConfig"
+## Script registered as the [constant AUTOLOAD_DEBUG] singleton.
+const DEBUG_SCRIPT_PATH := "res://addons/voxly-core/utils/voxly_debug.gd"
+## Script registered as the [constant AUTOLOAD_CONFIG] singleton.
+const CONFIG_SCRIPT_PATH := "res://addons/voxly-core/utils/voxly_config.gd"
+
+## Script type of the debug singleton, used for typed autoload lookups.
+##
+## The script is preloaded by path instead of being reached through a global
+## class name or its autoload identifier, so this script stays parseable while
+## the autoloads do not exist yet.
+const VoxlyDebugUtility := preload("res://addons/voxly-core/utils/voxly_debug.gd")
+
+## Context label attached to every debug log emitted by the plugin.
 const _debug_context := NAME
 
 ## Editor import plugins.
@@ -42,18 +60,16 @@ var _current_voxel_node_3d: VoxelNode3D = null
 
 ## Registers singletons, import plugins, and editor signal handlers.
 func _enter_tree() -> void:
-	# Register VoxlyDebug as a global singleton before anything uses it.
-	add_autoload_singleton("VoxlyDebug", "res://addons/voxly-core/utils/voxly_debug.gd")
-	
-	# Register VoxlyConfig as a global singleton so any plugin/UI code can
-	# persist editor settings to: user://voxly-core/*.json
-	add_autoload_singleton("VoxlyConfig", "res://addons/voxly-core/utils/voxly_config.gd")
+	# Register the utility singletons before anything else.
+	_register_autoloads()
 	
 	# Always-print lifecycle banner.
-	if VoxlyDebug.is_enabled():
-		VoxlyDebug.log_always(_debug_context, "%s v%s loaded : debug logging is enabled." % [NAME, VERSION])
-	else:
-		VoxlyDebug.log_always(_debug_context, "%s v%s loaded : debug logging is disabled (call VoxlyDebug.enable() to turn it on)." % [NAME, VERSION])
+	var debug := _get_debug()
+	if debug:
+		if debug.is_enabled():
+			debug.log_always(_debug_context, "%s v%s loaded : debug logging is enabled." % [NAME, VERSION])
+		else:
+			debug.log_always(_debug_context, "%s v%s loaded : debug logging is disabled (call VoxlyDebug.enable() to turn it on)." % [NAME, VERSION])
 	
 	# Register import plugins.
 	_add_importers()
@@ -75,10 +91,12 @@ func _enter_tree() -> void:
 	scene_closed.connect(_on_scene_closed)
 	main_screen_changed.connect(_on_main_screen_changed)
 
-## Cleans up docks, importers, and signals, then unregisters singletons.
+## Cleans up docks, importers, and signals, then flushes persisted settings.
 func _exit_tree() -> void:
 	# Always-print lifecycle banner.
-	VoxlyDebug.log_always(_debug_context, "%s v%s unloaded successfully." % [NAME, VERSION])
+	var debug := _get_debug()
+	if debug:
+		debug.log_always(_debug_context, "%s v%s unloaded successfully." % [NAME, VERSION])
 	
 	# Transition to IDLE first (closes docks, stops editing, cleans up controller).
 	if _state_machine and _state_machine.current_state != VoxlyState.State.IDLE:
@@ -114,15 +132,61 @@ func _exit_tree() -> void:
 	_current_voxel_node_3d = null
 	_input_handler = null
 	
-	# Flush + unregister config singleton.
-	if VoxlyConfig:
-		VoxlyConfig.save_all()
-	remove_autoload_singleton("VoxlyConfig")
-	
-	# Unregister debug singleton.
-	remove_autoload_singleton("VoxlyDebug")
+	# Flush the config cache while the singletons are still reachable.
+	_flush_config()
 
-## Registers all four editor import plugins.
+## Registers the utility singletons when the plugin is enabled in the editor.
+func _enable_plugin() -> void:
+	_register_autoloads()
+
+## Unregisters the utility singletons when the plugin is disabled in the editor.
+## The config cache is flushed first, so no settings are lost while the
+## singletons are going away.
+func _disable_plugin() -> void:
+	_flush_config()
+	_unregister_autoloads()
+
+## Registers the utility singletons as project autoloads when they are missing.
+func _register_autoloads() -> void:
+	if not _is_singleton_registered(AUTOLOAD_DEBUG):
+		add_autoload_singleton(AUTOLOAD_DEBUG, DEBUG_SCRIPT_PATH)
+	
+	if not _is_singleton_registered(AUTOLOAD_CONFIG):
+		add_autoload_singleton(AUTOLOAD_CONFIG, CONFIG_SCRIPT_PATH)
+
+## Returns true if [param singleton_name] is registered as an enabled autoload.
+func _is_singleton_registered(singleton_name: String) -> bool:
+	var setting := "autoload/" + singleton_name
+	if not ProjectSettings.has_setting(setting):
+		return false
+	
+	var path: Variant = ProjectSettings.get_setting(setting)
+	return path is String and (path as String).begins_with("*")
+
+## Removes the utility singletons from the project autoloads.
+func _unregister_autoloads() -> void:
+	if ProjectSettings.has_setting("autoload/" + AUTOLOAD_CONFIG):
+		remove_autoload_singleton(AUTOLOAD_CONFIG)
+	
+	if ProjectSettings.has_setting("autoload/" + AUTOLOAD_DEBUG):
+		remove_autoload_singleton(AUTOLOAD_DEBUG)
+
+## Writes every cached config value to disk, if the config singleton is loaded.
+func _flush_config() -> void:
+	var config := _get_autoload_node(AUTOLOAD_CONFIG)
+	if config:
+		config.call("save_all")
+
+## Returns the debug singleton, or null if it is not registered.
+func _get_debug() -> VoxlyDebugUtility:
+	return _get_autoload_node(AUTOLOAD_DEBUG) as VoxlyDebugUtility
+
+## Returns the autoload node named [param singleton_name], or null if missing.
+## Find utility singelton through the scene tree instead of the global identifiers.
+func _get_autoload_node(singleton_name: String) -> Node:
+	return get_node_or_null("/root/" + singleton_name)
+
+## Registers all editor import plugins.
 func _add_importers() -> void:
 	# Register Voxly Model Importer (.vox, .png, .jpg to a PackedScene).
 	_voxel_model_3d_importer = preload("res://addons/voxly-core/importers/voxel_model_3d_import.gd").new()
@@ -140,7 +204,7 @@ func _add_importers() -> void:
 	_voxel_mesh_instance_importer = preload("res://addons/voxly-core/importers/voxel_mesh_instance_import.gd").new()
 	add_import_plugin(_voxel_mesh_instance_importer)
 
-## Unregisters all four editor import plugins.
+## Unregisters all editor import plugins.
 func _remove_importers() -> void:
 	if _voxel_model_3d_importer:
 		remove_import_plugin(_voxel_model_3d_importer)
