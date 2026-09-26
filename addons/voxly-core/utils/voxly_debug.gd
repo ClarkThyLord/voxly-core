@@ -34,6 +34,7 @@ const CATEGORY_EDITOR_UI := "editor_ui"
 const CATEGORY_PLUGIN := "plugin"
 const CATEGORY_EDITOR_LOGIC := "editor_logic"
 const CATEGORY_RAYCAST := "raycast_debug"
+const CATEGORY_IO := "io"
 
 ## All categories in an array for iteration.
 const ALL_CATEGORIES := [
@@ -46,6 +47,7 @@ const ALL_CATEGORIES := [
 	CATEGORY_EDITOR_UI,
 	CATEGORY_EDITOR_LOGIC,
 	CATEGORY_RAYCAST,
+	CATEGORY_IO,
 	CATEGORY_PLUGIN,
 ]
 

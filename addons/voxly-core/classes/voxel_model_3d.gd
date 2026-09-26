@@ -52,29 +52,14 @@ func _get_property_list() -> Array[Dictionary]:
 	})
 	return properties
 
-## Serializes all voxels into a packed byte array.
+## Serializes all voxels into a packed byte array through [VoxlyVoxelContentCodec].
 ##
-## Each voxel occupies 16 bytes: four consecutive int32 values for x, y, z, and
-## the voxel ID. An empty array means there are no voxels.
+## The `_voxel_data` property is storage-only and handled manually through
+## [method _get] / [method _set], sharing the record layout used by
+## [VoxlyVoxelContentFile].
 func _get(property: StringName):
 	if property == &"_voxel_data":
-		var data := PackedByteArray()
-		var count := _voxels.size()
-		if count == 0:
-			return data
-		
-		data.resize(count * 16)
-		var byte_index := 0
-		for voxel_position in _voxels:
-			data.encode_s32(byte_index, voxel_position.x)
-			byte_index += 4
-			data.encode_s32(byte_index, voxel_position.y)
-			byte_index += 4
-			data.encode_s32(byte_index, voxel_position.z)
-			byte_index += 4
-			data.encode_s32(byte_index, _voxels[voxel_position])
-			byte_index += 4
-		return data
+		return VoxlyVoxelContentCodec.encode_records(_voxels)
 	
 	return null
 
@@ -82,20 +67,8 @@ func _get(property: StringName):
 ## [method _get]. Returns true when the property is handled.
 func _set(property: StringName, value) -> bool:
 	if property == &"_voxel_data":
-		_voxels.clear()
 		var data: PackedByteArray = value
-		var voxel_count := data.size() / 16
-		if voxel_count > 0:
-			var byte_index := 0
-			for i in range(voxel_count):
-				var voxel_position := Vector3i(
-					data.decode_s32(byte_index),
-					data.decode_s32(byte_index + 4),
-					data.decode_s32(byte_index + 8)
-				)
-				var voxel_id := data.decode_s32(byte_index + 12)
-				_voxels[voxel_position] = voxel_id
-				byte_index += 16
+		_voxels = VoxlyVoxelContentCodec.decode_records(data)
 		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, _debug_context, "Loaded %d voxels from serialized data" % _voxels.size())
 		return true
 	
@@ -225,6 +198,89 @@ func clear_voxels() -> void:
 	var count := _voxels.size()
 	_voxels.clear()
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, _debug_context, "Cleared %d voxels" % count)
+
+## Returns the model's voxel content as a dictionary suitable for saving.
+##
+## Keys: [code]voxels[/code] ([code]Dictionary[Vector3i, int][/code]),
+## [code]shape[/code], [code]origin[/code], [code]voxel_size[/code], and
+## [code]voxel_set_path[/code] (the assigned [VoxelSet] resource path, or an
+## empty string). When [param positions] is non-empty only those voxels are
+## included.
+func get_voxel_content(positions: Array[Vector3i] = []) -> Dictionary:
+	var voxels: Dictionary[Vector3i, int] = {}
+	if positions.is_empty():
+		voxels = _voxels.duplicate()
+	else:
+		for position in positions:
+			if _voxels.has(position):
+				voxels[position] = _voxels[position]
+	
+	var voxel_set_path := ""
+	if is_instance_valid(voxel_set) and not voxel_set.resource_path.is_empty():
+		voxel_set_path = voxel_set.resource_path
+	
+	return {
+		"voxels": voxels,
+		"shape": shape,
+		"origin": origin,
+		"voxel_size": voxel_size,
+		"voxel_set_path": voxel_set_path,
+	}
+
+## Applies voxel content previously returned by [method get_voxel_content].
+##
+## [param options] keys: [code]mode[/code] (0 replace, 1 append),
+## [code]apply_shape[/code], [code]apply_origin[/code], and
+## [code]apply_voxel_size[/code]. Metadata is only applied when the content
+## carries it and the matching option is enabled.
+func set_voxel_content(content: Dictionary, options: Dictionary = {}) -> void:
+	if options.get("apply_shape", false) and content.has("shape"):
+		var new_shape: Vector3i = content["shape"]
+		shape = new_shape
+	if options.get("apply_origin", false) and content.has("origin"):
+		var new_origin: Vector3 = content["origin"]
+		origin = new_origin
+	if options.get("apply_voxel_size", false) and content.has("voxel_size"):
+		var new_voxel_size: Vector3 = content["voxel_size"]
+		voxel_size = new_voxel_size
+	
+	if int(options.get("mode", 0)) == 0:
+		clear_voxels()
+	
+	var incoming: Dictionary[Vector3i, int] = {}
+	var source_voxels: Dictionary = content.get("voxels", {})
+	for position in source_voxels:
+		incoming[position] = source_voxels[position]
+	add_voxels(incoming)
+	update()
+
+## Saves this model's voxel content to a `.vxc` file.
+##
+## [param options] is passed through to [method VoxlyVoxelContentFile.save]. Returns
+## [constant OK] on success or an error code.
+func save_voxels(path: String, options: Dictionary = {}) -> int:
+	return VoxlyVoxelContentFile.save(path, get_voxel_content(), options)
+
+## Loads voxel content from a `.vxc` file into this model.
+##
+## [param options] is passed through to [method set_voxel_content], plus
+## [code]apply_voxel_set[/code] to assign the file's referenced [VoxelSet].
+## Returns [constant OK] on success or an error code.
+func load_voxels(path: String, options: Dictionary = {}) -> int:
+	var result := VoxlyVoxelContentFile.load(path)
+	var error: int = result.get("error", ERR_FILE_CORRUPT)
+	if error != OK:
+		return error
+	
+	if options.get("apply_voxel_set", false):
+		var set_path := str(result.get("voxel_set_path", ""))
+		if not set_path.is_empty() and ResourceLoader.exists(set_path):
+			var loaded := ResourceLoader.load(set_path)
+			if loaded is VoxelSet:
+				voxel_set = loaded
+	
+	set_voxel_content(result, options)
+	return OK
 
 ## Locates the [MeshInstance3D] used to render this model, creating one if the
 ## node doesn't already have a suitable child.

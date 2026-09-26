@@ -79,6 +79,20 @@ text = "Editing"
 [node name="VSeparator" type="VSeparator" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=808998058]
 layout_mode = 2
 
+[node name="VoxelContentMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1269091848]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Voxel Content"
+item_count = 4
+popup/item_0/text = "Save..."
+popup/item_0/id = 2
+popup/item_1/text = "Load..."
+popup/item_1/id = 3
+popup/item_2/id = -1
+popup/item_2/separator = true
+popup/item_3/text = "Import"
+popup/item_3/id = 3
+
 [node name="SelectMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1871278738]
 unique_name_in_owner = true
 layout_mode = 2
@@ -89,16 +103,6 @@ text = "Select"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Edit"
-
-[node name="ImportMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=1269091848]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Import"
-item_count = 2
-popup/item_0/text = "Append..."
-popup/item_0/id = 0
-popup/item_1/text = "Replace..."
-popup/item_1/id = 1
 
 [node name="SettingsMenuButton" type="MenuButton" parent="ToolbarContainer/FlowContainer/VBoxContainer" unique_id=950767497]
 unique_name_in_owner = true
@@ -688,10 +692,8 @@ initial_position = 4
 size = Vector2i(104, 100)
 visible = false
 wrap_controls = true
-unresizable = true
+exclusive = true
 always_on_top = true
-minimize_disabled = true
-maximize_disabled = true
 
 [node name="MarginContainer" type="MarginContainer" parent="ContextWindow" unique_id=1453680835]
 anchors_preset = 15

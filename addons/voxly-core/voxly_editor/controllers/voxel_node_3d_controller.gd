@@ -382,6 +382,165 @@ func import_file(path: String, append: bool) -> void:
 	import_progress.emit("Done", 1.0)
 	import_finished.emit(true)
 
+## Saves the target's voxel content to a `.vxc` file.
+##
+## [param options] is passed through to [method VoxlyVoxelContentFile.save]. When
+## [code]selection_only[/code] is set and a selection exists, only the selected
+## voxels are written. Returns [constant OK] on success or an error code.
+func save_voxels_file(path: String, options: Dictionary = {}) -> int:
+	if not is_instance_valid(target) or not target.has_method("get_voxel_content"):
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context, "save_voxels_file: target cannot supply voxel content")
+		return ERR_UNAVAILABLE
+	
+	var positions: Array[Vector3i] = []
+	if options.get("selection_only", false):
+		# An empty position list means "all voxels" to get_voxel_content, so a
+		# selection-only save requires a non-empty selection.
+		if not editor or not editor.selection or editor.selection.count() == 0:
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context, "save_voxels_file: selection_only requested with an empty selection")
+			return ERR_UNAVAILABLE
+		for position in editor.selection.to_array():
+			positions.append(position)
+	
+	return VoxlyVoxelContentFile.save(path, target.get_voxel_content(positions), options)
+
+## Loads voxel content from a `.vxc` file into the target through UndoRedo.
+##
+## Unlike [method import_file], positions and (when requested) metadata are
+## applied verbatim instead of normalized, which makes this the "swap content"
+## path. Runs as a chunked coroutine and drives the same
+## [signal import_started] / [signal import_progress] / [signal import_finished]
+## signals.
+func load_voxels_file(path: String, options: Dictionary = {}) -> void:
+	if not is_instance_valid(target) or not undo_redo or not target.has_method("get_voxels"):
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context, "load_voxels_file: no valid target/undo_redo")
+		import_finished.emit(false)
+		return
+	
+	import_started.emit(path.get_file())
+	import_progress.emit("Reading file", 0.0)
+	await _await_frame()
+	
+	var result := VoxlyVoxelContentFile.load(path)
+	var error: int = result.get("error", ERR_FILE_CORRUPT)
+	if error != OK:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context,
+			"load_voxels_file: failed to read '%s' (error=%d)" % [path, error])
+		import_finished.emit(false)
+		return
+	
+	var incoming: Dictionary[Vector3i, int] = {}
+	var source_voxels: Dictionary = result.get("voxels", {})
+	for position in source_voxels:
+		incoming[position] = source_voxels[position]
+	
+	var replace := int(options.get("mode", 0)) == 0
+	var apply_shape: bool = options.get("apply_shape", false)
+	var apply_origin: bool = options.get("apply_origin", false)
+	var apply_voxel_size: bool = options.get("apply_voxel_size", false)
+	var apply_voxel_set: bool = options.get("apply_voxel_set", false)
+	
+	# Count voxels the target's shape would reject so an incomplete load is
+	# visible; enabling Apply Shape avoids this for files that carry a shape.
+	var effective_shape := Vector3i(1, 1, 1)
+	if apply_shape and result.has("shape"):
+		var content_shape: Vector3i = result["shape"]
+		effective_shape = content_shape.max(Vector3i.ONE)
+	elif "shape" in target:
+		effective_shape = target.shape
+	var rejected := 0
+	for position in incoming:
+		var typed_position: Vector3i = position
+		if (
+			typed_position.x < 0 or typed_position.x >= effective_shape.x
+			or typed_position.y < 0 or typed_position.y >= effective_shape.y
+			or typed_position.z < 0 or typed_position.z >= effective_shape.z
+		):
+			rejected += 1
+	if rejected > 0:
+		VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context,
+			"load_voxels_file: %d voxels fall outside shape %s and were skipped" % [rejected, effective_shape])
+	
+	undo_redo.create_action("Voxly Load %s" % path.get_file())
+	
+	# Assign the referenced VoxelSet so the loaded IDs resolve.
+	if apply_voxel_set:
+		var set_path := str(result.get("voxel_set_path", ""))
+		if not set_path.is_empty() and ResourceLoader.exists(set_path):
+			var loaded_set := ResourceLoader.load(set_path)
+			if loaded_set is VoxelSet:
+				var old_voxel_set: VoxelSet = _get_voxel_set()
+				if old_voxel_set != loaded_set:
+					undo_redo.add_do_property(target, "voxel_set", loaded_set)
+					undo_redo.add_undo_property(target, "voxel_set", old_voxel_set)
+	
+	# Metadata is applied before filling voxels so positions stay valid.
+	if apply_shape and result.has("shape"):
+		var old_shape: Vector3i = target.shape if "shape" in target else Vector3i(1, 1, 1)
+		var new_shape: Vector3i = result["shape"]
+		if new_shape != old_shape:
+			undo_redo.add_do_property(target, "shape", new_shape)
+			undo_redo.add_undo_property(target, "shape", old_shape)
+	
+	if apply_origin and result.has("origin") and "origin" in target:
+		var old_origin: Vector3 = target.origin
+		var new_origin: Vector3 = result["origin"]
+		if new_origin != old_origin:
+			undo_redo.add_do_property(target, "origin", new_origin)
+			undo_redo.add_undo_property(target, "origin", old_origin)
+	
+	if apply_voxel_size and result.has("voxel_size"):
+		var old_voxel_size: Vector3 = target.voxel_size
+		var new_voxel_size: Vector3 = result["voxel_size"]
+		if new_voxel_size != old_voxel_size:
+			undo_redo.add_do_property(target, "voxel_size", new_voxel_size)
+			undo_redo.add_undo_property(target, "voxel_size", old_voxel_size)
+	
+	# Replace mode: clear existing voxels first.
+	if replace:
+		var existing_voxels: Dictionary = target.get_voxels()
+		var cleared := 0
+		var clear_total := max(existing_voxels.size(), 1)
+		for position in existing_voxels:
+			undo_redo.add_do_method(target, "remove_voxel", position)
+			undo_redo.add_undo_method(target, "set_voxel", position, existing_voxels[position])
+			cleared += 1
+			if cleared % _PROGRESS_BATCH == 0:
+				import_progress.emit("Clearing existing voxels", 0.1 + 0.2 * float(cleared) / float(clear_total))
+				await _await_frame()
+	
+	# Write voxels in chunks so the editor stays responsive.
+	var total := max(incoming.size(), 1)
+	var written := 0
+	for position in incoming:
+		var old_id = target.get_voxel(position)
+		undo_redo.add_do_method(target, "set_voxel", position, incoming[position])
+		if old_id != null:
+			undo_redo.add_undo_method(target, "set_voxel", position, old_id)
+		else:
+			undo_redo.add_undo_method(target, "remove_voxel", position)
+		written += 1
+		if written % _PROGRESS_BATCH == 0:
+			import_progress.emit("Writing voxels", 0.3 + 0.65 * float(written) / float(total))
+			await _await_frame()
+	
+	import_progress.emit("Rebuilding mesh", 0.97)
+	await _await_frame()
+	
+	undo_redo.add_do_method(target, "update")
+	undo_redo.add_undo_method(target, "update")
+	
+	undo_redo.commit_action()
+	
+	# Keep the editor's voxel_set reference in sync.
+	editor.voxel_set = _get_voxel_set()
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context,
+		"load_voxels_file: loaded %d voxels ('%s', replace=%s)" % [incoming.size(), path, replace])
+	
+	import_progress.emit("Done", 1.0)
+	import_finished.emit(true)
+
 ## Yields until the next engine frame. Works from a RefCounted controller by
 ## reaching the scene tree through the main loop.
 func _await_frame() -> void:

@@ -43,8 +43,8 @@ signal voxel_set_editor_requested
 ## Edit operations menu.
 @onready var _edit_menu_button: MenuButton = %EditMenuButton
 
-## Import actions menu.
-@onready var _import_menu_button: MenuButton = %ImportMenuButton
+## Voxel content menu (save, load, import).
+@onready var _voxel_content_menu_button: MenuButton = %VoxelContentMenuButton
 
 ## Settings menu.
 @onready var _settings_menu_button: MenuButton = %SettingsMenuButton
@@ -258,6 +258,13 @@ func _update_title_visibility() -> void:
 
 ## Connects all widget signals and populates menus.
 func _ready() -> void:
+	# Hide windows
+	_settings_window.visible = false
+	_progress_window.visible = false
+	_context_window.visible = false
+	_missing_voxel_set_dialog.visible = false
+	_palette_required_dialog.visible = false
+	
 	# Apply title visibility
 	_update_title_visibility()
 	
@@ -364,8 +371,14 @@ var _menu_item_serial: int = 0
 ## Populated while building the Select/Edit menus, read by the generic handler.
 var _op_menu_meta: Dictionary = {}
 
-## Operation awaiting confirmation via the ContextWindow prompt.
-var _pending_prompt_op: VoxlyEditOperation = null
+## The last operation executed from the Select/Edit menus, reused by Repeat.
+var _last_operation: VoxlyEditOperation = null
+
+## Menu metadata of the last executed operation, used to label the Repeat item.
+var _last_operation_meta: Dictionary = {}
+
+## Callable run when the shared ContextWindow options prompt is confirmed.
+var _pending_prompt_confirm: Callable = Callable()
 
 ## Resets menu item id generation + metadata at the start of a rebuild.
 func _reset_menu_item_ids() -> void:
@@ -384,12 +397,23 @@ func _update_menus() -> void:
 	_build_select_menu()
 	_build_edit_menu()
 	
-	# Import menu
-	var import_popup := _import_menu_button.get_popup()
-	import_popup.clear()
-	_connect_popup_id(import_popup, _on_import_action)
-	import_popup.add_item("Append...", 0)
-	import_popup.add_item("Replace...", 1)
+	# Voxel content menu
+	var content_popup := _voxel_content_menu_button.get_popup()
+	content_popup.clear()
+	for submenu in content_popup.get_children():
+		content_popup.remove_child(submenu)
+		submenu.queue_free()
+	_connect_popup_id(content_popup, _on_import_action)
+	content_popup.add_item("Save...", 2)
+	content_popup.add_item("Load...", 3)
+	content_popup.add_separator()
+	var import_submenu := PopupMenu.new()
+	import_submenu.name = "ImportSubmenu"
+	_connect_popup_id(import_submenu, _on_import_action)
+	import_submenu.add_item("Append...", 0)
+	import_submenu.add_item("Replace...", 1)
+	content_popup.add_child(import_submenu)
+	content_popup.add_submenu_item("Import", import_submenu.name)
 	
 	# Settings menu
 	var settings_popup := _settings_menu_button.get_popup()
@@ -442,6 +466,12 @@ func _build_edit_menu() -> void:
 	var registry := controller.editor.registry
 	var names_by_category := registry.get_operations_by_category()
 	
+	# Repeat the last executed operation, shown above the clipboard group only
+	# while there is an operation to repeat.
+	if _last_operation != null:
+		_add_repeat_item(edit_popup)
+		edit_popup.add_separator()
+	
 	_add_operation_groups(edit_popup, registry, names_by_category, ["clipboard"])
 	if names_by_category.has("clipboard") and not names_by_category["clipboard"].is_empty():
 		edit_popup.add_separator()
@@ -458,6 +488,23 @@ func _build_edit_menu() -> void:
 	
 	_build_param_submenus(edit_popup, registry)
 	_build_prompt_ops(edit_popup, registry, ["transform"])
+
+
+## Adds the "Repeat" item that re-runs the last executed operation. Only added
+## while an operation exists to repeat, so the item is omitted otherwise.
+func _add_repeat_item(popup: PopupMenu) -> void:
+	var serial := _next_menu_item_id()
+	popup.add_item(_repeat_item_label(), serial)
+	popup.set_item_metadata(popup.item_count - 1, serial)
+	_op_menu_meta[serial] = {"repeat": true}
+
+
+## Returns the label for the Repeat item. Falls back to a plain "Repeat" when no
+## operation has been recorded yet.
+func _repeat_item_label(has_selection: bool = false) -> String:
+	if _last_operation == null:
+		return "Repeat"
+	return "Repeat: %s" % _resolve_operation_label(_last_operation, _last_operation_meta, has_selection)
 
 
 ## Adds submenu groups for the given ordered category names. Each category that
@@ -596,28 +643,42 @@ func _refresh_popup(popup: PopupMenu, editor: VoxlyEditor, has_selection: bool) 
 		if not serial is int or not _op_menu_meta.has(serial):
 			continue
 		var metadata: Dictionary = _op_menu_meta[serial]
+		if metadata.get("repeat", false):
+			popup.set_item_text(i, _repeat_item_label(has_selection))
+			popup.set_item_disabled(i, _last_operation == null or not _last_operation.is_available(editor))
+			continue
 		var operation = editor.registry.create_operation(metadata["op"])
 		if operation == null:
 			continue
 		if metadata.has("kind") and metadata["kind"] == "count":
 			popup.set_item_disabled(i, not operation.is_available(editor))
 			continue
-		if metadata.has("label"):
-			popup.set_item_text(i, metadata["label"])
-		elif metadata.has("param"):
-			var target := "Selection" if has_selection else "All Voxels"
-			popup.set_item_text(i, "%s %s %s" % [operation.display_name, metadata["param_label"], target])
-		elif metadata.get("prompt", false):
-			popup.set_item_text(i, "%s..." % operation.display_name)
-		else:
-			popup.set_item_text(i, operation.get_display_label(has_selection))
+		popup.set_item_text(i, _resolve_operation_label(operation, metadata, has_selection))
 		popup.set_item_disabled(i, not operation.is_available(editor))
+
+
+## Returns the menu label for an operation item.
+func _resolve_operation_label(operation: VoxlyEditOperation, metadata: Dictionary, has_selection: bool) -> String:
+	if metadata.get("kind", "") == "count":
+		return operation.display_name
+	if metadata.has("label"):
+		return metadata["label"]
+	if metadata.has("param"):
+		var target := "Selection" if has_selection else "All Voxels"
+		return "%s %s %s" % [operation.display_name, metadata.get("param_label", ""), target]
+	if metadata.get("prompt", false):
+		return "%s..." % operation.display_name
+	return operation.get_display_label(has_selection)
+
 
 ## Generic handler for all operation menu items.
 func _on_operation_pressed(item_id: int) -> void:
 	if not controller or not controller.editor or not _op_menu_meta.has(item_id):
 		return
 	var metadata: Dictionary = _op_menu_meta[item_id]
+	if metadata.get("repeat", false):
+		_repeat_last_operation()
+		return
 	var editor := controller.editor
 	var operation = editor.registry.create_operation(metadata["op"])
 	if operation == null or not operation.is_available(editor):
@@ -627,10 +688,11 @@ func _on_operation_pressed(item_id: int) -> void:
 	# Operations flagged with "prompt" collect their parameters via the
 	# ContextWindow before executing (e.g. Translate).
 	if metadata.get("prompt", false):
-		_open_context_prompt(operation)
+		_open_context_prompt(operation, metadata)
 		return
 	
 	operation.execute(editor, controller.undo_redo)
+	_remember_last_operation(operation, metadata)
 	
 	# Refresh the menus after Copy/Cut/Paste so shortcuts stay in sync.
 	if metadata.get("op", "") in ["copy_voxels", "cut_voxels", "paste_voxels"]:
@@ -648,11 +710,35 @@ func _on_count_operation_pressed(item_id: int) -> void:
 		return
 	
 	if metadata.get("prompt", false):
-		_open_context_prompt(operation)
+		_open_context_prompt(operation, metadata)
 		return
 	
 	operation.steps = metadata.get("count", 1)
 	operation.execute(editor, controller.undo_redo)
+	_remember_last_operation(operation, metadata)
+
+
+## Records an executed operation so the Repeat item can re-run it with the same
+## retained parameters.
+func _remember_last_operation(operation: VoxlyEditOperation, metadata: Dictionary) -> void:
+	var had_operation := _last_operation != null
+	_last_operation = operation
+	_last_operation_meta = metadata.duplicate()
+	# The Repeat item is only added while an operation exists to repeat, so
+	# rebuild the menus (deferred) the first time one is recorded.
+	if not had_operation:
+		call_deferred("_update_menus")
+
+
+## Re-runs the last executed operation with its retained parameters.
+func _repeat_last_operation() -> void:
+	if _last_operation == null or not controller or not controller.editor:
+		return
+	var editor := controller.editor
+	if not _last_operation.is_available(editor):
+		return
+	_last_operation.execute(editor, controller.undo_redo)
+
 
 ## Sets axis/direction parameters on parameterized transform operations.
 func _apply_param(operation: VoxlyEditOperation, param: String) -> void:
@@ -679,36 +765,53 @@ func _apply_param(operation: VoxlyEditOperation, param: String) -> void:
 				if "align_all_axes" in operation:
 					operation.align_all_axes = false
 
-## Opens the ContextWindow prompt for an operation that requires user input.
-## Rows are built from the operation's `get_options()` schema via the shared
-## VoxlyOptionBuilder; edits write straight back to the operation's properties.
-func _open_context_prompt(operation: VoxlyEditOperation) -> void:
-	_pending_prompt_op = operation
+## Opens the shared options prompt, building rows from [param schema] into the
+## ContextWindow and binding their edits to [param source]. [param on_confirm]
+## runs when the prompt is confirmed.
+func _open_options_prompt(title: String, schema: Array[Dictionary], source, on_confirm: Callable) -> void:
+	_pending_prompt_confirm = on_confirm
 	if not _context_window or not _context_window_grid:
 		return
-	_option_builder.build_into(_context_window_grid, operation.get_options(), operation)
-	_context_window.title = operation.display_name
+	_option_builder.build_into(_context_window_grid, schema, source)
+	_context_window.title = title
 	_context_window.popup_centered()
 
 
-## Executes the pending operation after the ContextWindow prompt confirms.
-## Values were already written to the operation's properties by the option builder
-## as the user edited them, so no collection pass is needed here.
-func _on_context_window_ok() -> void:
-	var operation = _pending_prompt_op
-	_pending_prompt_op = null
-	if _context_window:
-		_context_window.hide()
+## Opens the ContextWindow prompt for an operation that requires user input.
+## Rows are built from the operation's `get_options()` schema via the shared
+## VoxlyOptionBuilder; edits write straight back to the operation's properties.
+## [param metadata] is retained so the Repeat item can re-run the operation.
+func _open_context_prompt(operation: VoxlyEditOperation, metadata: Dictionary = {}) -> void:
+	_open_options_prompt(operation.display_name, operation.get_options(), operation,
+		_execute_prompted_operation.bind(operation, metadata))
+
+
+## Executes an operation confirmed through the ContextWindow prompt. Values were
+## already written to the operation's properties by the option builder as the
+## user edited them, so no collection pass is needed here.
+func _execute_prompted_operation(operation: VoxlyEditOperation, metadata: Dictionary) -> void:
 	if operation == null or not controller or not controller.editor:
 		return
 	var editor := controller.editor
-	if operation.is_available(editor):
-		operation.execute(editor, controller.undo_redo)
+	if not operation.is_available(editor):
+		return
+	operation.execute(editor, controller.undo_redo)
+	_remember_last_operation(operation, metadata)
 
 
-## Closes the ContextWindow without executing the pending operation.
+## Runs the pending prompt confirmation after the ContextWindow is accepted.
+func _on_context_window_ok() -> void:
+	var confirm := _pending_prompt_confirm
+	_pending_prompt_confirm = Callable()
+	if _context_window:
+		_context_window.hide()
+	if confirm.is_valid():
+		confirm.call()
+
+
+## Closes the ContextWindow without running the pending confirmation.
 func _on_context_window_cancel() -> void:
-	_pending_prompt_op = null
+	_pending_prompt_confirm = Callable()
 	if _context_window:
 		_context_window.hide()
 
@@ -1225,21 +1328,92 @@ func _on_voxel_set_editor_button_pressed() -> void:
 var _import_file_dialog: FileDialog = null
 ## Whether the next import appends or replaces.
 var _import_append: bool = true
+## File dialog for saving voxel content.
+var _save_voxels_file_dialog: FileDialog = null
+## File dialog for loading voxel content.
+var _load_voxels_file_dialog: FileDialog = null
+## Dialog shown when a voxel content operation fails.
+var _error_dialog: AcceptDialog = null
 
-## Opens the import file dialog.
+## Handles the File menu items: import, save voxels, and load voxels.
 func _on_import_action(id: int) -> void:
+	match id:
+		2:
+			_open_save_voxels_dialog()
+			return
+		3:
+			_open_load_voxels_dialog()
+			return
 	_import_append = id == 0
 	if not _import_file_dialog:
 		_import_file_dialog = FileDialog.new()
 		_import_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-		_import_file_dialog.add_filter("*.png,*.jpg,*.jpeg,*.vox;Supported Files")
+		_import_file_dialog.add_filter("*.png,*.jpg,*.jpeg,*.vox,*.%s;Supported Files" % VoxlyVoxelContentFile.EXTENSION)
 		_import_file_dialog.add_filter("*.png;PNG Image")
 		_import_file_dialog.add_filter("*.jpg,*.jpeg;JPEG Image")
 		_import_file_dialog.add_filter("*.vox;MagicaVoxel")
+		_import_file_dialog.add_filter("*.%s;Voxly Voxel Content" % VoxlyVoxelContentFile.EXTENSION)
 		_import_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 		_import_file_dialog.file_selected.connect(_on_import_file_selected)
 		add_child(_import_file_dialog)
 	_import_file_dialog.popup_centered()
+
+## Opens the voxel content save dialog.
+func _open_save_voxels_dialog() -> void:
+	if not controller:
+		return
+	if not _save_voxels_file_dialog:
+		_save_voxels_file_dialog = FileDialog.new()
+		_save_voxels_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		_save_voxels_file_dialog.add_filter("*.%s;Voxly Voxel Content" % VoxlyVoxelContentFile.EXTENSION)
+		_save_voxels_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+		_save_voxels_file_dialog.current_file = "voxels.%s" % VoxlyVoxelContentFile.EXTENSION
+		_save_voxels_file_dialog.file_selected.connect(_on_save_voxels_file_selected)
+		add_child(_save_voxels_file_dialog)
+	_save_voxels_file_dialog.popup_centered()
+
+## Opens the voxel content load dialog.
+func _open_load_voxels_dialog() -> void:
+	if not controller:
+		return
+	if not _load_voxels_file_dialog:
+		_load_voxels_file_dialog = FileDialog.new()
+		_load_voxels_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+		_load_voxels_file_dialog.add_filter("*.%s;Voxly Voxel Content" % VoxlyVoxelContentFile.EXTENSION)
+		_load_voxels_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+		_load_voxels_file_dialog.file_selected.connect(_on_load_voxels_file_selected)
+		add_child(_load_voxels_file_dialog)
+	_load_voxels_file_dialog.popup_centered()
+
+## Prompts for save options once a destination path has been chosen.
+func _on_save_voxels_file_selected(path: String) -> void:
+	if not controller:
+		return
+	var options := VoxlyVoxelContentSaveOptions.new()
+	_open_options_prompt("Save Voxels", options.get_options(), options,
+		_confirm_save_voxels.bind(path, options))
+
+## Saves the target's voxel content using the chosen options.
+func _confirm_save_voxels(path: String, options: VoxlyVoxelContentSaveOptions) -> void:
+	if not controller:
+		return
+	var error := controller.save_voxels_file(path, options.to_dictionary())
+	if error != OK:
+		push_error("Voxly: Failed to save voxel content to '%s' (error=%d)" % [path, error])
+
+## Prompts for load options once a source path has been chosen.
+func _on_load_voxels_file_selected(path: String) -> void:
+	if not controller:
+		return
+	var options := VoxlyVoxelContentLoadOptions.new()
+	_open_options_prompt("Load Voxels", options.get_options(), options,
+		_confirm_load_voxels.bind(path, options))
+
+## Loads voxel content using the chosen options.
+func _confirm_load_voxels(path: String, options: VoxlyVoxelContentLoadOptions) -> void:
+	if not controller:
+		return
+	controller.load_voxels_file(path, options.to_dictionary())
 
 
 ## Routes the selected file to the controller import.
@@ -1273,10 +1447,23 @@ func _on_import_progress(stage: String, fraction: float) -> void:
 	_import_progress_bar.value = clampf(fraction, 0.0, 1.0) * 100.0
 
 
-## Hides the progress window when an import finishes (success or failure).
-func _on_import_finished(_success: bool) -> void:
+## Hides the progress window when an import finishes and reports failures.
+func _on_import_finished(success: bool) -> void:
 	if _progress_window:
 		_progress_window.hide()
+	if not success:
+		_show_error_dialog("Voxel content operation failed. See the Output panel for details.")
+
+
+## Shows a modal error dialog so failed import/load operations are visible.
+func _show_error_dialog(message: String) -> void:
+	if not _error_dialog:
+		_error_dialog = AcceptDialog.new()
+		_error_dialog.title = "Voxly"
+		_error_dialog.min_size = Vector2i(360, 0)
+		add_child(_error_dialog)
+	_error_dialog.dialog_text = message
+	_error_dialog.popup_centered()
 
 
 ## Opens the settings window on the selected tab.

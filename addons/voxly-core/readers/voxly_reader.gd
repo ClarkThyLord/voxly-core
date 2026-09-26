@@ -34,6 +34,10 @@ static func read_file(file_path: String, options: Dictionary = {}) -> Dictionary
 			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Dispatching to VoxReader for .vox file")
 			result = VoxReader.read_file(file_path, options)
 		
+		"vxc":
+			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Dispatching to VoxlyVoxelContentFile for .vxc file")
+			result = _read_vxc(file_path)
+		
 		"png", "bmp", "dds", "exr", "hdr", "jpg", "jpeg", "tga", "svg", "svgz", "webp":
 			VoxlyDebug.log_category(VoxlyDebug.CATEGORY_READERS, _debug_context, "Dispatching to ImageReader for image file")
 			result = ImageReader.read_file(file_path, options)
@@ -165,3 +169,27 @@ static func read_result_to_scene(result: Dictionary, voxel_size: Vector3 = Vecto
 	var scene := PackedScene.new()
 	scene.pack(model)
 	return scene
+
+## Reads a Voxly voxel-content file (`.vxc`) into the standard result shape.
+## The referenced [VoxelSet] (and its palette) is exposed when it can be loaded.
+static func _read_vxc(file_path: String) -> Dictionary:
+	var loaded := VoxlyVoxelContentFile.load(file_path)
+	var error: int = loaded.get("error", ERR_FILE_CORRUPT)
+	if error != OK:
+		return { "error": error }
+	
+	var result := {
+		"error": OK,
+		"voxels": loaded.get("voxels", {}),
+		"palette": {},
+		"materials": {},
+	}
+	
+	var voxel_set_path := str(loaded.get("voxel_set_path", ""))
+	if not voxel_set_path.is_empty() and ResourceLoader.exists(voxel_set_path):
+		var voxel_set := ResourceLoader.load(voxel_set_path)
+		if voxel_set is VoxelSet:
+			result["voxel_set"] = voxel_set
+			result["palette"] = voxel_set.get_voxels().duplicate()
+	
+	return result
