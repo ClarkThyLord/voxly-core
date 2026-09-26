@@ -214,6 +214,14 @@ func update() -> void:
 func rebuild_mesh() -> void:
 	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_VOXEL_NODES, _debug_context, "Rebuilding mesh")
 
+## Returns the mesh currently rendered for this node, or null when no mesh has
+## been generated yet (for example when the node has no voxels).
+func get_generated_mesh() -> Mesh:
+	var mesh_instance := _get_mesh_instance()
+	if is_instance_valid(mesh_instance):
+		return mesh_instance.mesh
+	return null
+
 ## Converts a world position to local voxel grid coordinates.
 func world_to_voxel_position(world_position: Vector3) -> Vector3i:
 	return Vector3i((world_position / voxel_size).round())

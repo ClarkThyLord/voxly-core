@@ -48,14 +48,20 @@ func register_factory(type: int, hint: String, factory: Callable) -> void:
 	_factories["%d:%s" % [type, hint]] = factory
 
 ## Builds label + control rows for each option into [param container],
-## clearing it first. [param source] is the object whose properties are
+## clearing it first; existing rows are detached before new ones are added so
+## the container never reports both sets of rows at once. [param source] is the
+## object whose properties are
 ## read/written (may be null for action-only rows).
 ## [param button_callable](action) is invoked when a "button" row is pressed;
 ## [param action_callable](enabled, action) is invoked when an "action" row
 ## toggles.
 func build_into(container: GridContainer, options: Array[Dictionary], source,
 		button_callable: Callable = Callable(), action_callable: Callable = Callable()) -> void:
+	# Detach the old rows before adding new ones; queue_free alone defers removal
+	# to the end of the frame, which would leave both row sets in the layout when
+	# a wrapping window sizes itself to the content.
 	for child in container.get_children():
+		container.remove_child(child)
 		child.queue_free()
 	for option in options:
 		_build_row(container, option, source, button_callable, action_callable)

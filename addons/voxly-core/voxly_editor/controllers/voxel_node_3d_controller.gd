@@ -402,7 +402,10 @@ func save_voxels_file(path: String, options: Dictionary = {}) -> int:
 		for position in editor.selection.to_array():
 			positions.append(position)
 	
-	return VoxlyVoxelContentFile.save(path, target.get_voxel_content(positions), options)
+	var error := VoxlyVoxelContentFile.save(path, target.get_voxel_content(positions), options)
+	if error == OK:
+		_refresh_resource_filesystem(path)
+	return error
 
 ## Loads voxel content from a `.vxc` file into the target through UndoRedo.
 ##
@@ -540,6 +543,44 @@ func load_voxels_file(path: String, options: Dictionary = {}) -> void:
 	
 	import_progress.emit("Done", 1.0)
 	import_finished.emit(true)
+
+## Exports the generated mesh to [param path] as a resource.
+##
+## Returns [constant OK], or [constant ERR_DOES_NOT_EXIST] when there is no
+## generated mesh to write.
+func export_mesh_file(path: String) -> int:
+	if not is_instance_valid(target) or not target.has_method("get_generated_mesh"):
+		VoxlyDebug.error(_debug_context, "export_mesh_file: no mesh accessor on target")
+		return ERR_UNAVAILABLE
+	
+	var mesh: Mesh = target.get_generated_mesh()
+	if mesh == null:
+		VoxlyDebug.error(_debug_context, "export_mesh_file: nothing to export")
+		return ERR_DOES_NOT_EXIST
+	
+	var error := ResourceSaver.save(mesh, path)
+	if error != OK:
+		VoxlyDebug.error(_debug_context, "export_mesh_file: failed to save %s (error=%d)" % [path, error])
+		return error
+	
+	VoxlyDebug.log_category(VoxlyDebug.CATEGORY_EDITOR_LOGIC, _debug_context, "Exported mesh to %s" % path)
+	_refresh_resource_filesystem(path)
+	return OK
+
+## Asks the editor filesystem scan for files just created so it
+## appears in the FileSystem dock immediately.
+func _refresh_resource_filesystem(path: String) -> void:
+	var local_path := ProjectSettings.localize_path(path)
+	if not local_path.begins_with("res://"):
+		return
+	
+	var filesystem := EditorInterface.get_resource_filesystem()
+	if filesystem == null:
+		return
+	
+	# Avoid requesting a new scan while the editor is already scanning.
+	if not filesystem.is_scanning():
+		filesystem.scan()
 
 ## Yields until the next engine frame. Works from a RefCounted controller by
 ## reaching the scene tree through the main loop.

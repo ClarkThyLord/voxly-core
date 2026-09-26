@@ -407,6 +407,13 @@ func _update_menus() -> void:
 	content_popup.add_item("Save...", 2)
 	content_popup.add_item("Load...", 3)
 	content_popup.add_separator()
+	var export_submenu := PopupMenu.new()
+	export_submenu.name = "ExportSubmenu"
+	_connect_popup_id(export_submenu, _on_export_action)
+	export_submenu.add_item("Mesh (.res)...", 0)
+	content_popup.add_child(export_submenu)
+	content_popup.add_submenu_item("Export", export_submenu.name)
+
 	var import_submenu := PopupMenu.new()
 	import_submenu.name = "ImportSubmenu"
 	_connect_popup_id(import_submenu, _on_import_action)
@@ -774,7 +781,7 @@ func _open_options_prompt(title: String, schema: Array[Dictionary], source, on_c
 		return
 	_option_builder.build_into(_context_window_grid, schema, source)
 	_context_window.title = title
-	_context_window.popup_centered()
+	_context_window.popup_centered(Vector2i(_context_window.get_contents_minimum_size()))
 
 
 ## Opens the ContextWindow prompt for an operation that requires user input.
@@ -1334,6 +1341,8 @@ var _save_voxels_file_dialog: FileDialog = null
 var _load_voxels_file_dialog: FileDialog = null
 ## Dialog shown when a voxel content operation fails.
 var _error_dialog: AcceptDialog = null
+## File dialog for exporting the generated mesh.
+var _export_mesh_file_dialog: FileDialog = null
 
 ## Handles the File menu items: import, save voxels, and load voxels.
 func _on_import_action(id: int) -> void:
@@ -1414,6 +1423,40 @@ func _confirm_load_voxels(path: String, options: VoxlyVoxelContentLoadOptions) -
 	if not controller:
 		return
 	controller.load_voxels_file(path, options.to_dictionary())
+
+## Handles the Export submenu items.
+func _on_export_action(id: int) -> void:
+	match id:
+		0:
+			_open_export_mesh_dialog()
+		_:
+			return
+
+## Opens the mesh export dialog.
+func _open_export_mesh_dialog() -> void:
+	if not controller:
+		return
+	if not _export_mesh_file_dialog:
+		_export_mesh_file_dialog = FileDialog.new()
+		_export_mesh_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		_export_mesh_file_dialog.add_filter("*.res;Mesh Resource")
+		_export_mesh_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+		_export_mesh_file_dialog.file_selected.connect(_on_export_mesh_file_selected)
+		add_child(_export_mesh_file_dialog)
+	
+	var node_name := "voxel"
+	if is_instance_valid(controller.target):
+		node_name = str(controller.target.name).to_snake_case()
+	_export_mesh_file_dialog.current_file = "%s_mesh.res" % node_name
+	_export_mesh_file_dialog.popup_centered()
+
+## Exports the generated mesh to the chosen path.
+func _on_export_mesh_file_selected(path: String) -> void:
+	if not controller:
+		return
+	var error := controller.export_mesh_file(path)
+	if error != OK:
+		_show_error_dialog("Failed to export the voxel mesh to %s. See the Output panel for details." % path)
 
 
 ## Routes the selected file to the controller import.
