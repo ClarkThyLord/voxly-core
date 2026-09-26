@@ -44,6 +44,7 @@ func get_options() -> Array[Dictionary]:
 ## the operation renders as a submenu with one item per entry. Each entry is:
 ##   { "label": String, "param": String }
 ## where `param` is fed to _apply_param-like handling on execution.
+## Entries may also set `separator: true` to render a separator row.
 func get_param_entries() -> Array[Dictionary]:
 	return []
 

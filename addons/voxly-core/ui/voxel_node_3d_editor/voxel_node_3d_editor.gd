@@ -756,9 +756,12 @@ func _apply_param(operation: VoxlyEditOperation, param: String) -> void:
 		"x", "y", "z":
 			if "axis" in operation:
 				operation.axis = axis_map[param]
-		"right", "left":
+		"x_right", "x_left", "y_right", "y_left", "z_right", "z_left":
 			if "clockwise" in operation:
-				operation.clockwise = (param == "right")
+				var parts := param.split("_")
+				if parts.size() == 2 and "axis" in operation:
+					operation.axis = axis_map[parts[0]]
+				operation.clockwise = param.ends_with("right")
 		"xyz_center":
 			if "axis" in operation and "align_mode" in operation and "align_all_axes" in operation:
 				operation.axis = 0
