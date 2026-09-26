@@ -132,6 +132,43 @@ func show_dock(dock_type: DockType, node: Node3D = null) -> void:
 		_:
 			return
 
+## Shows and focuses a dock as an explicit user request (e.g. the 3D toolbar).
+##
+## Unlike [method show_dock], a remembered dismissal is cleared so the dock is
+## guaranteed to open. A dock that is already visible is re-focused instead of
+## being rebuilt, which preserves an in-progress editing session.
+func focus_dock(dock_type: DockType, node: Node3D = null) -> void:
+	match dock_type:
+		DockType.VOXEL_SET_EDITOR:
+			_dock_dismissed[VOXEL_SET_DOCK_PATH] = false
+			if _voxel_set_dock != null and _voxel_set_dock.visible:
+				_focus_dock(_voxel_set_dock, VOXEL_SET_DOCK_PATH)
+			elif node is VoxelNode3D:
+				_show_voxel_set_dock_for_node(node)
+			else:
+				_show_voxel_set_dock(node)
+		DockType.VOXEL_OBJECT_EDITOR:
+			_dock_dismissed[VOXEL_NODE_3D_DOCK_PATH] = false
+			if _bottom_dock != null and _bottom_dock.visible:
+				_focus_dock(_bottom_dock, VOXEL_NODE_3D_DOCK_PATH)
+			else:
+				_show_voxel_node_editor_dock(node)
+		_:
+			return
+
+## Brings an existing dock to the foreground, bypassing the "don't steal focus"
+## guard that context-driven shows use.
+func _focus_dock(dock: Control, path: String) -> void:
+	if dock == null:
+		return
+	_syncing_docks = true
+	if dock.has_method("make_visible"):
+		dock.make_visible()
+	else:
+		dock.show()
+	_dock_has_been_shown[path] = true
+	_syncing_docks = false
+
 ## Hides and cleans up the current bottom dock only.
 ## Does not affect the VoxelSet right-side dock.
 func hide_current_dock() -> void:

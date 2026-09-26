@@ -382,9 +382,17 @@ func query(query_string: String) -> Array[int]:
 			results.append(voxel_id)
 	return results
 
-## Emits the [signal changed] signal.
-func _notify_changed() -> void:
+## Emits [signal changed] so listeners (nodes and editors) refresh.
+##
+## Use this after mutating the set outside its own setters, or to force
+## dependent voxel nodes to rebuild.
+func notify_changed() -> void:
 	changed.emit()
+
+## Emits the [signal changed] signal.
+## Kept for the inspector's notify button ([member notify_changed_button]).
+func _notify_changed() -> void:
+	notify_changed()
 
 ## Returns true if the given voxel satisfies every query token.
 func _matches_query(voxel_id: int, voxel: Voxel, tokens: PackedStringArray) -> bool:

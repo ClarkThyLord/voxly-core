@@ -31,6 +31,9 @@ var _input_handler: VoxlyInputHandler = null
 ## Manages bottom panel UI lifecycle.
 var _ui_manager: VoxlyUIManager = null
 
+## Contextual 3D toolbar menus for the currently edited object.
+var _toolbar: VoxlyToolbar = null
+
 ## Current VoxelSet resource being edited.
 var _current_voxel_set: VoxelSet = null
 
@@ -59,6 +62,7 @@ func _enter_tree() -> void:
 	_state_machine = VoxlyStateMachine.new(self)
 	_input_handler = VoxlyInputHandler.new(_state_machine)
 	_ui_manager = VoxlyUIManager.new(self, _state_machine)
+	_toolbar = VoxlyToolbar.new(self, _state_machine, _ui_manager)
 	
 	# Connect to state machine changes.
 	_state_machine.state_changed.connect(_on_state_changed)
@@ -95,7 +99,10 @@ func _exit_tree() -> void:
 	if main_screen_changed.is_connected(_on_main_screen_changed):
 		main_screen_changed.disconnect(_on_main_screen_changed)
 	
-	# Clean up UI and input (VoxlyDebug is still available).
+	# Clean up the toolbar and UI (VoxlyDebug is still available).
+	if _toolbar:
+		_toolbar.dispose()
+		_toolbar = null
 	if _ui_manager:
 		_ui_manager.dispose_all_docks()
 		_ui_manager = null
@@ -175,6 +182,9 @@ func _handles(object: Object) -> bool:
 	return _state_machine and _state_machine.can_handle(object)
 
 ## Called by Godot to begin editing the given object.
+##
+## [param object] is null when the previously edited object is no longer handled
+## by this plugin, which lets the plugin reset its editing state.
 func _edit(object: Object) -> void:
 	if not _state_machine:
 		return
@@ -187,6 +197,20 @@ func _edit(object: Object) -> void:
 		_current_voxel_set = object
 		_state_machine.set_current_voxel_set(object)
 		_state_machine.transition_to(VoxlyState.State.VIEWING_VOXEL_SET, null)
+	
+	# Contextual toolbar menus follow whatever the editor is editing.
+	if _toolbar:
+		_toolbar.set_current_object(object)
+
+## Shows or hides the plugin's contextual toolbar menus.
+func _make_visible(visible: bool) -> void:
+	if _toolbar:
+		_toolbar.set_visible(visible)
+
+## Resets the editing state when the edited object is gone (freed or scene change).
+func _clear() -> void:
+	if _toolbar:
+		_toolbar.set_current_object(null)
 
 ## Forwards 3D viewport input to the input handler.
 func _forward_3d_gui_input(camera: Camera3D, event: InputEvent) -> int:
